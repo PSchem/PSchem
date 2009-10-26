@@ -22,6 +22,26 @@ from Primitives import *
 
 
 class Reader():
+    def __init__(self, database):
+        self._database = database
+    
+    def parseSchematic(self, fileName, cellView):
+        pass
+    
+    def parseSymbol(self, fileName, cellView):
+        pass
+    
+    def parseNetlist(self, fileName, cellView):
+        pass
+    
+    def parseLayout(self, fileName, cellView):
+        pass
+    
+    def parsePCB(self, fileName, cellView):
+        pass
+        
+    
+class GedaReader(Reader):
     uu = 100 #default database units / user units
     peof = re.compile(r'^$')
     pempty = re.compile(r'^\s*$')
@@ -51,6 +71,7 @@ class Reader():
 
 
     def __init__(self, importer):
+        Reader.__init__(self, importer.database)
         self.importer = importer
         self.inSchematic = False
         self.inSymbol = False
@@ -70,38 +91,38 @@ class Reader():
 
     def parseLine(self):
         m=self.match
-        l = Line(self.view, self.importer.database.layers(), int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)))
+        l = Line(self.view, self._database.layers(), int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)))
         self.last = l
         self.view.addElem(l)
 
     def parseArc(self):
         m=self.match
         radius = 2 * int(m.group(3))
-        e = EllipseArc(self.view, self.importer.database.layers(), int(m.group(1)), int(m.group(2)), radius, radius, int(m.group(4)), int(m.group(5)))
+        e = EllipseArc(self.view, self._database.layers(), int(m.group(1)), int(m.group(2)), radius, radius, int(m.group(4)), int(m.group(5)))
         self.last = e
         self.view.addElem(e)
 
     def parsePin(self):
         m=self.match
-        p = Pin(self.view, self.importer.database.layers(), int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)))
+        p = Pin(self.view, self._database.layers(), int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)))
         self.last = p
         self.view.addElem(p)
 
     def parseNet(self):
         m=self.match
-        n = NetSegment(self.view, self.importer.database.layers(), int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)))
+        n = NetSegment(self.view, self._database.layers(), int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)))
         self.last = n
         self.view.addElem(n)
 
     def parseBox(self):
         m=self.match
-        r = Rect(self.view, self.importer.database.layers(), int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)))
+        r = Rect(self.view, self._database.layers(), int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)))
         self.last = r
         self.view.addElem(r)
 
     def parseCustomPath(self):
         m=self.match
-        p = CustomPath(self.view, self.importer.database.layers())
+        p = CustomPath(self.view, self._database.layers())
         #, int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)))
         for n in range(int(m.group(13))):
             line = self.readLine()
@@ -121,14 +142,14 @@ class Reader():
                           int(self.match.group(6)))
             elif (self.regExpSearch(self.ppath_close, line)):
                 p.closePath()
-        p.setLayer(self.importer.database.layers().layerByName('annotation2', 'drawing'))
+        p.setLayer(self._database.layers().layerByName('annotation2', 'drawing'))
         self.last = p
         self.view.addElem(p)
 
     def parseCircle(self):
         m=self.match
         radius = 2 * int(m.group(3))
-        c = Ellipse(self.view, self.importer.database.layers(), int(m.group(1)), int(m.group(2)), radius, radius)
+        c = Ellipse(self.view, self._database.layers(), int(m.group(1)), int(m.group(2)), radius, radius)
         self.last = c
         self.view.addElem(c)
 
@@ -144,7 +165,7 @@ class Reader():
         #print m.group(6)
         #c = self.importer.getCellByName(m.group(6))
         #c = lib.cellByName(m.group(6))
-        i = Instance(self.view, self.importer.database.layers())
+        i = Instance(self.view, self._database.layers())
         i.setXY(int(m.group(1)), int(m.group(2)))
         i.setAngle(int(m.group(4)))
         i.setHMirror(int(m.group(5)) == 1)
@@ -164,10 +185,10 @@ class Reader():
         key = m.group(1)
         val = m.group(2)
         if (self.inAttribute):
-            a = Attribute(self.last, self.importer.database.layers(), key, val)
+            a = Attribute(self.last, self._database.layers(), key, val)
             self.last.addAttribute(a)
         else:
-            a = Attribute(self.view, self.importer.database.layers(), key, val)
+            a = Attribute(self.view, self._database.layers(), key, val)
             self.view.addElem(a)
         a.setXY(int(mAttr.group(1)), int(mAttr.group(2)))
         #a.setLayer(None)  #int(mAttr.group(3))
@@ -200,7 +221,7 @@ class Reader():
         if (self.regExpSearch(self.pattr, text)):
             self.parseAttribute(m)
         else:
-            l = Label(self.view, self.importer.database.layers())
+            l = Label(self.view, self._database.layers())
             #l = Label(self.view, int(m.group(1)), int(m.group(2)), int(int(m.group(4))*13.888))
             l.setText(text)
             l.setXY(int(m.group(1)), int(m.group(2)))
@@ -392,7 +413,7 @@ class GedaImporter(Importer):
                     if not cv:
                         cv = Symbol('symbol')
                         self.cell.addView(cv)
-                        r = Reader(self)
+                        r = GedaReader(self)
                         cv = r.parseSymbol(f, cv)
                     #cv = r.parseSymbol(f)
                     #self.cell.addView(cv)
@@ -429,7 +450,7 @@ class GedaImporter(Importer):
                     if not cv:
                         cv = Schematic('schematic')
                         self.cell.addView(cv)
-                        r = Reader(self)
+                        r = GedaReader(self)
                         r.parseSchematic(f, cv)
                     #self.cell.addView(cv)
                 else:

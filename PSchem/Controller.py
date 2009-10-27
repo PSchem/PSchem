@@ -96,3 +96,10 @@ class Controller():
                 if (text != ''):
                     self.parse(text)
 
+    def repl(self):
+        while True:
+            print '>>> '
+            line = self.window.consoleWidget.readline()
+            print 'line :' + line
+            self.executeOld(compile(line, "console", "single"))
+            

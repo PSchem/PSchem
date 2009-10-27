@@ -89,6 +89,10 @@ class PWindow(QtGui.QMainWindow):
         if (val.canConvert(QtCore.QVariant.ByteArray)):
             self.restoreState(val.toByteArray())
 
+    def show(self):
+        QtGui.QMainWindow.show(self)
+        self.controller.repl()
+    
     def createConsole(self):
         self.consoleWidget = ConsoleWidget(self)
         self.controller = Controller(self)
@@ -100,6 +104,7 @@ class PWindow(QtGui.QMainWindow):
         #self.databaseWidget = DatabaseWidget.DatabaseWidget(self)
         self.dockC.setWidget(self.consoleWidget)
         self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.dockC)
+
 
     def createDatabaseView(self):
         self.dockD = QtGui.QDockWidget(self.tr("Database"), self)

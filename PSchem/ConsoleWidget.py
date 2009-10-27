@@ -25,6 +25,7 @@ except ImportError:
 
 import cmd    
 import os
+import time
 
 class StdinWrap():
     def __init__(self, console):
@@ -104,27 +105,27 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
     DEL  = 177 # ignored
     CSI  = 233 # equivalent to ESC [
 
+
     keyCtrlCodes = {
         QtCore.Qt.Key_A : '\x01',
         QtCore.Qt.Key_B : '\x02',
         QtCore.Qt.Key_E : '\x05',
+        QtCore.Qt.Key_J : '\x0a',
+        QtCore.Qt.Key_Enter : '\x0a',
         QtCore.Qt.Key_M : '\x0d',
         QtCore.Qt.Key_N : '\x0e',
+        QtCore.Qt.Key_O : '\x0f',
+        QtCore.Qt.Key_P : '\x10',
         QtCore.Qt.Key_Q : '\x11',
         QtCore.Qt.Key_R : '\x12',
         QtCore.Qt.Key_S : '\x13',
-        QtCore.Qt.Key_Z : '\x1a',
+        QtCore.Qt.Key_Y : '\x15',
         QtCore.Qt.Key_V : '\x16',
         QtCore.Qt.Key_W : '\x17',
         QtCore.Qt.Key_X : '\x18',
-
-        QtCore.Qt.Key_J : '\x0a',
-        QtCore.Qt.Key_Enter : '\x0a',
-        QtCore.Qt.Key_BracketRight : '\x1d',
+        QtCore.Qt.Key_Z : '\x1a',
         QtCore.Qt.Key_BracketLeft : '\x1b',
-        QtCore.Qt.Key_P : '\x10',
-        QtCore.Qt.Key_O : '\x0f',
-        QtCore.Qt.Key_Y : '\x15',
+        QtCore.Qt.Key_BracketRight : '\x1d',
         }
 
     def __init__(self, window=None):
@@ -133,7 +134,9 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
         self.inHistory = False
         self.history = History()
         #self.setReadOnly(True)
-        self.window = window
+        #self.window = window
+        self.window = None
+        self.buffer = u''
         # font
         self.defaultFormat = self.currentCharFormat()
         self.defaultFormat.setFontFamily("Courier")
@@ -167,8 +170,8 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
         self.menu.popup(ev.globalPos())
         ev.accept()
         
-    def readline(self):
-        return ''
+    #def readline(self):
+    #    return ''
 
 
     def error(self, message):
@@ -222,18 +225,39 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
         self.reading = 1
         self.__clear_line()
         self.moveCursor(QtGui.QTextCursor.End)
-        while self.reading:
-        #    #pass
-        #    #QtGui.qApp.processOneEvent()
-            QtGui.qApp.processEvents() #QtCore.QEventLoop.ExcludeUserInputEvents)
-        #    #QtCore.QCoreApplication.processOneEvent()
-        if self.line.length() == 0:
-            return '\n'
+        #while self.reading:
+        ##    #pass
+        ##    #QtGui.qApp.processOneEvent()
+        #    QtGui.qApp.processEvents() #QtCore.QEventLoop.ExcludeUserInputEvents)
+        ##    #QtCore.QCoreApplication.processOneEvent()
+        #if self.line.length() == 0:
+        #    return '\n'
+        text = u''
+        while True:
+            QtGui.qApp.processEvents()
+            char = self.read(1)
+            text = text + char
+            if len(char) > 0 and char == '\x0d':
+                break 
         else:
-            return str(self.line)
+            return text
 
+    def read(self, count=1, acc=''):
+        lenBuf = len(self.buffer)
+        if lenBuf >= count:
+            str = acc + self.buffer[0:count]
+            self.buffer = self.buffer[count:lenBuf]
+            return str
+        else:
+            str = acc + self.buffer
+            self.buffer = u''
+            time.sleep(0.01)
+            return str
+            #self.read(count - len(str), str)
+            
     def parseInput(self, str):
-        self.write(str)
+        self.buffer = self.buffer + str
+        #self.write(str)
             
     def keyPressEvent(self, event):
         text  = event.text()
@@ -244,7 +268,7 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
 
         if (key == QtCore.Qt.Key_Control and modifier & QtCore.Qt.ControlModifier):
             pass
-        elif (modifier & QtCore.Qt.ControlModifier):
+        if (modifier & QtCore.Qt.ControlModifier):
             if key in self.keyCtrlCodes:
                 self.parseInput(self.keyCtrlCodes[key])
                 
@@ -318,9 +342,10 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
         elif text.length():
             self.__insert_text(text)
             return
-
         else:
-            QtGui.QPlainTextEdit.keyPressEvent(self, event)
+            self.parseInput(event.text())
+        #else:
+        #    QtGui.QPlainTextEdit.keyPressEvent(self, event)
 #            event.ignore()
 
     def __insert_text(self, text):

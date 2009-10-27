@@ -17,7 +17,13 @@
 
 import sys
 from PyQt4 import QtCore, QtGui
-from PSchem.Controller import Command
+
+try:
+    from PSchem.Controller import Command
+except ImportError:
+    pass
+
+import cmd    
 import os
 
 class StdinWrap():
@@ -78,18 +84,50 @@ class History():
             self.pointer += 1
         return self.history[self.pointer]
 
-class ConsoleDoc(QtGui.QTextDocument):
-    def __init__(self, parent = None):
-        QtGui.QTextDocument.__init__(self)
-        
-    def setPlainText(self, txt):
-        QtGui.QTextDocument.setPlainText(self, txt + "1")
-        
-    def setText(self, txt):
-        QtGui.QTextDocument.setText(self, txt + "1")
-        
 class ConsoleWidget(QtGui.QPlainTextEdit):
-    def __init__(self, window):
+    NUL  = 000 # ignored
+    ENQ  = 005 # trigger answerback message
+    BEL  = 007 # beep
+    BS   = 010 # backspace one column
+    HT   = 011 # horizontal tab to next tab stop
+    LF   = 012 # line feed
+    VT   = 013 # line feed
+    FF   = 014 # line feed
+    CR   = 015 # carriage return
+    S0   = 016 # activate G1 character set & newline
+    SI   = 017 # activate G0 character set
+    XON  = 021 # resume transmission
+    XOFF = 023 # stop transmission, ignore characters
+    CAN  = 030 # interrupt escape sequence
+    SUB  = 032 # interrupt escape sequence
+    ESC  = 033 # start escape sequence
+    DEL  = 177 # ignored
+    CSI  = 233 # equivalent to ESC [
+
+    keyCtrlCodes = {
+        QtCore.Qt.Key_A : '\x01',
+        QtCore.Qt.Key_B : '\x02',
+        QtCore.Qt.Key_E : '\x05',
+        QtCore.Qt.Key_M : '\x0d',
+        QtCore.Qt.Key_N : '\x0e',
+        QtCore.Qt.Key_Q : '\x11',
+        QtCore.Qt.Key_R : '\x12',
+        QtCore.Qt.Key_S : '\x13',
+        QtCore.Qt.Key_Z : '\x1a',
+        QtCore.Qt.Key_V : '\x16',
+        QtCore.Qt.Key_W : '\x17',
+        QtCore.Qt.Key_X : '\x18',
+
+        QtCore.Qt.Key_J : '\x0a',
+        QtCore.Qt.Key_Enter : '\x0a',
+        QtCore.Qt.Key_BracketRight : '\x1d',
+        QtCore.Qt.Key_BracketLeft : '\x1b',
+        QtCore.Qt.Key_P : '\x10',
+        QtCore.Qt.Key_O : '\x0f',
+        QtCore.Qt.Key_Y : '\x15',
+        }
+
+    def __init__(self, window=None):
         QtGui.QPlainTextEdit.__init__(self)
 
         self.inHistory = False
@@ -100,34 +138,35 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
         self.defaultFormat = self.currentCharFormat()
         self.defaultFormat.setFontFamily("Courier")
         self.defaultFormat.setFontFixedPitch(True)
-        #self.defaultFormat.setForeground(QtGui.QBrush(QtCore.Qt.white))
-        #self.defaultFormat.setBackground(QtGui.QBrush(QtCore.Qt.black))
         self.setCurrentCharFormat(self.defaultFormat)
-        #self.setBackground(QtGui.QBrush(QtCore.Qt.black))
-        #self.setBackgroundVisible(True)
-        p = self.palette();
-        p.setColor(QtGui.QPalette.Base, QtCore.Qt.black);
-        p.setColor(QtGui.QPalette.Text, QtCore.Qt.white);
-        self.setPalette(p);
         
-        #self.consoleDoc = ConsoleDoc()
-        #self.consoleDoc = QtGui.QTextDocument()
-        #self.setDocument(self.consoleDoc)
-
+        #p = self.palette();
+        #p.setColor(QtGui.QPalette.Base, QtCore.Qt.black);
+        #p.setColor(QtGui.QPalette.Text, QtCore.Qt.white);
+        #self.setPalette(p);
+        
         self.eofKey = QtCore.Qt.Key_D
         self.line = QtCore.QString()
         self.point = 0
         
-        #print self.edit.sizeHint()
-        #print self.edit.sizePolicy().verticalPolicy()
-        #print self.console.sizeHint()
-        #print self.console.sizePolicy().verticalPolicy()
         sys.stdout = StdoutWrap(self)
         #sys.stderr = StderrWrap(self)
         sys.stdin = StdinWrap(self)
-        #self.defaultFormat = self.currentCharFormat()
 
+        self.menu = QtGui.QMenu(self)
+        self.menu.addAction(self.trUtf8('Copy'), self.copy)
+        self.menu.addAction(self.trUtf8('Paste'), self.paste)
+        #self.menu.addSeparator()
 
+    def contextMenuEvent(self,ev):
+        """
+        Reimplemented to show our own context menu.
+        
+        @param ev context menu event (QContextMenuEvent)
+        """
+        self.menu.popup(ev.globalPos())
+        ev.accept()
+        
     def readline(self):
         return ''
 
@@ -152,7 +191,8 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
         #print dir(text)
         #print text
         command = Command(text)
-        self.window.controller.execute(command)
+        if self.window:
+            self.window.controller.execute(command)
         self.history.push(command)
         #self.window.controller.parse(text)
         #self.history.push(text)
@@ -161,6 +201,7 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
 
     def write(self, txt):
         #if (txt != "\n"):
+        self.moveCursor(QtGui.QTextCursor.End)
         self.textCursor().insertText(txt, self.defaultFormat)
         #self.console.append(txt)
         self.ensureCursorVisible()
@@ -168,6 +209,7 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
 
     def writeErr(self, txt):
         #frmt = QtGui.QTextCharFormat()
+        self.moveCursor(QtGui.QTextCursor.End)
         frmt = QtGui.QTextCharFormat(self.defaultFormat)
         frmt.setForeground(QtGui.QBrush(QtCore.Qt.red))
         self.textCursor().insertText(txt, frmt)
@@ -190,6 +232,9 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
         else:
             return str(self.line)
 
+    def parseInput(self, str):
+        self.write(str)
+            
     def keyPressEvent(self, event):
         text  = event.text()
         key   = event.key()
@@ -199,6 +244,11 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
 
         if (key == QtCore.Qt.Key_Control and modifier & QtCore.Qt.ControlModifier):
             pass
+        elif (modifier & QtCore.Qt.ControlModifier):
+            if key in self.keyCtrlCodes:
+                self.parseInput(self.keyCtrlCodes[key])
+                
+
         elif key == QtCore.Qt.Key_Backspace:
             if self.point:
                 cursor = self.textCursor()
@@ -226,7 +276,8 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
 #                self.reading = 0
 #            else:
             self.pointer = 0
-            self.window.controller.parse(str(self.line))
+            if self.window:
+                self.window.controller.parse(str(self.line))
             self.__clear_line()
                 
         elif key == QtCore.Qt.Key_Tab:
@@ -277,6 +328,7 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
         Insert text at the current cursor position.
         """
 
+        self.moveCursor(QtGui.QTextCursor.End)
         self.line.insert(self.point, text)
         self.point += text.length()
 
@@ -294,21 +346,22 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
         self.line.truncate(0)
         self.point = 0
 
-    def mousePressEvent(self, e):
+    def mouseReleaseEvent(self, e):
         """
         Keep the cursor after the last prompt.
         """
+        QtGui.QPlainTextEdit.mousePressEvent(self, e)
         if e.button() == QtCore.Qt.LeftButton:
-            self.moveCursor(QtGui.QTextCursor.End)
+            self.copy()
+    #        self.moveCursor(QtGui.QTextCursor.End)
         if e.button() == QtCore.Qt.MidButton:
-            self.moveCursor(QtGui.QTextCursor.End)
-        return
+            self.paste()
+    #        self.moveCursor(QtGui.QTextCursor.End)
+        e.accept()
 
     def paste(self):
-        sys.stderr.stream.write('paste\n')
-        self.moveCursor(QtGui.QTextCursor.End)
-        QtGui.QPlainTextEdit.keyPressEvent(self, event)
-        
+        lines = unicode(QtGui.qApp.clipboard().text())
+        self.write(lines)
 
     def eventFilter(self, obj, ev):
         #sys.stderr.stream.write(str(obj)+ ' '+ str(ev) + '\n')
@@ -345,57 +398,10 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
             #self.edit.setPlainText(cmd.str())
 
 
-class EditWidget(QtGui.QTextEdit):
-    def __init__(self, console):
-        QtGui.QTextEdit.__init__(self)
-        self.console = console
-        self.setSizePolicy(QtGui.QSizePolicy(
-                QtGui.QSizePolicy.Expanding,
-                QtGui.QSizePolicy.Preferred)) #Fixed))
-        self.connect(self, QtCore.SIGNAL("textChanged()"),
-                     self.calcSizeHint)
+if __name__ == "__main__":
+    app = QtGui.QApplication(sys.argv)
+    console = ConsoleWidget()
+    console.show()
+    sys.exit(app.exec_())
 
-        self.setMaximumHeight(500)
-        self._sizeHint = QtCore.QSize(
-            300,1)
-
-    def minimumSizeHint(self):
-        return QtCore.QSize(
-            100,28)
-
-    def calcSizeHint(self):
-        newHeight = self.document().size().height() + 5
-        if newHeight != self._sizeHint.height():
-            self.updateGeometry()
-        self._sizeHint = QtCore.QSize(300, newHeight)
-        self.console.console.ensureCursorVisible()
-        #print newHeight, self.maximumHeight()
-
-    def sizeHint(self):
-        return self._sizeHint
-
-    def keyPressEvent(self, event):
-        text  = event.text()
-        key   = event.key()
-        modifier = event.modifiers()
-        #print self.console.size().height()
-        #print self.console.console.minimumSizeHint().height()
-        #print self.sizeHint().height()
-        #print modifier
-        #print dir(modifier)
-
-        if (key == QtCore.Qt.Key_Control and modifier & QtCore.Qt.ControlModifier):
-            pass
-        elif (key == QtCore.Qt.Key_Return and
-              modifier & QtCore.Qt.ControlModifier):
-            self.console.textParse()
-        elif (key == QtCore.Qt.Key_Up and
-              modifier & QtCore.Qt.ControlModifier):
-            self.console.historyPrev()
-        elif (key == QtCore.Qt.Key_Down and
-              modifier & QtCore.Qt.ControlModifier):
-            self.console.historyNext()
-        else:
-            QtGui.QTextEdit.keyPressEvent(self, event)
-            #event.ignore()
-        self.calcSizeHint()
+        

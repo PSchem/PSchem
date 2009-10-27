@@ -17,7 +17,8 @@
 
 import sys
 from PyQt4 import QtCore, QtGui
-from Controller import Command
+from PSchem.Controller import Command
+import os
 
 class StdinWrap():
     def __init__(self, console):
@@ -33,7 +34,7 @@ class StdinWrap():
 class StdoutWrap():
     def __init__(self, console):
         self.console = console
-        #self.stream = sys.stdout
+        self.stream = sys.stdout
 
     def write(self, txt):
         self.console.write(txt)
@@ -77,68 +78,54 @@ class History():
             self.pointer += 1
         return self.history[self.pointer]
 
-class ConsoleWidget(QtGui.QWidget):
+class ConsoleDoc(QtGui.QTextDocument):
+    def __init__(self, parent = None):
+        QtGui.QTextDocument.__init__(self)
+        
+    def setPlainText(self, txt):
+        QtGui.QTextDocument.setPlainText(self, txt + "1")
+        
+    def setText(self, txt):
+        QtGui.QTextDocument.setText(self, txt + "1")
+        
+class ConsoleWidget(QtGui.QPlainTextEdit):
     def __init__(self, window):
-        QtGui.QWidget.__init__(self)
+        QtGui.QPlainTextEdit.__init__(self)
 
         self.inHistory = False
         self.history = History()
-        self.layout = QtGui.QHBoxLayout()
-        #self.layout = QtGui.QSplitter()
-        self.hlayout = QtGui.QHBoxLayout()
-        self.console = QtGui.QTextEdit()
-        self.console.setFontFamily("Courier")
-        self.console.setReadOnly(True)
-        #self.edit = QtGui.QLineEdit()
-        self.edit = EditWidget(self)
-        self.console.setSizePolicy(QtGui.QSizePolicy(
-                QtGui.QSizePolicy.Expanding,
-                QtGui.QSizePolicy.Expanding)) #MinimumExpanding))
-        self.gridLayout = QtGui.QGridLayout()
-        self.gridLayout.setSpacing(0)
-        self.enter = QtGui.QPushButton("Enter")
-        self.clear = QtGui.QPushButton("Clear")
-        self.previous = QtGui.QPushButton("Previous")
-        self.next = QtGui.QPushButton("Next")
-        self.previous.setMaximumHeight(24)
-        self.next.setMaximumHeight(24)
-        #self.hlayout.addWidget(self.edit, 0)
-        self.gridLayout.addWidget(self.enter, 1, 0)
-        self.gridLayout.addWidget(self.clear, 1, 1)
-        self.gridLayout.addWidget(self.previous, 0, 0)
-        self.gridLayout.addWidget(self.next, 0, 1)
-        #self.gridLayout.setRowStretch(0, 0)
-        #self.gridLayout.setRowStretch(1, 1000)
-        self.previous.setAutoRepeat(True)
-        self.next.setAutoRepeat(True)
-        self.vlayout = QtGui.QVBoxLayout()
-        self.vlayout.addWidget(self.console, 5)
-        self.vlayout.addWidget(self.edit, 0)
-        self.hlayout.addLayout(self.vlayout)
-        self.hlayout.addLayout(self.gridLayout)
-        self.layout.addLayout(self.hlayout)
-        self.setLayout(self.layout)
-
-        #self.connect(self.edit, QtCore.SIGNAL("returnPressed()"),
-        #             self.textParse)
-        self.connect(self.enter, QtCore.SIGNAL("released()"),
-                     self.textParse)
-        self.connect(self.clear, QtCore.SIGNAL("released()"),
-                     self.edit.clear)
-        self.connect(self.previous, QtCore.SIGNAL("released()"),
-                     self.historyPrev)
-        self.connect(self.next, QtCore.SIGNAL("released()"),
-                     self.historyNext)
+        #self.setReadOnly(True)
         self.window = window
+        # font
+        self.defaultFormat = self.currentCharFormat()
+        self.defaultFormat.setFontFamily("Courier")
+        self.defaultFormat.setFontFixedPitch(True)
+        #self.defaultFormat.setForeground(QtGui.QBrush(QtCore.Qt.white))
+        #self.defaultFormat.setBackground(QtGui.QBrush(QtCore.Qt.black))
+        self.setCurrentCharFormat(self.defaultFormat)
+        #self.setBackground(QtGui.QBrush(QtCore.Qt.black))
+        #self.setBackgroundVisible(True)
+        p = self.palette();
+        p.setColor(QtGui.QPalette.Base, QtCore.Qt.black);
+        p.setColor(QtGui.QPalette.Text, QtCore.Qt.white);
+        self.setPalette(p);
+        
+        #self.consoleDoc = ConsoleDoc()
+        #self.consoleDoc = QtGui.QTextDocument()
+        #self.setDocument(self.consoleDoc)
 
+        self.eofKey = QtCore.Qt.Key_D
+        self.line = QtCore.QString()
+        self.point = 0
+        
         #print self.edit.sizeHint()
         #print self.edit.sizePolicy().verticalPolicy()
         #print self.console.sizeHint()
         #print self.console.sizePolicy().verticalPolicy()
         sys.stdout = StdoutWrap(self)
-        sys.stderr = StderrWrap(self)
+        #sys.stderr = StderrWrap(self)
         sys.stdin = StdinWrap(self)
-        self.defaultFormat = self.console.currentCharFormat()
+        #self.defaultFormat = self.currentCharFormat()
 
 
     def readline(self):
@@ -146,18 +133,18 @@ class ConsoleWidget(QtGui.QWidget):
 
 
     def error(self, message):
-        fmt = self.console.currentCharFormat()
-        self.console.setFontWeight(QtGui.QFont.Bold)
-        self.console.setTextColor(QtGui.QColor(255, 0, 0))
-        self.console.append(message)
-        self.console.setCurrentCharFormat(fmt)
+        fmt = self.currentCharFormat()
+        self.setFontWeight(QtGui.QFont.Bold)
+        self.setTextColor(QtGui.QColor(255, 0, 0))
+        self.append(message)
+        self.setCurrentCharFormat(fmt)
 
 
     def command(self, message):
-        fmt = self.console.currentCharFormat()
-        self.console.setFontWeight(QtGui.QFont.Bold)
-        self.console.append(">>> " + message)
-        self.console.setCurrentCharFormat(fmt)
+        fmt = self.currentCharFormat()
+        self.setFontWeight(QtGui.QFont.Bold)
+        self.append(">>> " + message)
+        self.setCurrentCharFormat(fmt)
 
     def textParse(self):
         #text = str(self.edit.text())
@@ -169,35 +156,184 @@ class ConsoleWidget(QtGui.QWidget):
         self.history.push(command)
         #self.window.controller.parse(text)
         #self.history.push(text)
-        self.edit.clear()
+        #self.edit.clear()
 
 
     def write(self, txt):
         #if (txt != "\n"):
-        self.console.textCursor().insertText(txt, self.defaultFormat)
+        self.textCursor().insertText(txt, self.defaultFormat)
         #self.console.append(txt)
-        self.console.ensureCursorVisible()
+        self.ensureCursorVisible()
 
 
     def writeErr(self, txt):
         #frmt = QtGui.QTextCharFormat()
         frmt = QtGui.QTextCharFormat(self.defaultFormat)
         frmt.setForeground(QtGui.QBrush(QtCore.Qt.red))
-        self.console.textCursor().insertText(txt, frmt)
-        self.console.ensureCursorVisible()
+        self.textCursor().insertText(txt, frmt)
+        self.ensureCursorVisible()
 
     #def resizeEvent(self, ev):
         #self.edit.setMaximumHeight(ev.size().height()-100)
         #QtGui.QWidget.resizeEvent(self, ev)
+    def readline(self):
+        self.reading = 1
+        self.__clear_line()
+        self.moveCursor(QtGui.QTextCursor.End)
+        while self.reading:
+        #    #pass
+        #    #QtGui.qApp.processOneEvent()
+            QtGui.qApp.processEvents() #QtCore.QEventLoop.ExcludeUserInputEvents)
+        #    #QtCore.QCoreApplication.processOneEvent()
+        if self.line.length() == 0:
+            return '\n'
+        else:
+            return str(self.line)
 
+    def keyPressEvent(self, event):
+        text  = event.text()
+        key   = event.key()
+        modifier = event.modifiers()
+        #print modifier
+        #print dir(modifier)
 
+        if (key == QtCore.Qt.Key_Control and modifier & QtCore.Qt.ControlModifier):
+            pass
+        elif key == QtCore.Qt.Key_Backspace:
+            if self.point:
+                cursor = self.textCursor()
+                cursor.movePosition(QtGui.QTextCursor.PreviousCharacter,
+                                    QtGui.QTextCursor.KeepAnchor)
+                cursor.removeSelectedText()
+                self.color_line()
+            
+                self.point -= 1 
+                self.line.remove(self.point, 1)
+
+        elif key == QtCore.Qt.Key_Delete:
+            cursor = self.textCursor()
+            cursor.movePosition(QtGui.QTextCursor.NextCharacter,
+                                QtGui.QTextCursor.KeepAnchor)
+            cursor.removeSelectedText()
+            self.color_line()
+                        
+            self.line.remove(self.point, 1)
+            
+        elif key == QtCore.Qt.Key_Return or key == QtCore.Qt.Key_Enter:
+            self.write('\n')
+            self.reading = 0
+#            if self.reading:
+#                self.reading = 0
+#            else:
+            self.pointer = 0
+            self.window.controller.parse(str(self.line))
+            self.__clear_line()
+                
+        elif key == QtCore.Qt.Key_Tab:
+            self.__insert_text(text)
+        elif key == QtCore.Qt.Key_Left:
+            if self.point : 
+                self.moveCursor(QtGui.QTextCursor.Left)
+                self.point -= 1 
+        elif key == QtCore.Qt.Key_Right:
+            if self.point < self.line.length():
+                self.moveCursor(QtGui.QTextCursor.Right)
+                self.point += 1 
+
+        elif key == QtCore.Qt.Key_Home:
+            cursor = self.textCursor ()
+            cursor.setPosition(self.cursor_pos)
+            self.setTextCursor (cursor)
+            self.point = 0
+
+        elif key == QtCore.Qt.Key_End:
+            self.moveCursor(QtGui.QTextCursor.EndOfLine)
+            self.point = self.line.length()
+
+#        elif key == QtCore.Qt.Key_Up:
+#            if len(self.history):
+#                if self.pointer == 0:
+#                    self.pointer = len(self.history)
+#                self.pointer -= 1
+#                self.__recall()
+#                
+#        elif key == QtCore.Qt.Key_Down:
+#            if len(self.history):
+#                self.pointer += 1
+#                if self.pointer == len(self.history):
+#                    self.pointer = 0
+#                self.__recall()
+
+        elif text.length():
+            self.__insert_text(text)
+            return
+
+        else:
+            QtGui.QPlainTextEdit.keyPressEvent(self, event)
+#            event.ignore()
+
+    def __insert_text(self, text):
+        """
+        Insert text at the current cursor position.
+        """
+
+        self.line.insert(self.point, text)
+        self.point += text.length()
+
+        cursor = self.textCursor()
+        cursor.insertText(text)
+        self.color_line()
+
+    def color_line(self):
+        pass
+
+    def __clear_line(self):
+        """
+        Clear input line buffer
+        """
+        self.line.truncate(0)
+        self.point = 0
+
+    def mousePressEvent(self, e):
+        """
+        Keep the cursor after the last prompt.
+        """
+        if e.button() == QtCore.Qt.LeftButton:
+            self.moveCursor(QtGui.QTextCursor.End)
+        if e.button() == QtCore.Qt.MidButton:
+            self.moveCursor(QtGui.QTextCursor.End)
+        return
+
+    def paste(self):
+        sys.stderr.stream.write('paste\n')
+        self.moveCursor(QtGui.QTextCursor.End)
+        QtGui.QPlainTextEdit.keyPressEvent(self, event)
+        
+
+    def eventFilter(self, obj, ev):
+        #sys.stderr.stream.write(str(obj)+ ' '+ str(ev) + '\n')
+        if isinstance(ev, QtGui.QMouseEvent):
+            if (int(ev.buttons()) & QtCore.Qt.MidButton):
+                sys.stderr.stream.write(str(int(ev.buttons())) + '\n')
+                self.midButtonPressed = True
+                return False
+            if (int(ev.buttons()) == 0 and self.midButtonPressed):
+                self.midButtonPressed = False
+                #self.moveCursor(QtGui.QTextCursor.End)
+                #self.paste()
+                return False
+        #print obj
+        #print ev
+        return False
+
+        
     def historyPrev(self):
         if (not self.inHistory):
             command = Command(str(self.edit.toPlainText()))
             self.history.push(command)
         self.inHistory = True
         cmd = self.history.back()
-        self.edit.setText(cmd.str())
+        #self.edit.setPlainText(cmd.str())
 
     def historyNext(self):
         if (self.inHistory):
@@ -206,7 +342,7 @@ class ConsoleWidget(QtGui.QWidget):
                 cmd = self.history.pop()
             else:
                 cmd = self.history.forward()
-            self.edit.setText(cmd.str())
+            #self.edit.setPlainText(cmd.str())
 
 
 class EditWidget(QtGui.QTextEdit):

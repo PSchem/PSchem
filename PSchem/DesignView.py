@@ -18,8 +18,8 @@
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
-from GraphicsItems import *
-from Modes import *
+from PSchem.GraphicsItems import *
+from PSchem.Modes import *
 from random import random
 
 

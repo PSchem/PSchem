@@ -17,7 +17,7 @@
 
 from PyQt4 import QtCore, QtGui
 
-from FlowLayout import *
+from PSchem.ThirdParty.FlowLayout import *
 
 class ToolOptions(QtGui.QWidget):
     def __init__(self):

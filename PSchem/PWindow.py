@@ -19,17 +19,17 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
 #from ..PSchem.ConsoleWidget import *
-from ConsoleWidget import *
-from Controller import *
-from DatabaseWidget import *
-from HierarchyWidget import *
-from LayerWidget import *
-from ToolOptions import *
-from DesignView import *
-from GraphicsScene import *
-from LayerView import *
-from Database import *
-from Resources_rc import *
+from PSchem.ConsoleWidget import *
+from PSchem.Controller import *
+from PSchem.DatabaseWidget import *
+from PSchem.HierarchyWidget import *
+from PSchem.LayerWidget import *
+from PSchem.ToolOptions import *
+from PSchem.DesignView import *
+from PSchem.GraphicsScene import *
+from PSchem.LayerView import *
+from PSchem.Database import *
+from PSchem.Resources_rc import *
 import os
 
 class SubWindow(QtGui.QMdiSubWindow):

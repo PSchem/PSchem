@@ -16,7 +16,7 @@
 # along with PSchem.  If not, see <http://www.gnu.org/licenses/>.
 
 from PyQt4 import QtCore, QtGui
-from Database.Primitives import *
+from PSchem.Database.Primitives import *
 
 class TextItemInt(QtGui.QGraphicsSimpleTextItem):
     def __init__(self, parent):

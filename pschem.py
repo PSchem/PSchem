@@ -31,7 +31,7 @@ import signal
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 
-if __name__ == "__main__":
+def main():    
     #QtGui.QApplication.setGraphicsSystem('raster')
     app = QtGui.QApplication(sys.argv)
     QtCore.qsrand(QtCore.QTime(0,0,0).secsTo(QtCore.QTime.currentTime()))
@@ -43,3 +43,7 @@ if __name__ == "__main__":
     #cProfile.run('app.exec_()', 'profdata')
     #p = pstats.Stats('profdata')
     #p.sort_stats('time').print_stats()
+
+
+if __name__ == "__main__":
+    main()

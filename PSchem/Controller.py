@@ -16,7 +16,7 @@
 # along with PSchem.  If not, see <http://www.gnu.org/licenses/>.
 
 import re
-from ConsoleWidget import *
+from PSchem.ConsoleWidget import *
 
 class Command():
     def __init__(self, commandStr):

@@ -16,8 +16,8 @@
 # along with PSchem.  If not, see <http://www.gnu.org/licenses/>.
 
 from PyQt4 import QtCore, QtGui
-from Database.Primitives import *
-from LayerView import *
+from PSchem.Database.Primitives import *
+from PSchem.LayerView import *
 from random import random
 
 class LayerModel(QtCore.QAbstractItemModel):

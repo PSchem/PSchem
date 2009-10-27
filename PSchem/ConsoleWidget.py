@@ -17,7 +17,7 @@
 
 import sys
 from PyQt4 import QtCore, QtGui
-from Controller import Command
+from PSchem.Controller import Command
 
 class StdinWrap():
     def __init__(self, console):

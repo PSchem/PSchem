@@ -16,8 +16,8 @@
 # along with PSchem.  If not, see <http://www.gnu.org/licenses/>.
 
 from PyQt4 import QtCore, QtGui
-from GraphicsItems import *
-from Database.Primitives import *
+from PSchem.GraphicsItems import *
+from PSchem.Database.Primitives import *
 
 class GraphicsScene(QtGui.QGraphicsScene):
     def __init__(self, cellView):

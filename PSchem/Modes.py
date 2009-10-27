@@ -18,7 +18,7 @@
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
-from ToolOptions import *
+from PSchem.ToolOptions import *
 
 class Lasso():
     def __init__(self, widget, firstCorner):

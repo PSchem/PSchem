@@ -146,6 +146,9 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
         #self.window = window
         self.window = None
         self.buffer = u''
+        self._asynchCursor = None
+        self._synchronous = False
+
         # font
         self.defaultFormat = self.currentCharFormat()
         self.defaultFormat.setFontFamily("Courier")
@@ -205,11 +208,22 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
         #self.history.push(text)
         #self.edit.clear()
 
+    def setSynchronous(self, synchronous, markPos = False):
+        if markPos:
+            self._asynchCursor = self.textCursor().position()
+        self._synchronous = synchronous
 
     def write(self, txt):
         #if (txt != "\n"):
-        self.moveCursor(QtGui.QTextCursor.End)
-        self.textCursor().insertText(txt, self.defaultFormat)
+        if self._synchronous or not self._asynchCursor:
+            self.moveCursor(QtGui.QTextCursor.End)
+            self.textCursor().insertText(txt, self.defaultFormat)
+        else:
+            cursor = self.textCursor()
+            cursor.setPosition(self._asynchCursor)
+            self.setTextCursor(cursor)
+            self.textCursor().insertText(txt, self.defaultFormat)
+            self._asynchCursor = self.textCursor().position()
         #self.console.append(txt)
         self.ensureCursorVisible()
 
@@ -226,9 +240,9 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
         #self.edit.setMaximumHeight(ev.size().height()-100)
         #QtGui.QWidget.resizeEvent(self, ev)
     def readline(self):
-        self.reading = 1
-        self.__clear_line()
-        self.moveCursor(QtGui.QTextCursor.End)
+        #self.reading = 1
+        #self.__clear_line()
+        #self.moveCursor(QtGui.QTextCursor.End)
         #while self.reading:
         ##    #pass
         ##    #QtGui.qApp.processOneEvent()
@@ -241,7 +255,9 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
             QtGui.qApp.processEvents()
             char = self.read(1)
             if len(char) > 0:
+                self.setSynchronous(True)
                 sys.stdout.write(char)
+                self.setSynchronous(False)
                 text = text + unicode(char)
                 #print '\'' + text + '\'\n'
                 if char == '\n':
@@ -396,7 +412,8 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
 
     def paste(self):
         lines = unicode(QtGui.qApp.clipboard().text())
-        self.write(lines)
+        self.parseInput(lines)
+        #self.write(lines)
 
     def eventFilter(self, obj, ev):
         #sys.stderr.stream.write(str(obj)+ ' '+ str(ev) + '\n')

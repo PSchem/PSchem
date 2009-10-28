@@ -35,7 +35,7 @@ class Command():
         return self._str
 
 class Controller():
-    pstrip = re.compile(r'^(>>> |\.\.\. )?')
+    pstrip = re.compile(r'^(>>> |\.\.\. |--- )?')
     pfirst = re.compile(r'^\S+.*\:$')
     pindented = re.compile(r'^\s+.*$')
 
@@ -110,13 +110,15 @@ class Controller():
             sys.stdout.write(sys.ps1)
             self.window.consoleWidget.setSynchronous(False)
             line = self.window.consoleWidget.readline()
-            self._indent = Controller.pfirst.search(line)
+            line = self.pstrip.sub('', line)
+            self._indent = self.pfirst.search(line)
             if self._indent:
                 while True:
                     self.window.consoleWidget.setSynchronous(True)
                     sys.stdout.write(sys.ps2)
                     self.window.consoleWidget.setSynchronous(False)
                     line2 = self.window.consoleWidget.readline()
+                    line2 = self.pstrip.sub('', line2)
                     if line2 == '\n':
                         break
                     line = line + line2

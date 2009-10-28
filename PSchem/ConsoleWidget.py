@@ -23,9 +23,9 @@ try:
 except ImportError:
     pass
 
-import cmd    
 import os
 import time
+import re
 
 class StdinWrap():
     def __init__(self, console):
@@ -95,6 +95,8 @@ class History():
         return self.history[self.pointer]
 
 class ConsoleWidget(QtGui.QPlainTextEdit):
+    pstrip = re.compile(r'^(>>> |\.\.\. |--- )?')
+
     NUL  = 000 # ignored
     ENQ  = 005 # trigger answerback message
     BEL  = 007 # beep
@@ -225,6 +227,7 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
             self.textCursor().insertText(txt, self.defaultFormat)
             self._asynchCursor = self.textCursor().position()
         #self.console.append(txt)
+        self.moveCursor(QtGui.QTextCursor.End)
         self.ensureCursorVisible()
 
 
@@ -266,6 +269,8 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
             
 
     def read(self, count=1, acc=''):
+        if acc == '':
+            self.buffer = self.pstrip.sub('', self.buffer)
         lenBuf = len(self.buffer)
         if lenBuf >= count:
             str = acc + self.buffer[0:count]
@@ -278,8 +283,8 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
             return str
             #self.read(count - len(str), str)
             
-    def parseInput(self, str):
-        self.buffer = self.buffer + str
+    def parseInput(self, text):
+        self.buffer = self.buffer + unicode(text)
         #self.write(str)
             
     def keyPressEvent(self, event):

@@ -17,8 +17,10 @@
 
 import re
 from PSchem.ConsoleWidget import *
+import sys
 
 class Command():
+    #pstrip = re.compile(r'\n$')
     def __init__(self, commandStr):
         self._str = commandStr
         self._compiled = None
@@ -29,6 +31,7 @@ class Command():
         return self._compiled
         
     def str(self):
+        #text = Controller.pstrip.sub('', self._str)
         return self._str
 
 class Controller():
@@ -44,7 +47,18 @@ class Controller():
         self.firstLine = True
 
         print self.pythonInfo()
-        print self.prompt1()
+        #print self.prompt1()
+        
+        try:
+            sys.ps1
+        except AttributeError:
+            sys.ps1 = '>>> '
+
+        try:
+            sys.ps2
+        except AttributeError:
+            sys.ps2 = '... '
+
 
     def pythonInfo(self):
         return 'Python %s on %s\n' % (sys.version, sys.platform) + \
@@ -52,17 +66,11 @@ class Controller():
 
 
     def execute(self, cmd):
-        print self.prompt1() + cmd.str()
+        sys.stdout.write('--- ' + cmd.str() + '\n')
         exec (cmd.compiled(), self.globals, self.locals)
 
     def executeOld(self, cmd):
         exec (cmd, self.globals, self.locals)
-
-    def prompt1(self):
-        return '>>> '
-
-    def prompt2(self):
-        return '... '
 
     def parse(self, text, eval=True):
         text = Controller.pstrip.sub('', text)
@@ -87,7 +95,7 @@ class Controller():
             #print "... " + text
             if indented:
                 self.oldStr += text + "\n"
-                print self.prompt2()
+                #print self.prompt2()
             else:
                 self.firstLine = True
                 #print self.oldStr
@@ -98,8 +106,16 @@ class Controller():
 
     def repl(self):
         while True:
-            print '>>> '
+            sys.stdout.write(sys.ps1)
             line = self.window.consoleWidget.readline()
-            print 'line :' + line
-            self.executeOld(compile(line, "console", "single"))
+            self._indent = Controller.pfirst.search(line)
+            if self._indent:
+                while True:
+                    sys.stdout.write(sys.ps2)
+                    line2 = self.window.consoleWidget.readline()
+                    if line2 == '\n':
+                        break
+                    line = line + line2
+            if line != '' and line != '\n':
+                self.executeOld(compile(line, "console", "single"))
             

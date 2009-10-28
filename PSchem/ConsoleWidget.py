@@ -33,10 +33,13 @@ class StdinWrap():
         self.stream = sys.stdin
 
     def isatty(self):
-        return 1
+        return True
 
     def readline(self):
         return self.console.readline()
+
+    def read(self, n=1):
+        return self.console.read(n)
 
 class StdoutWrap():
     def __init__(self, console):
@@ -45,7 +48,10 @@ class StdoutWrap():
 
     def write(self, txt):
         self.console.write(txt)
-        #self.stream.write(txt)
+        self.stream.write(txt)
+
+    def isatty(self):
+        return True
 
 class StderrWrap():
     def __init__(self, console):
@@ -55,6 +61,9 @@ class StderrWrap():
     def write(self, txt):
         self.console.writeErr(txt)
         self.stream.write(txt)
+
+    def isatty(self):
+        return True
 
 class History():    
     def __init__(self):
@@ -169,10 +178,6 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
         """
         self.menu.popup(ev.globalPos())
         ev.accept()
-        
-    #def readline(self):
-    #    return ''
-
 
     def error(self, message):
         fmt = self.currentCharFormat()
@@ -180,7 +185,6 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
         self.setTextColor(QtGui.QColor(255, 0, 0))
         self.append(message)
         self.setCurrentCharFormat(fmt)
-
 
     def command(self, message):
         fmt = self.currentCharFormat()
@@ -236,11 +240,14 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
         while True:
             QtGui.qApp.processEvents()
             char = self.read(1)
-            text = text + char
-            if len(char) > 0 and char == '\x0d':
-                break 
-        else:
-            return text
+            if len(char) > 0:
+                sys.stdout.write(char)
+                text = text + unicode(char)
+                #print '\'' + text + '\'\n'
+                if char == '\n':
+                    break 
+        return text
+            
 
     def read(self, count=1, acc=''):
         lenBuf = len(self.buffer)
@@ -268,12 +275,12 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
 
         if (key == QtCore.Qt.Key_Control and modifier & QtCore.Qt.ControlModifier):
             pass
-        if (modifier & QtCore.Qt.ControlModifier):
-            if key in self.keyCtrlCodes:
-                self.parseInput(self.keyCtrlCodes[key])
+        #if (modifier & QtCore.Qt.ControlModifier):
+        #    if key in self.keyCtrlCodes:
+        #        self.parseInput(self.keyCtrlCodes[key])
                 
 
-        elif key == QtCore.Qt.Key_Backspace:
+        if key == QtCore.Qt.Key_Backspace:
             if self.point:
                 cursor = self.textCursor()
                 cursor.movePosition(QtGui.QTextCursor.PreviousCharacter,
@@ -294,16 +301,19 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
             self.line.remove(self.point, 1)
             
         elif key == QtCore.Qt.Key_Return or key == QtCore.Qt.Key_Enter:
-            self.write('\n')
-            self.reading = 0
+            self.parseInput('\n')
+            #self.write('\n')
+            #self.reading = 0
 #            if self.reading:
 #                self.reading = 0
 #            else:
-            self.pointer = 0
-            if self.window:
-                self.window.controller.parse(str(self.line))
-            self.__clear_line()
+            #self.pointer = 0
+            #if self.window:
+            #    self.window.controller.parse(str(self.line))
+            #self.__clear_line()
                 
+        elif True:
+            self.parseInput(event.text())
         elif key == QtCore.Qt.Key_Tab:
             self.__insert_text(text)
         elif key == QtCore.Qt.Key_Left:

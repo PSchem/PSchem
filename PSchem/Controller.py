@@ -126,4 +126,21 @@ class Controller():
                 self.window.consoleWidget.setSynchronous(True)
                 self.executeOld(compile(line, "console", "single"))
                 self.window.consoleWidget.setSynchronous(False)
-            
+
+    def repl2(self):
+        sys.stdout.writeSync(sys.ps1, True)
+        line = self.window.consoleWidget.readline()
+        line = self.pstrip.sub('', line)
+        self._indent = self.pfirst.search(line)
+        if self._indent:
+            sys.stdout.writeSync(sys.ps2)
+            line2 = self.window.consoleWidget.readline()
+            line2 = self.pstrip.sub('', line2)
+            #if line2 == '\n':
+            #    break
+            line = line + line2
+        if line != '' and line != '\n':
+            self.window.consoleWidget.setSynchronous(True)
+            self.executeOld(compile(line, "console", "single"))
+            self.window.consoleWidget.setSynchronous(False)
+                

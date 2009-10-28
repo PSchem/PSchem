@@ -216,7 +216,6 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
         self._synchronous = synchronous
 
     def write(self, txt):
-        #if (txt != "\n"):
         if self._synchronous or not self._asynchCursor:
             self.moveCursor(QtGui.QTextCursor.End)
             self.textCursor().insertText(txt, self.defaultFormat)
@@ -226,11 +225,14 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
             self.setTextCursor(cursor)
             self.textCursor().insertText(txt, self.defaultFormat)
             self._asynchCursor = self.textCursor().position()
-        #self.console.append(txt)
         self.moveCursor(QtGui.QTextCursor.End)
         self.ensureCursorVisible()
 
-
+    def writeSync(self, txt, markPos = False):
+        self.setSynchronous(True, markPos)
+        self.write(txt)
+        self.setSynchronous(False)
+        
     def writeErr(self, txt):
         #frmt = QtGui.QTextCharFormat()
         self.moveCursor(QtGui.QTextCursor.End)
@@ -239,27 +241,17 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
         self.textCursor().insertText(txt, frmt)
         self.ensureCursorVisible()
 
-    #def resizeEvent(self, ev):
-        #self.edit.setMaximumHeight(ev.size().height()-100)
-        #QtGui.QWidget.resizeEvent(self, ev)
     def readline(self):
-        #self.reading = 1
-        #self.__clear_line()
-        #self.moveCursor(QtGui.QTextCursor.End)
-        #while self.reading:
-        ##    #pass
-        ##    #QtGui.qApp.processOneEvent()
-        #    QtGui.qApp.processEvents() #QtCore.QEventLoop.ExcludeUserInputEvents)
-        ##    #QtCore.QCoreApplication.processOneEvent()
-        #if self.line.length() == 0:
-        #    return '\n'
         text = u''
         while True:
             QtGui.qApp.processEvents()
             char = self.read(1)
             if len(char) > 0:
+                #if char[0] == '\x08':
+                #    sys.stdout.write('\x08\x1b\x5b\x4b')
                 self.setSynchronous(True)
                 sys.stdout.write(char)
+                #sys.stdout.write(str(hex(ord(char))) + ' ')
                 self.setSynchronous(False)
                 text = text + unicode(char)
                 #print '\'' + text + '\'\n'
@@ -301,7 +293,7 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
         #        self.parseInput(self.keyCtrlCodes[key])
                 
 
-        if key == QtCore.Qt.Key_Backspace:
+        if False: #key == QtCore.Qt.Key_Backspace:
             if self.point:
                 cursor = self.textCursor()
                 cursor.movePosition(QtGui.QTextCursor.PreviousCharacter,
@@ -312,7 +304,7 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
                 self.point -= 1 
                 self.line.remove(self.point, 1)
 
-        elif key == QtCore.Qt.Key_Delete:
+        elif False: #key == QtCore.Qt.Key_Delete:
             cursor = self.textCursor()
             cursor.movePosition(QtGui.QTextCursor.NextCharacter,
                                 QtGui.QTextCursor.KeepAnchor)
@@ -323,15 +315,6 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
             
         elif key == QtCore.Qt.Key_Return or key == QtCore.Qt.Key_Enter:
             self.parseInput('\n')
-            #self.write('\n')
-            #self.reading = 0
-#            if self.reading:
-#                self.reading = 0
-#            else:
-            #self.pointer = 0
-            #if self.window:
-            #    self.window.controller.parse(str(self.line))
-            #self.__clear_line()
                 
         elif True:
             self.parseInput(event.text())
@@ -409,10 +392,10 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
         QtGui.QPlainTextEdit.mousePressEvent(self, e)
         if e.button() == QtCore.Qt.LeftButton:
             self.copy()
-    #        self.moveCursor(QtGui.QTextCursor.End)
+            #self.moveCursor(QtGui.QTextCursor.End)
         if e.button() == QtCore.Qt.MidButton:
             self.paste()
-    #        self.moveCursor(QtGui.QTextCursor.End)
+        self.moveCursor(QtGui.QTextCursor.End)
         e.accept()
 
     def paste(self):

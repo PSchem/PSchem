@@ -89,6 +89,10 @@ class PWindow(QtGui.QMainWindow):
         if (val.canConvert(QtCore.QVariant.ByteArray)):
             self.restoreState(val.toByteArray())
 
+    def show(self):
+        QtGui.QMainWindow.show(self)
+        #self.controller.repl()
+    
     def createConsole(self):
         self.consoleWidget = ConsoleWidget(self)
         self.controller = Controller(self)
@@ -100,6 +104,7 @@ class PWindow(QtGui.QMainWindow):
         #self.databaseWidget = DatabaseWidget.DatabaseWidget(self)
         self.dockC.setWidget(self.consoleWidget)
         self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.dockC)
+
 
     def createDatabaseView(self):
         self.dockD = QtGui.QDockWidget(self.tr("Database"), self)
@@ -373,102 +378,105 @@ class PWindow(QtGui.QMainWindow):
         self.openViewAct = QtGui.QAction(self.tr("&Open view"), self)
         self.openViewAct.setShortcut(self.tr("Ctrl+O"))
         self.openViewAct.setStatusTip(self.tr("Open selected view"))
+        self.openViewCmd = Command("window.openView(window.databaseWidget.selectedView())")
         self.connect(self.openViewAct, QtCore.SIGNAL("triggered()"),
-                     lambda: self.controller.parse('window.openView(window.databaseWidget.selectedView())'))
+                    lambda: self.controller.execute(self.openViewCmd))
+
 
         self.exitAct = QtGui.QAction(self.tr("E&xit"), self)
         self.exitAct.setShortcut(self.tr("Ctrl+Q"))
         self.exitAct.setStatusTip(self.tr("Exit the application"))
-        cmdTxt = 'window.menuBar().addMenu("&File")'
-        cmd = compile(cmdTxt, '', 'single')
-        #self.connect(self.exitAct, QtCore.SIGNAL("triggered()"),
-        #             lambda: self.controller.executePrint(cmd, cmdTxt))
+        self.exitCmd = Command("window.close()")
         self.connect(self.exitAct, QtCore.SIGNAL("triggered()"),
-                     lambda: self.controller.parse('window.menuBar().addMenu("&File")'))
-        #self.connect(self.exitAct, QtCore.SIGNAL("triggered()"), self, QtCore.SLOT("close()"))
+                    lambda: self.controller.execute(self.exitCmd))
+
         
         self.toggleDocksAct = QtGui.QAction(self.tr("Toggle Docks"), self)
         self.toggleDocksAct.setShortcut(self.tr("F11"))
         self.toggleDocksAct.setStatusTip(self.tr("Toggle visibility of the main window docks"))
-        cmdTxt = 'window.toggleDocks()'
-        cmd = compile(cmdTxt, '', 'single')
+        self.toggleDocksCmd = Command("window.toggleDocks()")
         self.connect(self.toggleDocksAct, QtCore.SIGNAL("triggered()"),
-                     lambda: self.controller.parse('window.toggleDocks()'))
-        #self.connect(self.exitAct, QtCore.SIGNAL("triggered()"), self, QtCore.SLOT("close()"))
-        
-        self.openWWAct = QtGui.QAction(self.tr("&New Waveform Window"), self)
-        self.openWWAct.setStatusTip(self.tr("Open a new Waveform Browser Window"))
-        #self.connect(self.openWWAct, QtCore.SIGNAL("triggered()"), self.openWaveformWindow)
-        
+                    lambda: self.controller.execute(self.toggleDocksCmd))
+
+
         self.aboutAct = QtGui.QAction(self.tr("&About"), self)
         self.aboutAct.setStatusTip(self.tr("Show the application's About box"))
-        #self.connect(self.aboutAct, QtCore.SIGNAL("triggered()"), About.about)
+        #self.aboutCmd = Command("About.about()")
+        #self.connect(self.aboutAct, QtCore.SIGNAL("triggered()"),
+        #            lambda: self.controller.execute(self.aboutCmd))
         
+
         self.aboutQtAct = QtGui.QAction(self.tr("About &Qt"), self)
         self.aboutQtAct.setStatusTip(self.tr("Show the Qt library's About box"))
-        #self.connect(self.aboutQtAct, QtCore.SIGNAL("triggered()"), QtGui.qApp, QtCore.SLOT("aboutQt()"))
+        self.aboutQtCmd = Command("QtGui.qApp.aboutQt()")
         self.connect(self.aboutQtAct, QtCore.SIGNAL("triggered()"),
-                     lambda: self.controller.parse("QtGui.qApp.aboutQt()"))
-        #self.connect(self.aboutQtAct, QtCore.SIGNAL("triggered()"), self.aboutQt)
+                    lambda: self.controller.execute(self.aboutQtCmd))
 
 
         self.tileWindowsAct = QtGui.QAction(self.tr("Tile Windows"), self)
         self.tileWindowsAct.setStatusTip(self.tr("Tile Windows"))
+        self.tileWindowsCmd = Command("window.mdiArea.tileSubWindows()")
         self.connect(self.tileWindowsAct, QtCore.SIGNAL("triggered()"),
-                     lambda: self.controller.parse("window.mdiArea.tileSubWindows()"))
+                    lambda: self.controller.execute(self.tileWindowsCmd))
+
 
         self.cascadeWindowsAct = QtGui.QAction(self.tr("Cascade Windows"), self)
         self.cascadeWindowsAct.setStatusTip(self.tr("Cascade Windows"))
+        self.cascadeWindowsCmd = Command("window.mdiArea.cascadeSubWindows()")
         self.connect(self.cascadeWindowsAct, QtCore.SIGNAL("triggered()"),
-                     lambda: self.controller.parse("window.mdiArea.cascadeSubWindows()"))
+                    lambda: self.controller.execute(self.cascadeWindowsCmd))
 
 
         self.closeWindowsAct = QtGui.QAction(self.tr("Close All Windows"), self)
         self.closeWindowsAct.setStatusTip(self.tr("Close All Windows"))
+        self.closeWindowsCmd = Command("window.mdiArea.closeAllSubWindow()")
         self.connect(self.closeWindowsAct, QtCore.SIGNAL("triggered()"),
-                     lambda: self.controller.parse("window.mdiArea.closeAllSubWindows()"))
-
+                    lambda: self.controller.execute(self.closeWindowsCmd))
 
 
         self.closeWindowAct = QtGui.QAction(self.tr("Close Window"), self)
         self.closeWindowAct.setStatusTip(self.tr("Close Window"))
+        self.closeWindowCmd = Command("window.mdiArea.closeActiveSubWindow()")
         self.connect(self.closeWindowAct, QtCore.SIGNAL("triggered()"),
-                     lambda: self.controller.parse("window.mdiArea.closeActiveSubWindow()"))
-
+                    lambda: self.controller.execute(self.closeWindowCmd))
 
 
         self.maximizeWindowAct = QtGui.QAction(self.tr("Maximize Window"), self)
         self.maximizeWindowAct.setStatusTip(self.tr("Maximize Current Window"))
+        self.maximizeWindowCmd = Command("window.mdiArea.activeSubWindow().showMaximized()")
         self.connect(self.maximizeWindowAct, QtCore.SIGNAL("triggered()"),
-                     lambda: self.controller.parse("window.mdiArea.activeSubWindow().showMaximized()"))
+                    lambda: self.controller.execute(self.maximizeWindowCmd))
 
 
         self.minimizeWindowAct = QtGui.QAction(self.tr("Minimize Window"), self)
         self.minimizeWindowAct.setStatusTip(self.tr("Minimize Current Window"))
+        self.minimizeWindowCmd = Command("window.mdiArea.activeSubWindow().showMinimized()")
         self.connect(self.minimizeWindowAct, QtCore.SIGNAL("triggered()"),
-                     lambda: self.controller.parse("window.mdiArea.activeSubWindow().showMinimized()"))
-
+                    lambda: self.controller.execute(self.minimizeWindowCmd))
 
 
         self.zoomInAct = QtGui.QAction(self.tr("Zoom In"), self)
         self.zoomInAct.setStatusTip(self.tr("Zoom In Mode"))
         self.zoomInAct.setShortcut(self.tr("Z"))
+        self.zoomInCmd = Command("window.currentView().modeStack.pushZoomInMode()")
         self.connect(self.zoomInAct, QtCore.SIGNAL("triggered()"),
-                     lambda: self.controller.parse("window.currentView().modeStack.pushZoomInMode()"))
+                    lambda: self.controller.execute(self.zoomInCmd))
 
 
         self.zoomPrevAct = QtGui.QAction(self.tr("Previews View"), self)
         self.zoomPrevAct.setStatusTip(self.tr("Previews View"))
         self.zoomPrevAct.setShortcut(self.tr("Shift+Z"))
+        self.zoomPrevCmd = Command("window.currentView().undoViewStack.popView()")
         self.connect(self.zoomPrevAct, QtCore.SIGNAL("triggered()"),
-                     lambda: self.controller.parse("window.currentView().undoViewStack.popView()"))
+                    lambda: self.controller.execute(self.zoomPrevCmd))
 
 
         self.quitModeAct = QtGui.QAction(self.tr("Quit Mode"), self)
         self.quitModeAct.setStatusTip(self.tr("Return to Previous Editing Mode"))
         self.quitModeAct.setShortcut(self.tr("Esc"))
+        self.quitModeCmd = Command("window.currentView().modeStack.popMode()")
         self.connect(self.quitModeAct, QtCore.SIGNAL("triggered()"),
-                     lambda: self.controller.parse("window.currentView().modeStack.popMode()"))
+                    lambda: self.controller.execute(self.quitModeCmd))
 
 
         self.panLeftAct = QtGui.QAction(self.tr("Pan Left"), self)
@@ -517,9 +525,25 @@ class PWindow(QtGui.QMainWindow):
         self.fitAct = QtGui.QAction(self.tr("Fit"), self)
         self.fitAct.setStatusTip(self.tr("Fit contents to the current view"))
         self.fitAct.setShortcut(self.tr('f'))
+        self.fitCmd = Command("window.currentView().fit()")
         self.connect(self.fitAct, QtCore.SIGNAL("triggered()"),
-                     lambda: self.controller.parse("window.currentView().fit()"))
+                    lambda: self.controller.execute(self.fitCmd))
 
+        self.newSchematicAct = QtGui.QAction(self.tr("&New Schematic"), self)
+        self.newSchematicAct.setStatusTip(self.tr("&New Schematic"))
+        self.newSchematicAct.setShortcut(self.tr('Ctrl+N'))
+        self.newSchematicAct.setIcon(QtGui.QIcon(':/images/new.png'))
+        self.newSchematicCmd = Command("window.newSchematic()")
+        self.connect(self.newSchematicAct, QtCore.SIGNAL("triggered()"),
+                    lambda: self.controller.execute(self.newSchematicCmd))
+
+                    
+#2\text=&New Schematic
+#2\longText=&New Schematic
+#2\icon=:/images/new.png
+#2\shortcut=Ctrl+N
+#2\command=window.newSchematic()
+                    
         #self.actions.append({})
         #self.actions[0]['text'] = 'About &Qt'
         #self.actions[0]['longText'] = 'About &Qt'
@@ -572,16 +596,11 @@ class PWindow(QtGui.QMainWindow):
         self.actions.endArray()
 
         self.databaseMenu.addAction(self.openViewAct)
+        self.databaseMenu.addAction(self.newSchematicAct)
         self.databaseMenu.addAction(self.toggleDocksAct)
         self.databaseMenu.addAction(self.zoomInAct)
         self.databaseMenu.addAction(self.zoomPrevAct)
         self.databaseMenu.addAction(self.quitModeAct)
-
-        #self.addDatabaseMenu = self.databaseMenu.addMenu(self.tr("&Add Database"))
-        #self.addDatabaseMenu.addAction(self.addGnucapDAct)
-
-        self.optionsMenu = self.menuBar().addMenu(self.tr("&Options"))
-        self.optionsMenu.addAction(self.openWWAct)
 
         self.windowsMenu = QtGui.QMenu(self.tr("&Windows"))
         self.windowsAct = self.menuBar().addMenu(self.windowsMenu)
@@ -607,7 +626,7 @@ class PWindow(QtGui.QMainWindow):
     def createToolBars(self):
         self.databaseToolBar = self.addToolBar(self.tr("File"))
         self.databaseToolBar.setObjectName('fileToolbar')
-        #self.databaseToolBar.addAction(self.newSchAct)
+        self.databaseToolBar.addAction(self.newSchematicAct)
         #self.databaseToolBar.addAction(self.openAct)
         #self.databaseToolBar.addAction(self.saveAct)
 

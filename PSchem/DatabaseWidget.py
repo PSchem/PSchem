@@ -17,6 +17,7 @@
 
 from PyQt4 import QtCore, QtGui
 from PSchem.Database.Primitives import *
+from PSchem.Controller import Command
 import os
 
 class DatabaseModel(QtCore.QAbstractItemModel):
@@ -238,9 +239,10 @@ class DatabaseWidget(QtGui.QWidget):
             #if self.window:
                 cell = data.parent()
                 lib = cell.parent()
-                self.window.controller.parse(
-                    'window.openViewByName(\'' +lib.name()+
-                    '\', \''+cell.name()+'\', \''+data.name()+'\')')
+                self.window.controller.execute(
+                    Command(
+                        'window.openViewByName(\'' +lib.name()+
+                        '\', \''+cell.name()+'\', \''+data.name()+'\')'))
 
 
     def updateRegExp(self):

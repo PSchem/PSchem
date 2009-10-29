@@ -17,26 +17,28 @@
 
 import re
 from PSchem.ConsoleWidget import *
-import sys
+import sys, traceback
 
 class Command():
     #pstrip = re.compile(r'\n$')
-    def __init__(self, commandStr):
-        self._str = commandStr
+    def __init__(self, commandStr, type = 'single'):
+        self._text = commandStr
+        self._type = type
         self._compiled = None
         
     def compiled(self):
         if (not self._compiled):
-            self._compiled = compile(self._str, "console", "single")
+            self._compiled = compile(self._text, "console", self._type)
         return self._compiled
         
-    def str(self):
+    def text(self):
         #text = Controller.pstrip.sub('', self._str)
-        return self._str
+        return self._text
 
 class Controller():
     pstrip = re.compile(r'^(>>> |\.\.\. |--- )?')
     pfirst = re.compile(r'^\S+.*\:$')
+    pempty = re.compile(r'^\s*$')
     pindented = re.compile(r'^\s+.*$')
 
     def __init__(self, window):
@@ -45,6 +47,9 @@ class Controller():
         self.globals = globals()
         self.oldStr = ''
         self.firstLine = True
+        
+        self._indent = False
+        self._cmd = u''
 
         print self.pythonInfo()
         #print self.prompt1()
@@ -59,88 +64,51 @@ class Controller():
         except AttributeError:
             sys.ps2 = '... '
 
+        sys.stdout.writeSync(sys.ps1, True)
 
     def pythonInfo(self):
         return 'Python %s on %s\n' % (sys.version, sys.platform) + \
             'Type "help", "copyright", "credits" or "license" for more information.\n'
 
 
-    def execute(self, cmd):
-        sys.stdout.write('--- ' + cmd.str() + '\n')
+    def execute(self, cmd, echo = True):
+        if echo:
+            sys.stdout.write('--- ' + cmd.text() + '\n')
         exec (cmd.compiled(), self.globals, self.locals)
 
-    def executeOld(self, cmd):
-        exec (cmd, self.globals, self.locals)
-
-    def parse(self, text, eval=True):
-        text = Controller.pstrip.sub('', text)
-        print ">>> " + text
-        #sys.stderr.stream.write(text + '\n')
-        first = Controller.pfirst.search(text)
-        indented = Controller.pindented.search(text)
-        if self.firstLine:
-            #print ">>> " + text
-            if first:
-                self.firstLine = False
-                self.oldStr = text + "\n"
-                #print self.prompt2()
-            elif (text != ''):
-                if eval:
-                    self.executeOld(compile(text, "console", "single"))
-                #print self.prompt1()
-            else:
-                pass
-                #print self.prompt1()
-        else:
-            #print "... " + text
-            if indented:
-                self.oldStr += text + "\n"
-                #print self.prompt2()
-            else:
-                self.firstLine = True
-                #print self.oldStr
-                if eval:
-                    self.executeOld(compile(self.oldStr, "console", "exec"))
-                if (text != ''):
-                    self.parse(text)
-
-    def repl(self):
-        while True:
-            self.window.consoleWidget.setSynchronous(True, True)
-            sys.stdout.write(sys.ps1)
-            self.window.consoleWidget.setSynchronous(False)
-            line = self.window.consoleWidget.readline()
-            line = self.pstrip.sub('', line)
-            self._indent = self.pfirst.search(line)
-            if self._indent:
-                while True:
-                    self.window.consoleWidget.setSynchronous(True)
-                    sys.stdout.write(sys.ps2)
-                    self.window.consoleWidget.setSynchronous(False)
-                    line2 = self.window.consoleWidget.readline()
-                    line2 = self.pstrip.sub('', line2)
-                    if line2 == '\n':
-                        break
-                    line = line + line2
-            if line != '' and line != '\n':
-                self.window.consoleWidget.setSynchronous(True)
-                self.executeOld(compile(line, "console", "single"))
-                self.window.consoleWidget.setSynchronous(False)
-
-    def repl2(self):
-        sys.stdout.writeSync(sys.ps1, True)
-        line = self.window.consoleWidget.readline()
+    def parse(self, cmd):
+        #sys.stdout.writeSync(sys.ps1, True)
+        line = cmd.text()
         line = self.pstrip.sub('', line)
-        self._indent = self.pfirst.search(line)
+        empty = self.pempty.search(line)
+        #self._indent = self.pfirst.search(line)
         if self._indent:
-            sys.stdout.writeSync(sys.ps2)
-            line2 = self.window.consoleWidget.readline()
-            line2 = self.pstrip.sub('', line2)
-            #if line2 == '\n':
-            #    break
-            line = line + line2
-        if line != '' and line != '\n':
-            self.window.consoleWidget.setSynchronous(True)
-            self.executeOld(compile(line, "console", "single"))
-            self.window.consoleWidget.setSynchronous(False)
+            if line == '\n':
+                self._indent = False
+                self.window.consoleWidget.setSynchronous(True)
+                try:
+                    self.execute(Command(self._cmd, 'exec'), False)
+                except (StandardError) as err:
+                    print traceback.format_exc()
+                self.window.consoleWidget.setSynchronous(False)
+                sys.stdout.writeSync(sys.ps1, True)
+            else:
+                sys.stdout.writeSync(sys.ps2)
+                self._cmd = self._cmd + line
+        else:
+            first = self.pfirst.search(line)
+            self._cmd = line
+            if first:
+                sys.stdout.writeSync(sys.ps2)
+                self._indent = True
+            else:
+                if not empty:
+                    self.window.consoleWidget.setSynchronous(True)
+                    try:
+                        self.execute(Command(self._cmd), False)
+                    except (StandardError) as err:
+                        print traceback.format_exc()
+                        #print err
+                    self.window.consoleWidget.setSynchronous(False)
+                sys.stdout.writeSync(sys.ps1, True)
                 

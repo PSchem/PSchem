@@ -175,7 +175,7 @@ class SelectMode(Mode):
         self._modifiers = None
 
     def findItems(self, pos):
-        items = self._view.scene.items(pos)
+        items = self._view.scene().items(pos)
         items = filter(lambda i: not(i.parentItem()), items)
         items = map(lambda i: i.model, items)
         items = set(items)
@@ -199,7 +199,7 @@ class SelectMode(Mode):
     def closeLasso(self):
         lasso = self._lasso
         if lasso and lasso.rect():
-            items = self._view.scene.items(lasso.rect(), QtCore.Qt.ContainsItemShape)
+            items = self._view.scene().items(lasso.rect(), QtCore.Qt.ContainsItemShape)
             for i in items:
                 if not i.parentItem():
                     #print i
@@ -226,7 +226,7 @@ class SelectMode(Mode):
             self._modifiers = event.modifiers()
             #print "released", pos
             if self._lasso and self._lasso.rect():
-                items = self._view.scene.items(self._lasso.rect(), QtCore.Qt.ContainsItemShape)
+                items = self._view.scene().items(self._lasso.rect(), QtCore.Qt.ContainsItemShape)
                 items = filter(lambda i: not(i.parentItem()), items)
                 items = map(lambda i: i.model, items)
                 self._selection = None # forces destruction

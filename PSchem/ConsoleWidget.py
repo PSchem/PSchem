@@ -48,13 +48,15 @@ class StdoutWrap():
 
     def write(self, txt):
         self.console.write(txt)
-        self.stream.write(txt)
+        if self.stream.fileno() >= 0: # for Windows (pythonw.exe) compatibility
+            self.stream.write(txt)
 
     def writeSync(self, txt, markPos = False):
         self.console.setSynchronous(True, markPos)
         self.console.write(txt)
         self.console.setSynchronous(False)
-        self.stream.write(txt)
+        if self.stream.fileno() >= 0:
+            self.stream.write(txt)
 
     def isatty(self):
         return True
@@ -66,7 +68,8 @@ class StderrWrap():
 
     def write(self, txt):
         self.console.writeErr(txt)
-        self.stream.write(txt)
+        if self.stream.fileno() >= 0:
+            self.stream.write(txt)
 
     def isatty(self):
         return True

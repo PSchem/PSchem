@@ -16,8 +16,9 @@
 # along with PSchem.  If not, see <http://www.gnu.org/licenses/>.
 
 import re
-from PSchem.ConsoleWidget import *
-import sys, traceback
+#from PSchem.ConsoleWidget import *
+import sys
+import math
 
 class Command():
     #pstrip = re.compile(r'\n$')
@@ -36,79 +37,19 @@ class Command():
         return self._text
 
 class Controller():
-    pstrip = re.compile(r'^(>>> |\.\.\. |--- )?')
-    pfirst = re.compile(r'^\S+.*\:$')
-    pempty = re.compile(r'^\s*$')
-    pindented = re.compile(r'^\s+.*$')
 
     def __init__(self, window):
         self.window = window
+        currentView = window.currentView
+        currentCellView = window.currentCellView
+        database = window.database
         self.locals = locals()
         self.globals = globals()
-        self.oldStr = ''
-        self.firstLine = True
         
-        self._indent = False
-        self._cmd = u''
-
-        print self.pythonInfo()
-        #print self.prompt1()
-        
-        try:
-            sys.ps1
-        except AttributeError:
-            sys.ps1 = '>>> '
-
-        try:
-            sys.ps2
-        except AttributeError:
-            sys.ps2 = '... '
-
-        sys.stdout.writeSync(sys.ps1, True)
-
-    def pythonInfo(self):
-        return 'Python %s on %s\n' % (sys.version, sys.platform) + \
-            'Type "help", "copyright", "credits" or "license" for more information.\n'
-
 
     def execute(self, cmd, echo = True):
         if echo:
             sys.stdout.write('--- ' + cmd.text() + '\n')
         exec (cmd.compiled(), self.globals, self.locals)
 
-    def parse(self, cmd):
-        #sys.stdout.writeSync(sys.ps1, True)
-        line = cmd.text()
-        line = self.pstrip.sub('', line)
-        empty = self.pempty.search(line)
-        #self._indent = self.pfirst.search(line)
-        if self._indent:
-            if line == '\n':
-                self._indent = False
-                self.window.consoleWidget.setSynchronous(True)
-                try:
-                    self.execute(Command(self._cmd, 'exec'), False)
-                except (StandardError) as err:
-                    print traceback.format_exc()
-                self.window.consoleWidget.setSynchronous(False)
-                sys.stdout.writeSync(sys.ps1, True)
-            else:
-                sys.stdout.writeSync(sys.ps2)
-                self._cmd = self._cmd + line
-        else:
-            first = self.pfirst.search(line)
-            self._cmd = line
-            if first:
-                sys.stdout.writeSync(sys.ps2)
-                self._indent = True
-            else:
-                if not empty:
-                    self.window.consoleWidget.setSynchronous(True)
-                    try:
-                        self.execute(Command(self._cmd), False)
-                    except (StandardError) as err:
-                        print traceback.format_exc()
-                        #print err
-                    self.window.consoleWidget.setSynchronous(False)
-                sys.stdout.writeSync(sys.ps1, True)
                 

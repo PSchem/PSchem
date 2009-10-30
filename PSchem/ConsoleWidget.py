@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with PSchem.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
+import sys, traceback
 from PyQt4 import QtCore, QtGui
 
 try:
@@ -113,6 +113,9 @@ class History(list):
             
 class ConsoleWidget(QtGui.QPlainTextEdit):
     pstrip = re.compile(r'^(>>> |\.\.\. |--- )?')
+    pfirst = re.compile(r'^\S+.*\:$')
+    pempty = re.compile(r'^\s*$')
+    pindented = re.compile(r'^\s+.*$')
 
     def __init__(self, window=None):
         QtGui.QPlainTextEdit.__init__(self)
@@ -146,6 +149,28 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
         self.menu.addAction(self.trUtf8('Paste'), self.paste)
         #self.menu.addSeparator()
 
+        self._indent = False
+        self._cmd = ''
+
+        print self._pythonInfo()
+        
+        try:
+            sys.ps1
+        except AttributeError:
+            sys.ps1 = '>>> '
+
+        try:
+            sys.ps2
+        except AttributeError:
+            sys.ps2 = '... '
+
+        sys.stdout.writeSync(sys.ps1, True)
+
+    def _pythonInfo(self):
+        return 'Python %s on %s\n' % (sys.version, sys.platform) + \
+            'Type "help", "copyright", "credits" or "license" for more information.\n'
+        
+        
     def contextMenuEvent(self,ev):
         """
         Reimplemented to show our own context menu.
@@ -217,7 +242,46 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
             time.sleep(0.01)
             return str
             #self.read(count - len(str), str)
-            
+
+    def parse(self, cmd):
+        #sys.stdout.writeSync(sys.ps1, True)
+        res = None
+        line = cmd.text()
+        line = self.pstrip.sub('', line)
+        empty = self.pempty.search(line)
+        #self._indent = self.pfirst.search(line)
+        if self._indent:
+            if line == '\n':
+                self._indent = False
+                self.setSynchronous(True)
+                try:
+                    self.window.controller.execute(Command(self._cmd, 'exec'), False)
+                except (StandardError) as err:
+                    print traceback.format_exc()
+                self.setSynchronous(False)
+                sys.stdout.writeSync(sys.ps1, True)
+                res = self._cmd
+            else:
+                sys.stdout.writeSync(sys.ps2)
+                self._cmd = self._cmd + line
+        else:
+            first = self.pfirst.search(line)
+            self._cmd = line
+            if first:
+                sys.stdout.writeSync(sys.ps2)
+                self._indent = True
+            else:
+                if not empty:
+                    self.setSynchronous(True)
+                    try:
+                        self.window.controller.execute(Command(self._cmd), False)
+                    except (StandardError) as err:
+                        print traceback.format_exc()
+                        #print err
+                    self.setSynchronous(False)
+                    res = self._cmd
+                sys.stdout.writeSync(sys.ps1, True)
+        return res
            
     def keyPressEvent(self, event):
         text  = event.text()
@@ -251,8 +315,9 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
             self.buffer = self._getLine() + '\n'
             if not self._inReadline:
                 cmd = Command(self.readline())
-                self.window.controller.parse(cmd)
-                self.history.push(cmd)
+                cmdLine = self.parse(cmd)
+                if cmdLine:
+                    self.history.push(Command(cmdLine))
                 
         #elif key == QtCore.Qt.Key_Tab:
         #    self.__insert_text(text)

@@ -22,11 +22,14 @@ from PSchem.Database.Primitives import *
 class GraphicsScene(QtGui.QGraphicsScene):
     def __init__(self, cellView):
         QtGui.QGraphicsView.__init__(self)
-        self.cellView = cellView
-        self.uu = float(self.cellView.uu())
+        self._cellView = cellView
+        self.uu = float(self._cellView.uu())
 
-        self.cellView.installUpdateHook(self)
+        self._cellView.installUpdateHook(self)
 
+    def cellView(self):
+        return self._cellView
+        
     def addElem(self, e):
         print 'Unknown element type', e
 

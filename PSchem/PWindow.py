@@ -458,7 +458,7 @@ class PWindow(QtGui.QMainWindow):
         self.zoomInAct = QtGui.QAction(self.tr("Zoom In"), self)
         self.zoomInAct.setStatusTip(self.tr("Zoom In Mode"))
         self.zoomInAct.setShortcut(self.tr("Z"))
-        self.zoomInCmd = Command("window.currentView().modeStack.pushZoomInMode()")
+        self.zoomInCmd = Command("currentView().modeStack.pushZoomInMode()")
         self.connect(self.zoomInAct, QtCore.SIGNAL("triggered()"),
                     lambda: self.controller.execute(self.zoomInCmd))
 
@@ -466,7 +466,7 @@ class PWindow(QtGui.QMainWindow):
         self.zoomPrevAct = QtGui.QAction(self.tr("Previews View"), self)
         self.zoomPrevAct.setStatusTip(self.tr("Previews View"))
         self.zoomPrevAct.setShortcut(self.tr("Shift+Z"))
-        self.zoomPrevCmd = Command("window.currentView().undoViewStack.popView()")
+        self.zoomPrevCmd = Command("currentView().undoViewStack.popView()")
         self.connect(self.zoomPrevAct, QtCore.SIGNAL("triggered()"),
                     lambda: self.controller.execute(self.zoomPrevCmd))
 
@@ -474,7 +474,7 @@ class PWindow(QtGui.QMainWindow):
         self.quitModeAct = QtGui.QAction(self.tr("Quit Mode"), self)
         self.quitModeAct.setStatusTip(self.tr("Return to Previous Editing Mode"))
         self.quitModeAct.setShortcut(self.tr("Esc"))
-        self.quitModeCmd = Command("window.currentView().modeStack.popMode()")
+        self.quitModeCmd = Command("currentView().modeStack.popMode()")
         self.connect(self.quitModeAct, QtCore.SIGNAL("triggered()"),
                     lambda: self.controller.execute(self.quitModeCmd))
 
@@ -482,35 +482,35 @@ class PWindow(QtGui.QMainWindow):
         self.panLeftAct = QtGui.QAction(self.tr("Pan Left"), self)
         self.panLeftAct.setStatusTip(self.tr("Pan the current view left"))
         self.panLeftAct.setShortcut(self.tr("Left"))
-        self.panLeftCmd = Command("window.currentView().move(-0.25, 0)")
+        self.panLeftCmd = Command("currentView().move(-0.25, 0)")
         self.connect(self.panLeftAct, QtCore.SIGNAL("triggered()"),
                     lambda: self.controller.execute(self.panLeftCmd))
 
         self.panRightAct = QtGui.QAction(self.tr("Pan Right"), self)
         self.panRightAct.setStatusTip(self.tr("Pan the current view right"))
         self.panRightAct.setShortcut(self.tr("Right"))
-        self.panRightCmd = Command("window.currentView().move(0.25, 0)")
+        self.panRightCmd = Command("currentView().move(0.25, 0)")
         self.connect(self.panRightAct, QtCore.SIGNAL("triggered()"),
                     lambda: self.controller.execute(self.panRightCmd))
 
         self.panUpAct = QtGui.QAction(self.tr("Pan Up"), self)
         self.panUpAct.setStatusTip(self.tr("Pan the current view up"))
         self.panUpAct.setShortcut(self.tr("Up"))
-        self.panUpCmd = Command("window.currentView().move(0, 0.25)")
+        self.panUpCmd = Command("currentView().move(0, 0.25)")
         self.connect(self.panUpAct, QtCore.SIGNAL("triggered()"),
                     lambda: self.controller.execute(self.panUpCmd))
 
         self.panDownAct = QtGui.QAction(self.tr("Pan Down"), self)
         self.panDownAct.setStatusTip(self.tr("Pan the current view down"))
         self.panDownAct.setShortcut(self.tr("Down"))
-        self.panDownCmd = Command("window.currentView().move(0, -0.25)")
+        self.panDownCmd = Command("currentView().move(0, -0.25)")
         self.connect(self.panDownAct, QtCore.SIGNAL("triggered()"),
                     lambda: self.controller.execute(self.panDownCmd))
 
         self.zoomIn2Act = QtGui.QAction(self.tr("Zoom In"), self)
         self.zoomIn2Act.setStatusTip(self.tr("Zoom the current view in"))
         self.zoomIn2Act.setShortcut(self.tr(']'))
-        self.zoomIn2Cmd = Command("window.currentView().scale(1.41421356237)")
+        self.zoomIn2Cmd = Command("currentView().scale(math.sqrt(2))")
         self.connect(self.zoomIn2Act, QtCore.SIGNAL("triggered()"),
                     lambda: self.controller.execute(self.zoomIn2Cmd))
                     #lambda: self.controller.parse("window.currentView().scale(1.41421356237)"))
@@ -518,14 +518,14 @@ class PWindow(QtGui.QMainWindow):
         self.zoomOut2Act = QtGui.QAction(self.tr("Zoom Out"), self)
         self.zoomOut2Act.setStatusTip(self.tr("Zoom the current view out"))
         self.zoomOut2Act.setShortcut(self.tr('['))
-        self.zoomOut2Cmd = Command("window.currentView().scale(1/1.41421356237)")
+        self.zoomOut2Cmd = Command("currentView().scale(1/math.sqrt(2))")
         self.connect(self.zoomOut2Act, QtCore.SIGNAL("triggered()"),
                     lambda: self.controller.execute(self.zoomOut2Cmd))
 
         self.fitAct = QtGui.QAction(self.tr("Fit"), self)
         self.fitAct.setStatusTip(self.tr("Fit contents to the current view"))
         self.fitAct.setShortcut(self.tr('f'))
-        self.fitCmd = Command("window.currentView().fit()")
+        self.fitCmd = Command("currentView().fit()")
         self.connect(self.fitAct, QtCore.SIGNAL("triggered()"),
                     lambda: self.controller.execute(self.fitCmd))
 
@@ -647,6 +647,11 @@ class PWindow(QtGui.QMainWindow):
         #return self._currentWindow
         return self._currentView
 
+    def currentCellView(self):
+        if self._currentView and self._currentView.scene():
+            return self._currentView.scene().cellView()
+            
+            
     #def keyPressEvent(self, event):
         #key = event.key()
         #print key

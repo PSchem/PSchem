@@ -39,7 +39,7 @@ class UndoViewStack(list):
             matrix = self.pop()
             self._widget.cursor = None
             self._widget.setMatrix(matrix)
-            self._widget.updateSceneRect(self._widget.scene.sceneRect())
+            self._widget.updateSceneRect(self._widget._scene.sceneRect())
             return matrix
         else:
             return None
@@ -122,14 +122,14 @@ class DesignView(QtGui.QGraphicsView):
         #self.setDragMode(QtGui.QGraphicsView.ScrollHandDrag)
         #self.setDragMode(QtGui.QGraphicsView.RubberBandDrag)
 
-        self.scene = scene
+        self._scene = scene
 
-        self.setScene(self.scene)
+        self.setScene(self._scene)
 
         self.grid = 1
         self.gridOffset= QtCore.QPointF(0, 0);
 
-        self.updateSceneRect(self.scene.sceneRect())
+        self.updateSceneRect(self._scene.sceneRect())
 
         self._cursor = None
         self.modeStack = ModeStack(self)
@@ -140,14 +140,8 @@ class DesignView(QtGui.QGraphicsView):
         #self.mouseLasso = None
         self.fit()
 
-
-    #def paintEvent(self, event):
-    #    QtGui.QGraphicsView.paintEvent(self, event)
-    #    painter = QtGui.QPainter(self.viewport())
-    #    #painter.scale(1, 1)
-    #    painter.setPen(QtGui.QColor(random()*255, random()*255, random()*255))
-    #    self.drawForeground2(painter, event.rect())
-    #    #painter.drawRect(10, 10, 10, 10)
+    def scene(self):
+        return self._scene
 
     def drawBackground(self, painter, rect):
         brush = self.window.database.layers().layerByName('background', 'drawing').view().brush()
@@ -299,7 +293,7 @@ class DesignView(QtGui.QGraphicsView):
             rect = m.inverted()[0].mapRect(QtCore.QRectF(vr))
             m.translate(-self.flipX*dx*rect.width(), self.flipY*dy*rect.height())
             self.setMatrix(m)
-            self.updateSceneRect(self.scene.sceneRect())
+            self.updateSceneRect(self._scene.sceneRect())
 
 
     def scale(self, scaleFactor):
@@ -321,7 +315,7 @@ class DesignView(QtGui.QGraphicsView):
                 return
 
             self.setMatrix(newMatrix)
-            self.updateSceneRect(self.scene.sceneRect())
+            self.updateSceneRect(self._scene.sceneRect())
 
 
     def fitRect(self, rect):
@@ -331,7 +325,7 @@ class DesignView(QtGui.QGraphicsView):
         m = self.matrix()
         vp = self.viewport().rect()
 
-        #rect = self.scene.sceneRect()
+        #rect = self._scene.sceneRect()
         w = rect.width()
         h = rect.height()
         if w == 0:
@@ -351,10 +345,10 @@ class DesignView(QtGui.QGraphicsView):
 
         m = QtGui.QMatrix(self.flipX*scale, 0, 0, self.flipY*scale, sx, sy)
         self.setMatrix(m)
-        self.updateSceneRect(self.scene.sceneRect())
+        self.updateSceneRect(self._scene.sceneRect())
 
     def fit(self):
-        rect = self.scene.sceneRect()
+        rect = self._scene.sceneRect()
         w = rect.width()
         h = rect.height()
         self.fitRect(rect.adjusted(-0.1*w, -0.1*h, 0.1*w, 0.1*h))

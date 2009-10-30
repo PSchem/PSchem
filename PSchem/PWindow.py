@@ -28,8 +28,8 @@ from PSchem.ToolOptions import *
 from PSchem.DesignView import *
 from PSchem.GraphicsScene import *
 from PSchem.LayerView import *
-from PSchem.Database import *
 from PSchem.Resources_rc import *
+from Database import *
 import os
 
 class SubWindow(QtGui.QMdiSubWindow):

@@ -16,7 +16,7 @@
 # along with PSchem.  If not, see <http://www.gnu.org/licenses/>.
 
 from PyQt4 import QtCore, QtGui
-from PSchem.Database.Primitives import *
+from Database.Primitives import *
 
 from random import random
 

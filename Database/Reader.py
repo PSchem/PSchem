@@ -17,8 +17,8 @@
 
 import re
 import os
-from PSchem.Database.Primitives import *
-#from PSchem.Database.Primitives import Database
+from Database.Primitives import *
+#from Database.Primitives import Database
 
 
 class Reader():

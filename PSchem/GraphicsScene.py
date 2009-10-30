@@ -17,7 +17,7 @@
 
 from PyQt4 import QtCore, QtGui
 from PSchem.GraphicsItems import *
-from PSchem.Database.Primitives import *
+from Database.Primitives import *
 
 class GraphicsScene(QtGui.QGraphicsScene):
     def __init__(self, cellView):

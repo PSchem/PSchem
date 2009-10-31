@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from PyQt4 import QtCore, QtGui
+
+# Copyright (C) 2009 PSchem Contributors (see CONTRIBUTORS for details)
 
 # This file is part of PSchem.
  
@@ -16,7 +17,7 @@ from PyQt4 import QtCore, QtGui
 # You should have received a copy of the GNU General Public License
 # along with PSchem.  If not, see <http://www.gnu.org/licenses/>.
 
-# This file was ported from a FlowLayout Qt example.
+# This file was ported from a C++ FlowLayout Qt example.
 
 # Original notice:
 # /****************************************************************************
@@ -60,6 +61,7 @@ from PyQt4 import QtCore, QtGui
 # **
 # ****************************************************************************/
 
+from PyQt4 import QtCore, QtGui
  
 class FlowLayout(QtGui.QLayout):
     def __init__(self, parent=None, margin=None, spacing=None):

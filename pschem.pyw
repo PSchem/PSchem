@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# Copyright (C) 2009 PSchem Contributors (see CONTRIBUTORS for details)
+
 # This file is part of PSchem.
  
 # PSchem is free software: you can redistribute it and/or modify

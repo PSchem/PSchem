@@ -1,0 +1,9 @@
+﻿List of PSchem Contributors
+
+Please add your name and email address with a brief description
+of your contribution (class, file or package name).
+
+Andrzej Radecki, <ndrwrdck [at] gmail [dot] com>
+  - packages: PSchem, Database,
+  - files: pschem.py, pschem.pyw, ThirdParty/FlowLayout.py
+

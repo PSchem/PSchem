@@ -71,6 +71,10 @@ class GraphicsScene(QtGui.QGraphicsScene):
         #line.setLineWidth(0.0)
         self.addItem(line)
 
+    def addSolderDot(self, n):
+        ellipse = EllipseItem(n, None)
+        self.addItem(ellipse)
+
     def addLabel(self, l):
         label = TextItem(l, None)
         #label.setFont(QtGui.QFont("Lucida", l.size/self.uu, QtGui.QFont.Normal, False))

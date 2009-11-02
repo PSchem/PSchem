@@ -661,9 +661,56 @@ class NetSegment(Element):
     def y2(self):
         return self._y2
 
+    def minX(self):
+        return min(self._x1, self._x2)
+        
+    def maxX(self):
+        return max(self._x1, self._x2)
+        
+    def minY(self):
+        return min(self._y1, self._y2)
+        
+    def maxY(self):
+        return max(self._y1, self._y2)
+        
     def addToView(self, view):
         view.addNetSegment(self)
+    
+    def contains (self, x, y):
+        c1 = (self._x1 == self._x2 and 
+            self._y1 == self._y2 and
+            self._x1 == x and
+            self._y1 == y)
+        c2 = (self._x1 == x and self._y1 == y)
+        c3 = (self._x2 == x and self._y2 == y)
+        return (c1 or c2 or c3)
 
+    def containsInside (self, x, y):
+        c1 = (self._x1 == self._x2 == x and 
+            self.minY() < y < self.maxY())
+        c2 = (self._y1 == self._y2 == y and
+            self.minX() < x < self.maxX())
+        #print self._x1, self._y1, self._x2, self._y2, x, y
+        return (c1 or c2)
+
+class SolderDot(Element):
+    def __init__(self, parent, layers, x, y):
+        Element.__init__(self, parent, layers)
+        self._x = x
+        self._y = y
+        self._layer = self.layers().layerByName('net', 'drawing')
+        self._name = 'SolderDot '+str(x)+' '+str(y)
+
+    def addToView(self, view):
+        view.addSolderDot(self)
+        
+    def radiusX(self):
+        return self.parent().uu()
+        
+    def radiusY(self):
+        return self.parent().uu()
+        
+        
 class Instance(Element):
     def __init__(self, parent, layers):
         Element.__init__(self, parent, layers)
@@ -839,18 +886,6 @@ class Diagram(CellView):
 class Schematic(Diagram):
     def __init__(self, name):
         Diagram.__init__(self, name)
-        self._components = set()
-        self._instances = set()
-        self._nets = set()
-
-    def addNet(self, net):
-        self._nets.add(net)
-
-    def addComponent(self, component):
-        self._components.add(component)
-
-    def addInstance(self, instance):
-        self._instances.add(instance)
 
     def components(self):
         components = map(lambda i: i.cell(), self.instances())
@@ -860,8 +895,73 @@ class Schematic(Diagram):
         return filter(lambda e: isinstance(e, Instance), self.elems())
 
     def nets(self):
+        return filter(lambda e: isinstance(e, Net), self.elems())
+
+    def netSegments(self):
         return filter(lambda e: isinstance(e, NetSegment), self.elems())
 
+    def solderDots(self):
+        return filter(lambda e: isinstance(e, SolderDot), self.elems())
+
+    def checkNetSegments(self, segments = None):
+        if not segments:
+            segments = self.netSegments()
+        origNetSegments = segments
+        for n in origNetSegments:
+            splitPoints = set()
+            for n2 in origNetSegments:
+                if n.containsInside(n2.x1(), n2.y1()):
+                    splitPoints.add((n2.x1(), n2.y1()))
+                    #print n.x1(), n.y1()
+                if n.containsInside(n2.x2(), n2.y2()):
+                    splitPoints.add((n2.x2(), n2.y2()))
+                    #print n.x2(), n.y2()
+            if splitPoints:
+                splitPoints.add((n.x1(), n.y1()))
+                splitPoints.add((n.x2(), n.y2()))
+                pointList = list(splitPoints)
+                if (n.x1() != n.x2()):
+                    pointList.sort(lambda p1, p2: cmp(p1[0], p2[0]))
+                else:
+                    pointList.sort(lambda p1, p2: cmp(p1[1], p2[1]))
+                prevPoint = pointList[0]
+                for p in pointList[1:]:
+                    newSegment = NetSegment(n.parent(), n.layers(), prevPoint[0], prevPoint[1], p[0], p[1])
+                    self.addElem(newSegment)
+                    #print prevPoint[0], p[0], prevPoint[1], p[1]
+                    prevPoint = p
+                self.removeElem(n)
+
+    def checkSolderDots(self, segments = None):
+        if not segments:
+            segments = self.netSegments()
+        origNetSegments = segments
+        origSolderDots = self.solderDots()
+        for n in origNetSegments:
+            count1 = -1
+            count2 = -1
+            solder1 = filter(lambda sd: sd.x() == n.x1() and sd.y() == n.x2, origSolderDots)
+            solder2 = filter(lambda sd: sd.x() == n.x1() and sd.y() == n.x2, origSolderDots)
+            for n2 in origNetSegments:
+                if ((n.x1() == n2.x1() and n.y1() == n2.y1()) or
+                    (n.x1() == n2.x2() and n.y1() == n2.y2())):
+                    count1 += 1
+                if ((n.x2() == n2.x1() and n.y2() == n2.y1()) or
+                    (n.x2() == n2.x2() and n.y2() == n2.y2())):
+                    count2 += 1
+            if count1 > 1:
+                if not solder1:
+                    solder = SolderDot(n.parent(), n.layers(), n.x1(), n.y1())
+                    self.addElem(solder)
+            elif solder1:
+                    self.removeElem(solder1)
+            if count2 > 1:
+                if not solder2:
+                    solder = SolderDot(n.parent(), n.layers(), n.x2(), n.y2())
+                    self.addElem(solder)
+            elif solder2:
+                    self.removeElem(solder2)
+                
 class Symbol(Diagram):
     def __init__(self, name):
         Diagram.__init__(self, name)

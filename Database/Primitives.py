@@ -226,8 +226,6 @@ class Element():
         self._vmirror = False
         self._visible = True
         self._editable = True
-        self._selected = False
-        self._preSelected = False
 
     def addAttribute(self, attrib):
         self._attributes.add(attrib)
@@ -282,14 +280,6 @@ class Element():
             self._visible = visible
             self.updateViews()
 
-    def setSelected(self, selected): #bool, not saved
-        self._selected = selected
-        self.updateViews()
-
-    def setPreSelected(self, preSelected): #bool, not saved
-        self._preSelected = preSelected
-        self.updateViews()
-
     def attributes(self):
         return self._attributes
 
@@ -337,12 +327,6 @@ class Element():
 
     def visible(self):
         return self._visible
-
-    def selected(self):
-        return self._selected
-
-    def preSelected(self):
-        return self._preSelected
 
 class Attribute(Element):
     AlignLeft = 0

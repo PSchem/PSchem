@@ -153,19 +153,23 @@ class Selection(set):
         set.__init__(self, items)
         for i in items:
             i.setSelected(True)
+            i.update()
 
     def add(self, item):
         set.add(self, item)
         item.setSelected(True)
-
+        item.update()
+        
     def remove(self, item):
         set.remove(self, item)
         item.setSelected(False)
-
+        item.update()
+        
     def __del__(self):
+        pass
         for i in self:
             i.setSelected(False)
-        #self = None
+            i.update()
 
 class SelectMode(Mode):
     def __init__(self, view):
@@ -179,7 +183,7 @@ class SelectMode(Mode):
     def findItems(self, pos):
         items = self._view.scene().items(pos)
         items = filter(lambda i: not(i.parentItem()), items)
-        items = map(lambda i: i.model, items)
+        #items = map(lambda i: i.model, items)
         items = set(items)
         if self.addMode():
             self._toBeSelected = ItemBuffer(items - self._selection)
@@ -205,7 +209,8 @@ class SelectMode(Mode):
             for i in items:
                 if not i.parentItem():
                     #print i
-                    self._selection.add(i.model)
+                    self._selection.add(i)
+                    #self._selection.add(i.model)
                     #i.model.setSelected(True)
             #self._view.fitRect(lasso.rect())
             lasso.remove()
@@ -230,7 +235,7 @@ class SelectMode(Mode):
             if self._lasso and self._lasso.rect():
                 items = self._view.scene().items(self._lasso.rect(), QtCore.Qt.ContainsItemShape)
                 items = filter(lambda i: not(i.parentItem()), items)
-                items = map(lambda i: i.model, items)
+                #items = map(lambda i: i.model, items)
                 self._selection = None # forces destruction
                 self._selection = Selection(items)
                 self._lasso.remove()
@@ -243,8 +248,8 @@ class SelectMode(Mode):
                 if not self.addMode() and not self.subtractMode():
                     self._selection = None
                     self._selection = Selection()
-                if self._preSelected:
-                    self._preSelected.setPreSelected(False)
+                #if self._preSelected:
+                #    self._preSelected.setPreSelected(False)
                 if item:
                     if self.subtractMode():
                         self._selection.remove(item)
@@ -252,9 +257,9 @@ class SelectMode(Mode):
                         self._selection.add(item)
                 self.nextItem()
                 item = self.currentItem()
-                if item:
-                    self._preSelected = item
-                    item.setPreSelected(True)
+                #if item:
+                #    self._preSelected = item
+                #    item.setPreSelected(True)
 
     def mouseMoveEvent(self, event, pos = None):
         if pos:
@@ -263,12 +268,13 @@ class SelectMode(Mode):
             self.findItems(pos)
             item = self.currentItem()
             #print item, self._preSelected
-            if item != self._preSelected:
-                if self._preSelected:
-                    self._preSelected.setPreSelected(False)
-                if item:
-                    self._preSelected = item
-                    item.setPreSelected(True)
+            
+            #if item != self._preSelected:
+            #    if self._preSelected:
+            #        self._preSelected.setPreSelected(False)
+            #    if item:
+            #        self._preSelected = item
+            #        item.setPreSelected(True)
 
     def mouseDragEvent(self, event, pos = None):
         if pos: # and event.button() == QtCore.Qt.LeftButton:

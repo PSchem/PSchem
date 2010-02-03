@@ -17,79 +17,29 @@
 # You should have received a copy of the GNU General Public License
 # along with PSchem.  If not, see <http://www.gnu.org/licenses/>.
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt4 import QtCore, QtGui
+#from PyQt4.QtCore import *
+#from PyQt4.QtGui import *
 
 from PSchem.ToolOptions import *
-
-class Lasso():
-    def __init__(self, widget, firstCorner):
-        self._widget = widget
-        self._fc = firstCorner
-        self._lasso = None
-
-    def calcUpdate(self, lasso):
-        x1 = lasso.left()
-        x2 = lasso.right()
-        y1 = lasso.top()
-        y2 = lasso.bottom()
-        adj = self._widget.grid * 0.01
-        rectList = [
-            QtCore.QRectF(x1-adj, y1-adj, x2 - x1 + 2*adj, 2*adj),
-            QtCore.QRectF(x1-adj, y2-adj, x2 - x1 + 2*adj, 2*adj),
-            QtCore.QRectF(x1-adj, y1-adj, 2*adj, y2 - y1 + 2*adj),
-            QtCore.QRectF(x2-adj, y1-adj, 2*adj, y2 - y1 + 2*adj)]
-        return rectList
-
-    def stretchTo(self, pos):
-        grid = self._widget.grid
-        x1 = min(self._fc.x(), pos.x()) - grid / 2.0
-        y1 = min(self._fc.y(), pos.y()) - grid / 2.0
-        x2 = max(self._fc.x(), pos.x()) + grid / 2.0
-        y2 = max(self._fc.y(), pos.y()) + grid / 2.0
-
-        lasso = QtCore.QRectF(min(x1, x2), min(y1, y2), abs(x1-x2), abs(y1-y2))
-        #print self._mousePressedPos.x(), self._mousePressedPos.y(), pos.x(), pos.y()
-        if self._lasso:
-            self.remove()
-            #self._widget.updateScene(self.calcUpdate(self._lasso, lasso))
-        self._widget.updateScene(self.calcUpdate(lasso))
-        self._lasso = lasso
-
-    def remove(self):
-        if self._lasso:
-            self._widget.updateScene(
-                self.calcUpdate(self._lasso))
-            self._lasso = None
-
-    def draw(self, painter, rect):
-        if self._lasso:
-            layerView = self._widget.window.database.layers().layerByName('lasso', 'drawing').view()
-            painter.setPen(layerView.pen())
-            #painter.setBrush(layerView.brush())
-            painter.drawRect(self._lasso)
-
-    def rect(self):
-        return self._lasso
-
+from PSchem.Lasso import *
 
 class Mode():
-    def __init__(self, view):
+    def __init__(self, view, transient=False):
         self._view = view
         self._optionPanel = None
         self._actions = set()
         self._mousePressedPos = None
         self._mousePressedButton = QtCore.Qt.NoButton
-        self._lasso = None
         self.installActions()
+        self._lasso = None
+        self._transient = transient
 
     def view(self):
         return self._view
 
     def exitMode(self):
-        if self._lasso:
-            self._lasso.remove()
-            self._lasso = None
+        self.removeLasso()
         self.uninstallActions()
 
     def installActions(self):
@@ -103,8 +53,19 @@ class Mode():
     def actions(self):
         return self._actions
 
+    def transient(self):
+        return self._transient
+
+    def setMousePressedPos(self, pos):
+        self._mousePressedPos = pos
+    
+    def mousePressedPos(self):
+        return self._mousePressedPos
+    
     def mousePressEvent(self, event, pos = None):
-        pass
+        if pos and event.button() == QtCore.Qt.RightButton:
+            #print self._mousePressedPos
+            self._mousePressedPos = pos
 
     def mouseReleaseEvent(self, event, pos = None):
         pass
@@ -113,13 +74,32 @@ class Mode():
         pass
 
     def mouseDragEvent(self, event, pos = None):
-        pass
-
-    def drawLasso(self, painter, rect):
+        if pos and (event.buttons() & QtCore.Qt.RightButton):
+            mode = ZoomInMode(self._view, True)
+            mode.setMousePressedPos(self._mousePressedPos)
+            mode.mouseDragEvent(event, pos)
+            self._view.modeStack.push(mode)
+            
+    def addLasso(self, pos):
+        self._lasso = Lasso(self._view, pos)
+        self._view.scene().addItem(self._lasso)
+        
+    def stretchLasso(self, pos):
+        if not self._lasso:
+            self.addLasso(self._mousePressedPos)
+        self._lasso.stretchTo(pos)
+    
+    def lassoRect(self):
+        return self._lasso and self._lasso.rect()
+    
+    def removeLasso(self):
         if self._lasso:
-            self._lasso.draw(painter, rect)
-
-
+            self._view.scene().removeItem(self._lasso)
+            self._lasso = None
+    
+    def name(self):
+        return "Abstract"
+        
 class ItemBuffer(list):
     def __init__(self, items):
         list.__init__(self, items)
@@ -172,9 +152,9 @@ class Selection(set):
             i.update()
 
 class SelectMode(Mode):
-    def __init__(self, view):
+    def __init__(self, view, transient=False):
+        Mode.__init__(self, view, transient)
         self._optionPanel = SelectToolOptions()
-        Mode.__init__(self, view)
         self._selection = Selection()
         self._toBeSelected = None
         self._preSelected = None
@@ -202,20 +182,6 @@ class SelectMode(Mode):
         if self._toBeSelected:
             self._toBeSelected.next()
 
-    def closeLasso(self):
-        lasso = self._lasso
-        if lasso and lasso.rect():
-            items = self._view.scene().items(lasso.rect(), QtCore.Qt.ContainsItemShape)
-            for i in items:
-                if not i.parentItem():
-                    #print i
-                    self._selection.add(i)
-                    #self._selection.add(i.model)
-                    #i.model.setSelected(True)
-            #self._view.fitRect(lasso.rect())
-            lasso.remove()
-            self._lasso = None
-
     def addMode(self):
         return self._modifiers & QtCore.Qt.ShiftModifier
             
@@ -227,19 +193,20 @@ class SelectMode(Mode):
             self._modifiers = event.modifiers()
             #print "pressed", pos
             self._mousePressedPos = pos
+            #self.addLasso(pos)
+        else:
+            Mode.mousePressEvent(self, event, pos)
 
     def mouseReleaseEvent(self, event, pos = None):
         if pos and event.button() == QtCore.Qt.LeftButton:
             self._modifiers = event.modifiers()
             #print "released", pos
-            if self._lasso and self._lasso.rect():
-                items = self._view.scene().items(self._lasso.rect(), QtCore.Qt.ContainsItemShape)
+            if self.lassoRect():
+                items = self._view.scene().items(self.lassoRect(), QtCore.Qt.ContainsItemShape)
                 items = filter(lambda i: not(i.parentItem()), items)
                 #items = map(lambda i: i.model, items)
                 self._selection = None # forces destruction
                 self._selection = Selection(items)
-                self._lasso.remove()
-                self._lasso = None
                 self._toBeSelected = None
             else:
                 if not self._toBeSelected:
@@ -260,9 +227,12 @@ class SelectMode(Mode):
                 #if item:
                 #    self._preSelected = item
                 #    item.setPreSelected(True)
-
+            self.removeLasso()
+        else:
+            Mode.mouseReleaseEvent(self, event, pos)
+        
     def mouseMoveEvent(self, event, pos = None):
-        if pos:
+        if pos and (event.buttons() & QtCore.Qt.LeftButton):
             self._modifiers = event.modifiers()
             #self._toBeSelected = None
             self.findItems(pos)
@@ -275,51 +245,53 @@ class SelectMode(Mode):
             #    if item:
             #        self._preSelected = item
             #        item.setPreSelected(True)
+        else:
+            Mode.mouseMoveEvent(self, event, pos)
 
     def mouseDragEvent(self, event, pos = None):
-        if pos: # and event.button() == QtCore.Qt.LeftButton:
+        if pos and (event.buttons() & QtCore.Qt.LeftButton):
             self._modifiers = event.modifiers()
             #print "dragged", pos
 
-            if self._lasso:
-                self._lasso.stretchTo(pos)
-            else:
-                #if event.button() == QtCore.Qt.LeftButton:
-                self._lasso = Lasso(self._view, self._mousePressedPos)
+            self.stretchLasso(pos)
+        else:
+            Mode.mouseDragEvent(self, event, pos)
+
+    def name(self):
+        return "Select"
 
 
 class ZoomInMode(Mode):
-    def __init__(self, view):
-        Mode.__init__(self, view)
+    def __init__(self, view, transient=False):
+        Mode.__init__(self, view, transient)
         #print "Select the area to zoom in"
         self._prevCursor = self.view().cursor()
         #self.view().setCursor(QtCore.Qt.PointingHandCursor)
 
-    def exitMode(self):
-        Mode.exitMode(self)
-        self.view().setCursor(self._prevCursor)
-
     def mousePressEvent(self, event, pos = None):
-        if pos and event.button() == QtCore.Qt.LeftButton:
-            if not self._lasso:
-                self._lasso = Lasso(self._view, pos)
-
+        #if pos and event.button() == QtCore.Qt.LeftButton:
+            self.addLasso(pos)
+        #else:
+        #    Mode.mousePressEvent(self, event, pos)
 
     def mouseReleaseEvent(self, event, pos = None):
-        if pos and event.button() == QtCore.Qt.LeftButton:
-            lasso = self._lasso
-            if lasso and lasso.rect():
-                self._view.fitRect(lasso.rect())
-                lasso.remove()
-                self._lasso = None
+        #if pos and event.button() == QtCore.Qt.LeftButton:
+            if self.lassoRect():
+                self._view.fitRect(self.lassoRect())
+                self.removeLasso()
+            if self.transient():
                 self._view.modeStack.popMode()
+        #else:
+        #    Mode.mouseReleaseEvent(self, event, pos)
 
     def mouseDragEvent(self, event, pos = None):
-        #if pos and event.button() == QtCore.Qt.LeftButton:
-        if self._lasso:
-            self._lasso.stretchTo(pos)
+        #if pos and (event.buttons() & QtCore.Qt.LeftButton):
+            self.stretchLasso(pos)
+        #else:
+        #    Mode.mouseDragEvent(self, event, pos)
 
-
+    def name(self):
+        return "Zoom In"
 
 class ModeStack(list):
     def __init__(self, view):
@@ -332,6 +304,7 @@ class ModeStack(list):
 
     def push(self, mode):
         self.append(mode)
+        print "In \"" + mode.name() + "\" mode"
 
     def pushZoomInMode(self):
         self.push(ZoomInMode(self._view))
@@ -340,6 +313,7 @@ class ModeStack(list):
         if not self.isEmpty():
             mode = self.pop()
             mode.exitMode()
+            print "In \"" + self.top().name() + "\" mode"
             return mode
         else:
             return None

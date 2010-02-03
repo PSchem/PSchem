@@ -156,7 +156,6 @@ class DesignView(QtGui.QGraphicsView):
     def drawForeground(self, painter, rect):
         #painter.setCompositionMode(QtGui.QPainter.RasterOp_SourceXorDestination)
         #painter.setCompositionMode(QtGui.QPainter.CompositionMode_Xor)
-        self.modeStack.top().drawLasso(painter, rect)
         if self._cursor:
             self._cursor.draw(painter)
 

@@ -263,7 +263,7 @@ class CustomPathItem(BaseItem):
         self.prepareGeometryChange()
         #self.setPath(p)
         self.updateBoundingRect()
-        self.update(self.boundingRect())
+        
 
     def updateBoundingRect(self):
         self._rect = self._path.controlPointRect()
@@ -553,11 +553,17 @@ class InstanceItem(BaseItem):
         self._cellView.installUpdateHook(self)
         
     def paint(self, painter, option, widget):
-        if not self.parentItem() and self.selected():
-            pen = self.model.layers().layerByName('selection', 'drawing').view().pen()
-            painter.setPen(pen)
-            #painter.drawRect(self.boundingRect())
-            painter.drawPath(self.shape())
+        if not self.parentItem():
+            if self.selected():
+                pen = self.model.layers().layerByName('selection', 'drawing').view().pen()
+                painter.setPen(pen)
+                #painter.drawRect(self.boundingRect())
+                painter.drawPath(self.shape())
+            if self.preSelected():
+                pen = self.model.layers().layerByName('preselection', 'drawing').view().pen()
+                painter.setPen(pen)
+                #painter.drawRect(self.boundingRect())
+                painter.drawPath(self.shape())
 
 
     #def installTransformChangeHook(self, cb):

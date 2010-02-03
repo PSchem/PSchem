@@ -101,32 +101,45 @@ class Mode():
         return "Abstract"
         
 class ItemBuffer(list):
-    def __init__(self, items):
+    def __init__(self, items, pos=None):
         list.__init__(self, items)
         #print self
-        self._pos = 0
+        self._pos = pos
+        self._pointer = 0
 
     def current(self):
-        if self._pos < len(self):
-            return self[self._pos]
+        if self._pointer < len(self):
+            return self[self._pointer]
         else:
             return None
 
+    def pointer(self):
+        return self._pointer
+
+    def setPointer(self, pointer):
+        #print 'pos', pos
+        if pointer < 0 or len(self) == 0:
+            self._pointer = 0
+            return
+        if pointer < len(self):
+            self._pointer = pointer
+        else:
+            self.setPointer(pointer - len(self))
+
+    def setPointerToUnique(self, coll):
+        j = 0
+        for i in range(0, len(self)):
+            #print str(i) + str(self[i]) + str(self[i] in coll)
+            if not self[i] in coll:
+                break
+            j = j + 1
+        self.setPointer(j)
+        
+    def next(self):
+        self.setPointer(self._pointer + 1)
+    
     def pos(self):
         return self._pos
-
-    def setPos(self, pos):
-        #print 'pos', pos
-        if pos < 0 or len(self) == 0:
-            self._pos = 0
-            return
-        if pos < len(self):
-            self._pos = pos
-        else:
-            self.setPos(pos - len(self))
-
-    def next(self):
-        self.setPos(self._pos + 1)
 
 class Selection(set):
     def __init__(self, items=[]):
@@ -145,8 +158,21 @@ class Selection(set):
         item.setSelected(False)
         item.update()
         
+    def __ior__(self, items):
+        set.__ior__(self, items)
+        for i in items:
+            i.setSelected(True)
+            i.update()
+        return self
+
+    def __isub__(self, items):
+        set.__isub__(self, items)
+        for i in items:
+            i.setSelected(False)
+            i.update()
+        return self
+
     def __del__(self):
-        pass
         for i in self:
             i.setSelected(False)
             i.update()
@@ -159,19 +185,27 @@ class SelectMode(Mode):
         self._toBeSelected = None
         self._preSelected = None
         self._modifiers = None
+        self._timer = QtCore.QTimer()
+        self._timer.setSingleShot(True)
+        self._timer.setInterval(50)
+        self._view.connect(self._timer, QtCore.SIGNAL("timeout()"), self.updatePreSelected)
 
-    def findItems(self, pos):
+    def findItems(self, pos, modifiers=None):
         items = self._view.scene().items(pos)
         items = filter(lambda i: not(i.parentItem()), items)
         #items = map(lambda i: i.model, items)
         items = set(items)
-        if self.addMode():
-            self._toBeSelected = ItemBuffer(items - self._selection)
-        elif self.subtractMode():
-            self._toBeSelected = ItemBuffer(items & self._selection)
+        if self.addMode(modifiers):
+            return ItemBuffer(items - self._selection, pos)
+        elif self.subtractMode(modifiers):
+            return ItemBuffer(items & self._selection, pos)
         else:
-            self._toBeSelected = ItemBuffer(items)
-
+            itemsBuf = ItemBuffer(items, pos)
+            itemsBuf.setPointerToUnique(self._selection)
+            #print '->' + str(self._selection)
+            #print '->' + str(itemsBuf) + str(itemsBuf.pointer())
+            return itemsBuf
+            
     def currentItem(self):
         item = None
         if self._toBeSelected:
@@ -182,18 +216,16 @@ class SelectMode(Mode):
         if self._toBeSelected:
             self._toBeSelected.next()
 
-    def addMode(self):
-        return self._modifiers & QtCore.Qt.ShiftModifier
+    def addMode(self, modifiers):
+        return modifiers & QtCore.Qt.ShiftModifier
             
-    def subtractMode(self):
-        return self._modifiers & QtCore.Qt.ControlModifier
+    def subtractMode(self, modifiers):
+        return modifiers & QtCore.Qt.ControlModifier
             
     def mousePressEvent(self, event, pos = None):
         if pos and event.button() == QtCore.Qt.LeftButton:
             self._modifiers = event.modifiers()
-            #print "pressed", pos
             self._mousePressedPos = pos
-            #self.addLasso(pos)
         else:
             Mode.mousePressEvent(self, event, pos)
 
@@ -205,46 +237,56 @@ class SelectMode(Mode):
                 items = self._view.scene().items(self.lassoRect(), QtCore.Qt.ContainsItemShape)
                 items = filter(lambda i: not(i.parentItem()), items)
                 #items = map(lambda i: i.model, items)
-                self._selection = None # forces destruction
-                self._selection = Selection(items)
+                if self.addMode(event.modifiers()):
+                    self._selection |= items
+                elif self.subtractMode(event.modifiers()):
+                    self._selection -= items
+                else:
+                    self._selection = Selection(items)
                 self._toBeSelected = None
+                self.removeLasso()
+                self.updatePreSelected()
             else:
-                if not self._toBeSelected:
-                    self.findItems(pos)
+                if not self._toBeSelected or self._toBeSelected.pos() != pos:
+                    self._toBeSelected = self.findItems(pos, event.modifiers())
                 item = self.currentItem()
-                if not self.addMode() and not self.subtractMode():
+                if not self.addMode(event.modifiers()) and not self.subtractMode(event.modifiers()):
                     self._selection = None
                     self._selection = Selection()
-                #if self._preSelected:
-                #    self._preSelected.setPreSelected(False)
                 if item:
-                    if self.subtractMode():
+                    if self.subtractMode(event.modifiers()):
                         self._selection.remove(item)
                     else:
                         self._selection.add(item)
                 self.nextItem()
                 item = self.currentItem()
-                #if item:
-                #    self._preSelected = item
-                #    item.setPreSelected(True)
-            self.removeLasso()
+                self.updatePreSelected()
         else:
             Mode.mouseReleaseEvent(self, event, pos)
+
+    def updatePreSelected(self):
+        #items = self.findItems(pos, event.modifiers())
+        items = self.findItems(self._pos, self._modifiers)
+        #item = self.currentItem()
+        item = None
+        if len(items) > 0:
+            item = items[0]
+        #print item, self._preSelected
         
-    def mouseMoveEvent(self, event, pos = None):
-        if pos and (event.buttons() & QtCore.Qt.LeftButton):
-            self._modifiers = event.modifiers()
-            #self._toBeSelected = None
-            self.findItems(pos)
-            item = self.currentItem()
-            #print item, self._preSelected
+        if item != self._preSelected:
+            if self._preSelected:
+                self._preSelected.setPreSelected(False)
+                self._preSelected.update()
+            if item:
+                self._preSelected = item
+                item.setPreSelected(True)
+                item.update()
             
-            #if item != self._preSelected:
-            #    if self._preSelected:
-            #        self._preSelected.setPreSelected(False)
-            #    if item:
-            #        self._preSelected = item
-            #        item.setPreSelected(True)
+    def mouseMoveEvent(self, event, pos = None):
+        if pos:
+            self._pos = pos
+            self._modifiers = event.modifiers()
+            self._timer.start()
         else:
             Mode.mouseMoveEvent(self, event, pos)
 
@@ -305,6 +347,9 @@ class ModeStack(list):
     def push(self, mode):
         self.append(mode)
         print "In \"" + mode.name() + "\" mode"
+
+    def pushSelectMode(self):
+        self.push(SelectMode(self._view))
 
     def pushZoomInMode(self):
         self.push(ZoomInMode(self._view))

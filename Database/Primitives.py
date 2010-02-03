@@ -837,6 +837,16 @@ class CellView():
     def parent(self):
         return self._parent
 
+    def cell(self):
+        return self._parent
+        
+    def library(self):
+        return self._parent.library()
+        
+    def database(self):
+        return self._parent.database()
+        
+        
     def remove(self):
         for e in list(self._elems):
             self.removeElem(e)
@@ -999,6 +1009,11 @@ class Cell():
     def parent(self):
         return self._parent
 
+    def library(self):
+        return self._parent
+        
+    def database(self):
+        return self._parent.database()
 
 class Library():
     def __init__(self, name):
@@ -1011,7 +1026,6 @@ class Library():
         self._cells.add(cell)
         cell.setParent(self)
         self._cellNames[cell.name()] = cell
-
 
     def cells(self):
         return self._cells
@@ -1039,6 +1053,9 @@ class Library():
         self._parent = parent
         
     def parent(self):
+        return self._parent
+        
+    def database(self):
         return self._parent
 
     

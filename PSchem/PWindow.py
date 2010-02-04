@@ -50,7 +50,7 @@ class PWindow(QtGui.QMainWindow):
 
         self._currentView = None
 
-        self.database = Primitives.Database()
+        self.database = Database()
 
         #print os.path.join(os.getcwd(), 'pschem.ini')
         self.settings = QtCore.QSettings('pschem', 'pschem')
@@ -465,6 +465,14 @@ class PWindow(QtGui.QMainWindow):
                     lambda: self.controller.execute(self.zoomInCmd))
 
 
+        self.moveAct = QtGui.QAction(self.tr("Move"), self)
+        self.moveAct.setStatusTip(self.tr("Move Mode"))
+        self.moveAct.setShortcut(self.tr("M"))
+        self.moveCmd = Command("currentView().modeStack.pushMoveMode()")
+        self.connect(self.moveAct, QtCore.SIGNAL("triggered()"),
+                    lambda: self.controller.execute(self.moveCmd))
+
+
         self.zoomPrevAct = QtGui.QAction(self.tr("Previews View"), self)
         self.zoomPrevAct.setStatusTip(self.tr("Previews View"))
         self.zoomPrevAct.setShortcut(self.tr("Shift+Z"))
@@ -602,6 +610,7 @@ class PWindow(QtGui.QMainWindow):
         self.databaseMenu.addAction(self.toggleDocksAct)
         self.databaseMenu.addAction(self.zoomInAct)
         self.databaseMenu.addAction(self.zoomPrevAct)
+        self.databaseMenu.addAction(self.moveAct)
         self.databaseMenu.addAction(self.quitModeAct)
 
         self.windowsMenu = QtGui.QMenu(self.tr("&Windows"))

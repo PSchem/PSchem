@@ -23,8 +23,9 @@ from PyQt4 import QtCore, QtGui
 
 from PSchem.ToolOptions import *
 from PSchem.Lasso import *
+from PSchem.Selection import *
 
-class Mode():
+class SelectMode():
     def __init__(self, view, transient=False):
         self._view = view
         self._optionPanel = None
@@ -35,10 +36,26 @@ class Mode():
         self._lasso = None
         self._transient = transient
 
+        self._optionPanel = SelectToolOptions()
+        self._selection = Selection()
+        self._toBeSelected = None
+        self._preSelected = None
+        self._modifiers = None
+        self._pos = None
+        self._timer = QtCore.QTimer()
+        self._timer.setSingleShot(True)
+        self._timer.setInterval(50)
+        self._view.connect(self._timer, QtCore.SIGNAL("timeout()"), self.updatePreSelected)
+
+    def setup(self, pos=None):
+        self._pos = pos
+        
     def view(self):
         return self._view
 
     def exitMode(self):
+        if self._preSelected:
+            self._preSelected.setPreSelected(False)
         self.removeLasso()
         self.uninstallActions()
 
@@ -62,24 +79,6 @@ class Mode():
     def mousePressedPos(self):
         return self._mousePressedPos
     
-    def mousePressEvent(self, event, pos = None):
-        if pos and event.button() == QtCore.Qt.RightButton:
-            #print self._mousePressedPos
-            self._mousePressedPos = pos
-
-    def mouseReleaseEvent(self, event, pos = None):
-        pass
-
-    def mouseMoveEvent(self, event, pos = None):
-        pass
-
-    def mouseDragEvent(self, event, pos = None):
-        if pos and (event.buttons() & QtCore.Qt.RightButton):
-            mode = ZoomInMode(self._view, True)
-            mode.setMousePressedPos(self._mousePressedPos)
-            mode.mouseDragEvent(event, pos)
-            self._view.modeStack.push(mode)
-            
     def addLasso(self, pos):
         self._lasso = Lasso(self._view, pos)
         self._view.scene().addItem(self._lasso)
@@ -96,103 +95,11 @@ class Mode():
         if self._lasso:
             self._view.scene().removeItem(self._lasso)
             self._lasso = None
-    
-    def name(self):
-        return "Abstract"
-        
-class ItemBuffer(list):
-    def __init__(self, items, pos=None):
-        list.__init__(self, items)
-        #print self
-        self._pos = pos
-        self._pointer = 0
-
-    def current(self):
-        if self._pointer < len(self):
-            return self[self._pointer]
-        else:
-            return None
-
-    def pointer(self):
-        return self._pointer
-
-    def setPointer(self, pointer):
-        #print 'pos', pos
-        if pointer < 0 or len(self) == 0:
-            self._pointer = 0
-            return
-        if pointer < len(self):
-            self._pointer = pointer
-        else:
-            self.setPointer(pointer - len(self))
-
-    def setPointerToUnique(self, coll):
-        j = 0
-        for i in range(0, len(self)):
-            #print str(i) + str(self[i]) + str(self[i] in coll)
-            if not self[i] in coll:
-                break
-            j = j + 1
-        self.setPointer(j)
-        
-    def next(self):
-        self.setPointer(self._pointer + 1)
-    
-    def pos(self):
-        return self._pos
-
-class Selection(set):
-    def __init__(self, items=[]):
-        set.__init__(self, items)
-        for i in items:
-            i.setSelected(True)
-            i.update()
-
-    def add(self, item):
-        set.add(self, item)
-        item.setSelected(True)
-        item.update()
-        
-    def remove(self, item):
-        set.remove(self, item)
-        item.setSelected(False)
-        item.update()
-        
-    def __ior__(self, items):
-        set.__ior__(self, items)
-        for i in items:
-            i.setSelected(True)
-            i.update()
-        return self
-
-    def __isub__(self, items):
-        set.__isub__(self, items)
-        for i in items:
-            i.setSelected(False)
-            i.update()
-        return self
-
-    def __del__(self):
-        for i in self:
-            i.setSelected(False)
-            i.update()
-
-class SelectMode(Mode):
-    def __init__(self, view, transient=False):
-        Mode.__init__(self, view, transient)
-        self._optionPanel = SelectToolOptions()
-        self._selection = Selection()
-        self._toBeSelected = None
-        self._preSelected = None
-        self._modifiers = None
-        self._timer = QtCore.QTimer()
-        self._timer.setSingleShot(True)
-        self._timer.setInterval(50)
-        self._view.connect(self._timer, QtCore.SIGNAL("timeout()"), self.updatePreSelected)
 
     def findItems(self, pos, modifiers=None):
         items = self._view.scene().items(pos)
         items = filter(lambda i: not(i.parentItem()), items)
+        items = filter(lambda i: not(isinstance(i, Lasso)), items)
         #items = map(lambda i: i.model, items)
         items = set(items)
         if self.addMode(modifiers):
@@ -223,15 +130,11 @@ class SelectMode(Mode):
         return modifiers & QtCore.Qt.ControlModifier
             
     def mousePressEvent(self, event, pos = None):
-        if pos and event.button() == QtCore.Qt.LeftButton:
-            self._modifiers = event.modifiers()
+        if pos:
             self._mousePressedPos = pos
-        else:
-            Mode.mousePressEvent(self, event, pos)
 
     def mouseReleaseEvent(self, event, pos = None):
         if pos and event.button() == QtCore.Qt.LeftButton:
-            self._modifiers = event.modifiers()
             #print "released", pos
             if self.lassoRect():
                 items = self._view.scene().items(self.lassoRect(), QtCore.Qt.ContainsItemShape)
@@ -261,12 +164,28 @@ class SelectMode(Mode):
                 self.nextItem()
                 item = self.currentItem()
                 self.updatePreSelected()
-        else:
-            Mode.mouseReleaseEvent(self, event, pos)
+
+    def mouseMoveEvent(self, event, pos = None):
+        if pos:
+            self._pos = pos
+            self._modifiers = event.modifiers()
+            self._timer.start()
+
+    def mouseDragEvent(self, event, pos = None):
+        if pos and (event.buttons() & QtCore.Qt.LeftButton):
+            #print "dragged", pos
+            self.stretchLasso(pos)
+        elif pos and (event.buttons() & QtCore.Qt.RightButton):
+            mode = ZoomInMode(self._view, True)
+            mode.setMousePressedPos(self._mousePressedPos)
+            mode.mouseDragEvent(event, pos)
+            self._view.modeStack.push(mode)
 
     def updatePreSelected(self):
+        items = []
         #items = self.findItems(pos, event.modifiers())
-        items = self.findItems(self._pos, self._modifiers)
+        if self._pos:
+            items = self.findItems(self._pos, self._modifiers)
         #item = self.currentItem()
         item = None
         if len(items) > 0:
@@ -282,83 +201,135 @@ class SelectMode(Mode):
                 item.setPreSelected(True)
                 item.update()
             
-    def mouseMoveEvent(self, event, pos = None):
-        if pos:
-            self._pos = pos
-            self._modifiers = event.modifiers()
-            self._timer.start()
-        else:
-            Mode.mouseMoveEvent(self, event, pos)
-
-    def mouseDragEvent(self, event, pos = None):
-        if pos and (event.buttons() & QtCore.Qt.LeftButton):
-            self._modifiers = event.modifiers()
-            #print "dragged", pos
-
-            self.stretchLasso(pos)
-        else:
-            Mode.mouseDragEvent(self, event, pos)
-
     def name(self):
         return "Select"
 
 
-class ZoomInMode(Mode):
+class ZoomInMode(SelectMode):
     def __init__(self, view, transient=False):
-        Mode.__init__(self, view, transient)
-        #print "Select the area to zoom in"
-        self._prevCursor = self.view().cursor()
-        #self.view().setCursor(QtCore.Qt.PointingHandCursor)
+        SelectMode.__init__(self, view, transient)
 
     def mousePressEvent(self, event, pos = None):
-        #if pos and event.button() == QtCore.Qt.LeftButton:
-            self.addLasso(pos)
-        #else:
-        #    Mode.mousePressEvent(self, event, pos)
+        if pos: # and event.button() == QtCore.Qt.LeftButton:
+            self._mousePressedPos = pos
+        else:
+            SelectMode.mousePressEvent(self, event, pos)
 
     def mouseReleaseEvent(self, event, pos = None):
-        #if pos and event.button() == QtCore.Qt.LeftButton:
+        if pos: # and event.button() == QtCore.Qt.LeftButton:
             if self.lassoRect():
                 self._view.fitRect(self.lassoRect())
                 self.removeLasso()
             if self.transient():
                 self._view.modeStack.popMode()
-        #else:
-        #    Mode.mouseReleaseEvent(self, event, pos)
+        else:
+            SelectMode.mouseReleaseEvent(self, event, pos)
 
     def mouseDragEvent(self, event, pos = None):
-        #if pos and (event.buttons() & QtCore.Qt.LeftButton):
+        if pos: # and (event.buttons() & QtCore.Qt.LeftButton):
             self.stretchLasso(pos)
-        #else:
-        #    Mode.mouseDragEvent(self, event, pos)
+        else:
+            SelectMode.mouseDragEvent(self, event, pos)
 
     def name(self):
         return "Zoom In"
 
+class MoveMode(SelectMode):
+    def __init__(self, view, transient=False):
+        SelectMode.__init__(self, view, transient)
+
+    def setup(self, pos=None):
+        if pos:
+            self._refPoint = pos
+        else:
+            self.selectRefPoint()
+        
+    def selectRefPoint(self):
+        print "Select a Ref Point"
+        self._selectRefPoint = True
+        
+    def selectDest(self):
+        print "Select Destination"
+        self._selectRefPoint = False
+
+    def refPoint(self):
+        return self._refPoint
+        
+    def mousePressEvent(self, event, pos = None):
+        if pos: # and event.button() == QtCore.Qt.LeftButton:
+            self._mousePressedPos = pos
+
+    def mouseReleaseEvent(self, event, pos = None):
+        if pos: # and event.button() == QtCore.Qt.LeftButton:
+            if self._selectRefPoint:
+                self._refPoint = pos
+                print "x: "+str(pos.x())+",\t y: "+str(pos.y())
+                self.selectDest()
+            else:
+                print "x: "+str(pos.x())+",\t y: "+str(pos.y())
+                if self.transient():
+                    self._view.modeStack.popMode()
+                else:
+                    self.selectRefPoint()
+
+    def mouseDragEvent(self, event, pos = None):
+        pass
+
+    def mouseMoveEvent(self, event, pos = None):
+        pass
+
+    def name(self):
+        return "Move"
+
+class RefPointMode(SelectMode):
+    def __init__(self, view, transient=True):
+        SelectMode.__init__(self, view, transient)
+        self._refPoint = None
+        
+    def mouseReleaseEvent(self, event, pos = None):
+        if pos and event.button() == QtCore.Qt.LeftButton:
+            self._refPoint = pos
+            if self.transient():
+                self._view.modeStack.popMode()
+        else:
+            SelectMode.mouseReleaseEvent(self, event, pos)
+
+    def refPoint(self):
+        return self._refPoint
+        
+    def name(self):
+        return "Select Ref Point"
+            
 class ModeStack(list):
     def __init__(self, view):
         list.__init__(self)
         self._view = view
-        self.push(SelectMode(view))
+        self.append(SelectMode(view))
 
     def isEmpty(self):
         return len(self) <= 1
 
     def push(self, mode):
-        self.append(mode)
-        print "In \"" + mode.name() + "\" mode"
+        #self.top().exitMode()
+        if mode.name() != self.top().name():
+            self.append(mode)
+            print "In a " + mode.name() + " mode"
+            mode.setup()
 
     def pushSelectMode(self):
         self.push(SelectMode(self._view))
 
     def pushZoomInMode(self):
-        self.push(ZoomInMode(self._view))
+        self.push(ZoomInMode(self._view, True))
+
+    def pushMoveMode(self):
+        self.push(MoveMode(self._view, True))
 
     def popMode(self):
         if not self.isEmpty():
             mode = self.pop()
             mode.exitMode()
-            print "In \"" + self.top().name() + "\" mode"
+            print "In a " + self.top().name() + " mode"
             return mode
         else:
             return None

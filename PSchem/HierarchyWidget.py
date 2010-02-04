@@ -19,6 +19,7 @@
 
 from PyQt4 import QtCore, QtGui
 from Database.Primitives import *
+from Database.Cells import *
 
 class HierarchyModel(QtCore.QAbstractItemModel):
     def __init__(self, database, parent=None):

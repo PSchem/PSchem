@@ -60,7 +60,7 @@ class TextItemInt(QtGui.QGraphicsSimpleTextItem):
             QtGui.QGraphicsSimpleTextItem.paint(
                 self, painter, option, widget)
         #if self.parentItem().selected():
-        #    pen = self.parentItem().model.layers().layerByName('selection', 'drawing').view().pen()
+        #    pen = QtGui.QPen(self.parentItem().model.layers().layerByName('selection', 'drawing').view().pen())
         #    painter.setPen(pen)
         #    painter.drawRect(self.boundingRect())
 
@@ -173,7 +173,7 @@ class TextItem(BaseItem):
         #matrixItem = QtGui.QTransform(
         #    1, 0, 0, -1, 0, ascent)
         #matrixItem.rotate(angle)
-        brush = self.model.layer().view().fontBrush()
+        brush = QtGui.QBrush(self.model.layer().view().fontBrush())
         self._labelItem.setBrush(brush)
         #self._labelItem.prepareGeometryChange()
         #self._labelItem.setTransform(matrixItem)
@@ -203,7 +203,7 @@ class TextItem(BaseItem):
         #painter.drawLine(-2, 0, 2, 0)
         #painter.drawLine(0, -2, 0, 2)
         if not self.parentItem() and self.selected():
-            pen = self.model.layers().layerByName('selection', 'drawing').view().pen()
+            pen = QtGui.QPen(self.model.layers().layerByName('selection', 'drawing').view().pen())
             painter.setPen(pen)
             #painter.drawRect(self._labelItem.boundingRect())
             painter.drawRect(self.boundingRect())
@@ -238,7 +238,7 @@ class CustomPathItem(BaseItem):
                 pen.setWidth(max(scale*width, pixelWidth))
 
         painter.setPen(pen)
-        brush = self.model.layer().view().brush()
+        brush = QtGui.QBrush(self.model.layer().view().brush())
         brush.setMatrix(painter.worldMatrix().inverted()[0])
         painter.setBrush(brush)
         painter.setRenderHint(QtGui.QPainter.Antialiasing, self._aa)
@@ -300,13 +300,13 @@ class LineItem(BaseItem):
                 pen.setWidth(max(scale*width, pixelWidth))
 
         painter.setPen(pen)
-        brush = self.model.layer().view().brush()
+        brush = QtGui.QBrush(self.model.layer().view().brush())
         brush.setMatrix(painter.worldMatrix().inverted()[0])
         painter.setBrush(brush)
         painter.setRenderHint(QtGui.QPainter.Antialiasing, self._aa)
         painter.drawLine(self._lineShape)
         if not self.parentItem() and self.preSelected():
-            pen = self.model.layers().layerByName('preselection', 'drawing').view().pen()
+            pen = QtGui.QPen(self.model.layers().layerByName('preselection', 'drawing').view().pen())
             if width > 0:
                 if self._aa:
                     pen.setWidthF(max(pixelWidth/scale, width))
@@ -371,13 +371,13 @@ class RectItem(BaseItem):
                 pen.setWidth(max(scale*width, pixelWidth))
 
         painter.setPen(pen)
-        brush = self.model.layer().view().brush()
+        brush = QtGui.QBrush(self.model.layer().view().brush())
         brush.setMatrix(painter.worldMatrix().inverted()[0])
         painter.setBrush(brush)
         painter.setRenderHint(QtGui.QPainter.Antialiasing, self._aa)
         painter.drawRect(self._rectShape)
         if not self.parentItem() and self.selected():
-            pen = self.model.layers().layerByName('selection', 'drawing').view().pen()
+            pen = QtGui.QPen(self.model.layers().layerByName('selection', 'drawing').view().pen())
             painter.setPen(pen)
             painter.drawRect(self.boundingRect())
 
@@ -429,7 +429,7 @@ class EllipseItem(BaseItem):
                 pen.setWidth(max(scale*width, pixelWidth))
 
         painter.setPen(pen)
-        brush = self.model.layer().view().brush()
+        brush = QtGui.QBrush(self.model.layer().view().brush())
         brush.setMatrix(painter.worldMatrix().inverted()[0])
         painter.setBrush(brush)
         #painter.setRenderHint(QtGui.QPainter.Antialiasing, self._aa)
@@ -437,9 +437,9 @@ class EllipseItem(BaseItem):
         #painter.setPen(self.pen())
         painter.drawEllipse(self._ellipseRect)
         if not self.parentItem() and self.selected():
-            pen = self.model.layers().layerByName('selection', 'drawing').view().pen()
+            pen = QtGui.QPen(self.model.layers().layerByName('selection', 'drawing').view().pen())
             painter.setPen(pen)
-            brush = self.model.layers().layerByName('selection', 'drawing').view().brush()
+            brush = QtGui.QBrush(self.model.layers().layerByName('selection', 'drawing').view().brush())
             painter.setBrush(brush)
             painter.drawRect(self.boundingRect())
 
@@ -497,14 +497,14 @@ class EllipseArcItem(BaseItem):
         ##painter.setPen(self.pen)
         painter.drawArc(self._ellipseRect, self._startAngle, self._spanAngle)
         painter.setPen(QtGui.QPen())
-        brush = self.model.layer().view().brush()
+        brush = QtGui.QBrush(self.model.layer().view().brush())
         brush.setMatrix(painter.worldMatrix().inverted()[0])
         painter.setBrush(brush)
         #painter.drawRect(self.boundingRect())
         if not self.parentItem() and self.selected():
-            pen = self.model.layers().layerByName('selection', 'drawing').view().pen()
+            pen = QtGui.QPen(self.model.layers().layerByName('selection', 'drawing').view().pen())
             painter.setPen(pen)
-            brush = self.model.layers().layerByName('selection', 'drawing').view().brush()
+            brush = QtGui.QBrush(self.model.layers().layerByName('selection', 'drawing').view().brush())
             painter.setBrush(brush)
             painter.drawRect(self.boundingRect())
 
@@ -555,12 +555,12 @@ class InstanceItem(BaseItem):
     def paint(self, painter, option, widget):
         if not self.parentItem():
             if self.selected():
-                pen = self.model.layers().layerByName('selection', 'drawing').view().pen()
+                pen = QtGui.QPen(self.model.layers().layerByName('selection', 'drawing').view().pen())
                 painter.setPen(pen)
                 #painter.drawRect(self.boundingRect())
                 painter.drawPath(self.shape())
             if self.preSelected():
-                pen = self.model.layers().layerByName('preselection', 'drawing').view().pen()
+                pen = QtGui.QPen(self.model.layers().layerByName('preselection', 'drawing').view().pen())
                 painter.setPen(pen)
                 #painter.drawRect(self.boundingRect())
                 painter.drawPath(self.shape())

@@ -111,4 +111,7 @@ class GraphicsScene(QtGui.QGraphicsScene):
         self.addItem(instance)
         instance.updateMatrix()
 
+    #def mouseMoveEvent(self, event):
+    #    print str(event.pos().x()) + ' ' + str(event.pos().y())
+    #    QtGui.QGraphicsScene.mouseMoveEvent(self, event)
 

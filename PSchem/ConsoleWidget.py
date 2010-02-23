@@ -21,14 +21,55 @@ import sys, traceback
 from PyQt4 import QtCore, QtGui
 
 try:
-    from PSchem.Controller import Command
+    from Controller import *
 except ImportError:
     pass
 
 import os
 import time
 import re
+from collections import deque
 
+
+class Command():
+    pstrip = re.compile(r'^(>>> |\.\.\. |--- )?')
+    pfirst = re.compile(r'^\S+.*\:$')
+    pempty = re.compile(r'^\s*$')
+    pindented = re.compile(r'^\s+.*$')
+
+    def __init__(self, commandStr = '', type = 'single'):
+        self._text = commandStr
+        self._type = type
+        self._compiled = None
+        
+    def compiled(self):
+        #print 'compile: ' + self.text()
+        if (not self._compiled):
+            self._compiled = compile(self._text, "console", self._type)
+        return self._compiled
+        
+    def text(self):
+        #text = Controller.pstrip.sub('', self._str)
+        return self._text
+
+    def lines(self):
+        return self.text().splitlines(True)
+
+    def setType(self, type):
+        self._type = type
+        
+    def __repr__(self):
+        lines = self.lines()
+        if len(lines) == 0:
+            return '>>> '
+        txt='>>> '+lines[0]
+        if len(lines) > 1:
+            for l in lines[1:]:
+                txt += ('... '+l)
+            if not self.pempty.search(lines[-1]):
+                txt += '... \n'
+        return txt
+        
 class StdinWrap():
     def __init__(self, console):
         self.console = console
@@ -52,6 +93,7 @@ class StdoutWrap():
         self.console.write(txt)
         if self.stream.fileno() >= 0: # for Windows (pythonw.exe) compatibility
             self.stream.write(txt)
+        QtGui.qApp.processEvents()
 
     def writeSync(self, txt, markPos = False):
         self.console.setSynchronous(True, markPos)
@@ -59,9 +101,16 @@ class StdoutWrap():
         self.console.setSynchronous(False)
         if self.stream.fileno() >= 0:
             self.stream.write(txt)
+        QtGui.qApp.processEvents()
 
     def isatty(self):
         return True
+        
+    def pushSync(self, flag):
+        self.console.pushSynchronous(flag)
+
+    def popSync(self):
+        self.console.popSynchronous()
 
 class StderrWrap():
     def __init__(self, console):
@@ -72,13 +121,14 @@ class StderrWrap():
         self.console.writeErr(txt)
         if self.stream.fileno() >= 0:
             self.stream.write(txt)
+        QtGui.qApp.processEvents()
 
     def isatty(self):
         return True
 
-class History(list):    
+class History(deque):    
     def __init__(self):
-        list.__init__(self)
+        deque.__init__(self)
         self.pointer = 0
         self._transient = None
 
@@ -118,22 +168,27 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
     pfirst = re.compile(r'^\S+.*\:$')
     pempty = re.compile(r'^\s*$')
     pindented = re.compile(r'^\s+.*$')
+    penter = re.compile(r'\n$')
 
     def __init__(self, window=None):
         QtGui.QPlainTextEdit.__init__(self)
+        #QtGui.QTextEdit.__init__(self)
+
+        self._lastCursorPos = None
+        self._commandCursorPos = 0
+        self._printCursorPos = 0
 
         self.inHistory = False
         self._inReadline = False
-        self.history = History()
+        self._history = History()
         #self.setReadOnly(True)
         self.window = window
         #self.window = None
-        self.buffer = u''
-        self._asyncCursorPos = None
-        self._editCursorPos = None
-        self._lastCursorPos = None
-        self._synchronous = False
+        self._buffer = []
         
+        self._synchronous = True
+        self._syncFlag = False
+                
         # font
         self.defaultFormat = self.currentCharFormat()
         self.defaultFormat.setFontFamily("Courier")
@@ -141,6 +196,9 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
         self.setCurrentCharFormat(self.defaultFormat)
 
         self.setLineWrapMode(QtGui.QPlainTextEdit.NoWrap)
+        
+        self.setMaximumBlockCount(10000) #arbitrary limit on number of lines
+        self.setUndoRedoEnabled(False)
         
         sys.stdout = StdoutWrap(self)
         #sys.stderr = StderrWrap(self)
@@ -156,22 +214,39 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
 
         print self._pythonInfo()
         
-        try:
-            sys.ps1
-        except AttributeError:
-            sys.ps1 = '>>> '
+        #try:
+        #    sys.ps1
+        #except AttributeError:
+        #    sys.ps1 = '>>> '
 
-        try:
-            sys.ps2
-        except AttributeError:
-            sys.ps2 = '... '
+        #try:
+        #    sys.ps2
+        #except AttributeError:
+        #    sys.ps2 = '... '
 
-        sys.stdout.writeSync(sys.ps1, True)
+        self._commandCursorPos = self.textCursor().position()
+        self.textCursor().insertText('>>> ')
+        
+    def printCursors(self):
+        pos1 = self._commandCursorPos
+        pos2 = self.textCursor().position()
+        print [pos1, pos2]
+
+    def controller(self):
+        if self.window:
+            return self.window.controller
+        
+    def history(self):
+        return self._history
 
     def _pythonInfo(self):
         return 'Python %s on %s\n' % (sys.version, sys.platform) + \
+            'PyQt4 v.%s, Qt4 v.%s\n' % (QtCore.PYQT_VERSION_STR, QtCore.QT_VERSION_STR) + \
             'Type "help", "copyright", "credits" or "license" for more information.\n'
         
+        
+    def inReadline(self):
+        return self._inReadline
         
     def contextMenuEvent(self,ev):
         """
@@ -182,6 +257,9 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
         self.menu.popup(ev.globalPos())
         ev.accept()
 
+    def execute(self, cmd, echo = True):
+        self._history.push(cmd)
+        self.controller().execute(cmd, echo)
 
     def setSynchronous(self, synchronous, markPos = False):
         if markPos:
@@ -189,102 +267,54 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
             #sys.stdout.stream.write(str(self._asyncCursorPos))
         self._synchronous = synchronous
 
+    def pushSynchronous(self, synchronous, markPos = False):
+        self._syncFlag = self._synchronous
+        self.setSynchronous(synchronous, markPos)
+        
+    def popSynchronous(self):
+        self.setSynchronous(self._syncFlag)
+        
     def write(self, txt):
-        if self._synchronous or not self._asyncCursorPos:
-            self.moveCursor(QtGui.QTextCursor.End)
-            #frmt = QtGui.QTextCharFormat(self.defaultFormat)
-            #frmt.setForeground(QtGui.QBrush(QtCore.Qt.blue))
-            #self.textCursor().insertText(txt, frmt)
+        if self._synchronous:
+            if self._lastCursorPos:
+                self.textCursor().setPosition(self._lastCursorPos)
+                self._lastCursorPos = None
             self.textCursor().insertText(txt, self.defaultFormat)
-            self._editCursorPos = self.textCursor().position()
+            self._printCursorPos = self.textCursor().position()
         else:
-            cursor = self.textCursor()
-            cursor.setPosition(self._asyncCursorPos)
-            self.setTextCursor(cursor)
             frmt = QtGui.QTextCharFormat(self.defaultFormat)
             frmt.setForeground(QtGui.QBrush(QtCore.Qt.gray))
-            self.textCursor().insertText(txt, frmt)
-            #self.textCursor().insertText(txt, self.defaultFormat)
-            self._editCursorPos += self.textCursor().position() - self._asyncCursorPos
-            self._asyncCursorPos = self.textCursor().position()
-        self.moveCursor(QtGui.QTextCursor.End)
+            cursor = QtGui.QTextCursor(self.document())
+            cursor.setPosition(self._commandCursorPos)
+            cursor.insertText(txt, frmt)
+            self._commandCursorPos = cursor.position()
         self.ensureCursorVisible()
 
     def writeErr(self, txt):
         self.write(txt)
 
     def readline(self):
-        text = ''
         self._inReadline = True
         while True:
+            lines = self.commandLines()
+            if len(lines) > 0 and self.penter.search(lines[0]):
+                break
             QtGui.qApp.processEvents()
-            char = self.read(1)
-            if len(char) > 0:
-                #self.setSynchronous(True)
-                #sys.stdout.write(char)
-                #self.setSynchronous(False)
-                text = text + str(char)
-                if char == '\n':
-                    break 
-        self._inReadline = False
-        return str(text)
-            
-
-    def read(self, count=1, acc=''):
-        if acc == '':
-            self.buffer = self.pstrip.sub('', self.buffer)
-        lenBuf = len(self.buffer)
-        if lenBuf >= count:
-            str = acc + self.buffer[0:count]
-            self.buffer = self.buffer[count:lenBuf]
-            return str
-        else:
-            str = acc + self.buffer
-            self.buffer = u''
             time.sleep(0.01)
-            return str
-            #self.read(count - len(str), str)
+        self._inReadline = False
+        #sys.stdout.stream.write(str(lines))
+        sys.stdout.stream.write(lines[0])
+        self.commandClear()
+        return lines[0]
 
-    def parse(self, cmd):
-        #sys.stdout.writeSync(sys.ps1, True)
-        res = None
-        line = cmd.text()
-        line = self.pstrip.sub('', line)
-        empty = self.pempty.search(line)
-        #self._indent = self.pfirst.search(line)
-        if self._indent:
-            if line == '\n':
-                self._indent = False
-                self.setSynchronous(True)
-                try:
-                    self.window.controller.execute(Command(self._cmd, 'exec'), False)
-                except (StandardError) as err:
-                    print traceback.format_exc()
-                self.setSynchronous(False)
-                sys.stdout.writeSync(sys.ps1, True)
-                res = self._cmd
-            else:
-                sys.stdout.writeSync(sys.ps2)
-                self._cmd = self._cmd + line
-        else:
-            first = self.pfirst.search(line)
-            self._cmd = line
-            if first:
-                sys.stdout.writeSync(sys.ps2)
-                self._indent = True
-            else:
-                if not empty:
-                    self.setSynchronous(True)
-                    try:
-                        self.window.controller.execute(Command(self._cmd), False)
-                    except (StandardError) as err:
-                        print traceback.format_exc()
-                        #print err
-                    self.setSynchronous(False)
-                    res = self._cmd
-                sys.stdout.writeSync(sys.ps1, True)
-        return res
-           
+    def readChar(self):
+        while len(self._buffer) == 0:
+            QtGui.qApp.processEvents()
+            time.sleep(0.01)
+        char = self._buffer[0]
+        self._buffer = self._buffer[1:]
+        return char
+            
     def keyPressEvent(self, event):
         text  = event.text()
         key   = event.key()
@@ -294,13 +324,21 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
         else:
             mode = QtGui.QTextCursor.MoveAnchor
 
+        if self._lastCursorPos:
+            self.textCursor().setPosition(self._lastCursorPos)
+            self._lastCursorPos = None
         if key == QtCore.Qt.Key_Backspace:
             cursor = self.textCursor()
             if cursor.position() == cursor.anchor():
-                if cursor.position() > self._editCursorPos:
-                    cursor.deletePreviousChar()
+                cursor.movePosition(QtGui.QTextCursor.PreviousCharacter, QtGui.QTextCursor.KeepAnchor)
+                if cursor.columnNumber() < 4:
+                    cursor.setPosition(cursor.position()-4, QtGui.QTextCursor.KeepAnchor)
+                if cursor.position() < self._commandCursorPos:
+                    cursor.setPosition(self._commandCursorPos+4, QtGui.QTextCursor.KeepAnchor)
+                cursor.removeSelectedText()
             elif cursor.position() > self._editCursorPos:
                 cursor.removeSelectedText()
+            self.setTextCursor(cursor)
 
         elif key == QtCore.Qt.Key_Delete:
             cursor = self.textCursor()
@@ -310,27 +348,28 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
                 cursor.removeSelectedText()
             
         elif key == QtCore.Qt.Key_Return or key == QtCore.Qt.Key_Enter:
-            #self.parseInput('\n')
-            
-            self.moveCursor(QtGui.QTextCursor.EndOfLine)
-            self.textCursor().insertText(event.text())
-            self.buffer = self._getLine() + '\n'
+            cursor = self.textCursor()
+            cursor.movePosition(QtGui.QTextCursor.End, QtGui.QTextCursor.MoveAnchor)
+            cursor.insertText('\n')
+            self.setTextCursor(cursor)
             if not self._inReadline:
-                cmd = Command(self.readline())
-                cmdLine = self.parse(cmd)
-                if cmdLine:
-                    self.history.push(Command(cmdLine))
-                
+                self.commandParse()
+            self.setTextCursor(cursor)
+            self.ensureCursorVisible()
         #elif key == QtCore.Qt.Key_Tab:
-        #    self.__insert_text(text)
+        #    pass
         elif key == QtCore.Qt.Key_Left:
             cursor = self.textCursor()
             if modifier & QtCore.Qt.ControlModifier:
                 cursor.movePosition(QtGui.QTextCursor.PreviousWord, mode)
+                if cursor.columnNumber() < 4:
+                    cursor.movePosition(QtGui.QTextCursor.PreviousWord, mode)
             else:
                 cursor.movePosition(QtGui.QTextCursor.PreviousCharacter, mode)
-            if cursor.position() < self._editCursorPos:
-                cursor.setPosition(self._editCursorPos, mode)
+                if cursor.columnNumber() < 4:
+                    cursor.setPosition(cursor.position()-4, mode)
+            if cursor.position() < self._commandCursorPos:
+                cursor.setPosition(self._commandCursorPos+4, mode)
             self.setTextCursor(cursor)
 
         elif key == QtCore.Qt.Key_Right:
@@ -339,13 +378,16 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
                 cursor.movePosition(QtGui.QTextCursor.NextWord, mode)
             else:
                 cursor.movePosition(QtGui.QTextCursor.NextCharacter, mode)
+            if cursor.columnNumber() < 4:
+                cursor.setPosition(cursor.position()+4-cursor.columnNumber(), mode)
             #if cursor.position() > QtGui.QTextCursor.EndOfLine:
             #    cursor.setPosition(QtGui.QTextCursor.EndOfLine, mode)
             self.setTextCursor(cursor)
 
         elif key == QtCore.Qt.Key_Home:
             cursor = self.textCursor ()
-            cursor.setPosition(self._editCursorPos, mode)
+            cursor.movePosition(QtGui.QTextCursor.StartOfLine, mode)
+            cursor.setPosition(cursor.position()+4, mode)
             self.setTextCursor(cursor)
 
         elif key == QtCore.Qt.Key_End:
@@ -353,47 +395,147 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
             self.point = self.line.length()
 
         elif key == QtCore.Qt.Key_Up:
-            if not self.history.transient():
-                self.history.setTransient(Command(self._getLine()))
-            cmd = self.history.previous()
+            if not self.history().transient():
+                self.history().setTransient(Command(self.commandRawText()+'\n', 'exec'))
+            cmd = self.history().previous()
             if cmd:
-                text = cmd.text()
+                text = str(cmd)
                 text = text[0:len(text)-1]
-                self._setLine(text)
+                self.commandClear()
+                self.textCursor().insertText(text)
+                self.ensureCursorVisible()
                 
         elif key == QtCore.Qt.Key_Down:
-            cmd = self.history.next()
+            cmd = self.history().next()
             if cmd:
-                text = cmd.text()
+                text = str(cmd)
                 text = text[0:len(text)-1]
-                self._setLine(text)
+                self.commandClear()
+                self.textCursor().insertText(text)
+                self.ensureCursorVisible()
 
         elif text.length():
             self.textCursor().insertText(event.text())
+            if self._inReadline:
+                self._buffer.append(event.text())
         else:
             event.ignore()
 
-            
-    def _getLine(self):
+    #
+    # Command editing buffer
+    #
+    
+    def commandParse(self):
+        lines = self.commandLines()
+        #print lines
+        if len(lines) == 0:
+            return
+        line = lines[len(lines)-1]
+        empty = self.pempty.search(line)
+        indented = self.pindented.search(line)
+        first = self.pfirst.search(line)
+        if len(lines) == 1:
+            if not first and not empty:
+                cmd = Command(line, 'single')
+                sys.stdout.stream.write(self.commandText())
+                try:
+                    self.execute(cmd, False)
+                except (StandardError) as err:
+                    print traceback.format_exc()
+                self._commandCursorPos = self.textCursor().position()
+                self.textCursor().insertText('>>> ')
+            elif empty:
+                self._commandCursorPos = self.textCursor().position()
+                self.textCursor().insertText('>>> ')
+            else:
+                self.textCursor().insertText('... ')
+        elif empty or not indented:
+            txt = ''
+            for l in lines[:-1]:
+                txt += l
+            cmd = Command(txt, 'exec')
+            sys.stdout.stream.write(self.commandText())
+            try:
+                self.execute(cmd, False)
+            except (StandardError) as err:
+                print traceback.format_exc()
+            if not indented:
+                cursor = self.textCursor()
+                cursor.movePosition(QtGui.QTextCursor.Up, QtGui.QTextCursor.KeepAnchor)
+                cursor.movePosition(QtGui.QTextCursor.StartOfLine, QtGui.QTextCursor.KeepAnchor)
+                cursor.removeSelectedText()
+                self._commandCursorPos = cursor.position()
+                cursor.insertText('>>> '+line)
+                self.setTextCursor(cursor)
+                self.commandParse()  # recursive call
+            else:
+                self._commandCursorPos = self.textCursor().position()
+                self.textCursor().insertText('>>> ')
+        else:
+            self.textCursor().insertText('... ')
+
+    def commandClear(self):
         cursor = self.textCursor()
-        oldPos = cursor.position()
-        cursor.setPosition(self._editCursorPos)
-        cursor.movePosition(QtGui.QTextCursor.EndOfLine, QtGui.QTextCursor.KeepAnchor)
-        self.setTextCursor(cursor)
-        text = str(self.textCursor().selectedText())
-        cursor.setPosition(oldPos)
-        self.setTextCursor(cursor)
-        return text
-        
-    def _setLine(self, text):
-        cursor = self.textCursor()
-        oldPos = cursor.position()
-        cursor.setPosition(self._editCursorPos)
-        cursor.movePosition(QtGui.QTextCursor.EndOfLine, QtGui.QTextCursor.KeepAnchor)
-        self.setTextCursor(cursor)
+        ref = max(self._commandCursorPos, self._printCursorPos)
+        cursor.movePosition(QtGui.QTextCursor.End, QtGui.QTextCursor.MoveAnchor)
+        cursor.setPosition(ref, QtGui.QTextCursor.KeepAnchor)
         cursor.removeSelectedText()
-        cursor.insertText(text)
+        self.setTextCursor(cursor)
         
+    def commandConsumeChar(self):
+        if len(self) == 0:
+            return '' 
+        first = self[0]
+        if len(first) > 0:
+            res = first[0]
+            self[0] = first[1:]
+            return res
+        else:
+            if len(self) > 1:
+                self.popleft()
+                return self.commandConsumeChar()
+            else:
+                return ''
+        
+        
+    def commandRemoveLastLine(self):
+        cursor = self.textCursor()
+        cursor.movePosition(QtGui.QTextCursor.Up, QtGui.QTextCursor.KeepAnchor)
+        cursor.movePosition(QtGui.QTextCursor.StartOfLine, QtGui.QTextCursor.KeepAnchor)
+        txt = cursor.selectedText()
+        cursor.removeSelectedText()
+        self.setTextCursor(cursor)
+        txt.replace(u"\u2029", '\n')
+        txt = str(txt)
+        return txt
+    
+    def commandText(self):
+        cursor = self.textCursor()
+        pos = cursor.position()
+        ref = max(self._commandCursorPos, self._printCursorPos)
+        cursor.movePosition(QtGui.QTextCursor.End, QtGui.QTextCursor.MoveAnchor)
+        cursor.setPosition(ref, QtGui.QTextCursor.KeepAnchor)
+        txt = cursor.selectedText()
+        cursor.setPosition(pos, QtGui.QTextCursor.MoveAnchor)
+        self.setTextCursor(cursor)
+        txt.replace(u"\u2029", '\n')
+        txt = str(txt)
+        return txt
+
+    def commandLines(self):
+        txt = self.commandText()
+        lines = txt.splitlines(True)
+        lines2 = []
+        for l in lines:
+            lines2.append(self.pstrip.sub('', l))
+        return lines2
+        
+    def commandRawText(self):
+        txt = ''
+        lines = self.commandLines()
+        for l in lines:
+            txt += l
+        return txt
 
     def resizeEvent(self, e):
         QtGui.QPlainTextEdit.resizeEvent(self, e)
@@ -414,20 +556,30 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
         QtGui.QPlainTextEdit.mouseReleaseEvent(self, e)
         if e.button() == QtCore.Qt.LeftButton:
             self.copy()
-        if e.button() == QtCore.Qt.MidButton:
+        elif e.button() == QtCore.Qt.MidButton:
             self.paste()
-        if self.textCursor().position() < self._editCursorPos: #.position():
-            cursor = self.textCursor()
-            if self._lastCursorPos:
-                cursor.setPosition(self._lastCursorPos) #.position())
-            self.setTextCursor(cursor)
+        #if self.textCursor().position() < self._editCursorPos: #.position():
+        #    cursor = self.textCursor()
+        #    if self._lastCursorPos:
+        #        cursor.setPosition(self._lastCursorPos) #.position())
+        #    self.setTextCursor(cursor)
         e.accept()
 
     def paste(self):
+        if self._lastCursorPos:
+            self.textCursor().setPosition(self._lastCursorPos)
+            self._lastCursorPos = None
         lines = str(QtGui.qApp.clipboard().text())
-        self.textCursor().insertText(lines)
-
-
+        #print lines.splitlines(True)
+        for line in lines.splitlines(True):
+            line = self.pstrip.sub('', line)
+            enter = self.penter.search(line)
+            self.textCursor().insertText(line)
+            if enter and not self._inReadline:
+                if self._lineQueue.checkQueue():
+                    self._asyncCursorPos = self.textCursor().position()
+                    self._editCursorPos = self.textCursor().position()
+                #self.printCmd()
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)

@@ -19,7 +19,7 @@
 
 from PyQt4 import QtCore, QtGui
 from Database.Cells import *
-from PSchem.Controller import Command
+from PSchem.ConsoleWidget import Command
 import os
 
 class DatabaseModel(QtCore.QAbstractItemModel):

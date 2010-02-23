@@ -22,28 +22,17 @@ import re
 import sys
 import math
 
-class Command():
-    #pstrip = re.compile(r'\n$')
-    def __init__(self, commandStr, type = 'single'):
-        self._text = commandStr
-        self._type = type
-        self._compiled = None
-        
-    def compiled(self):
-        if (not self._compiled):
-            self._compiled = compile(self._text, "console", self._type)
-        return self._compiled
-        
-    def text(self):
-        #text = Controller.pstrip.sub('', self._str)
-        return self._text
-
 class Controller():
 
-    def __init__(self, window):
+    def __init__(self, wnd):
+        global window
+        window = wnd
         self.window = window
+        global currentView
         currentView = window.currentView
+        global currentCellView
         currentCellView = window.currentCellView
+        global database
         database = window.database
         self.locals = locals()
         self.globals = globals()
@@ -51,7 +40,18 @@ class Controller():
 
     def execute(self, cmd, echo = True):
         if echo:
+            sys.stdout.pushSync(False)
             sys.stdout.write('--- ' + cmd.text() + '\n')
-        exec (cmd.compiled(), self.globals, self.locals)
+            exec (cmd.compiled(), self.globals, self.locals)
+            #if res is not None:
+            #    sys.stdout.write('=== '+str(res))
+            sys.stdout.popSync()
+        else:
+            sys.stdout.pushSync(True)
+            #sys.stdout.write('=== ')
+            #exec (cmd.compiled(), self.globals, self.locals)
+            exec (cmd.compiled(), self.globals, self.globals)
+            #if res is not None:
+            #    sys.stdout.write('=== '+str(res))
+            sys.stdout.popSync()
 
-                

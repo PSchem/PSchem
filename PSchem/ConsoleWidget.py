@@ -192,16 +192,26 @@ class History(deque):
         self.pointer = len(self)
         #self.pointer += 1
 
-    def previous(self):
+    def previous(self, searchTxt = None):
         if self.pointer > 0:
             self.pointer -= 1
             val = self[self.pointer]
-            return val
+            #print ">>" + str(searchTxt) + "<<"
+            if (not searchTxt or str(val).find(searchTxt) != -1):
+                return val
+            else:
+                return self.previous(searchTxt)
 
-    def next(self):
+    def next(self, searchTxt = None):
         if (self.pointer < len(self) - 1):
             self.pointer += 1
-            return self[self.pointer]
+            val = self[self.pointer]
+            #print ">>" + str(searchTxt) + "<<"
+            if (not searchTxt or str(val).find(searchTxt) != -1):
+                return val
+            else:
+                return self.next(searchTxt)
+            #return self[self.pointer]
 
     def __repr__(self):
         text = ''
@@ -472,7 +482,7 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
             if not self._buffer:
                 self._buffer = self.commandText()
                 #self.history().setTransient(Command(self.commandRawText()+'\n', 'exec'))
-            cmd = self.history().previous()
+            cmd = self.history().previous(self.pstrip.sub('', self._buffer))
             if cmd:
                 text = str(cmd)
                 text = text[0:len(text)-1]
@@ -482,7 +492,7 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
             self.setLastCursorPos()
                 
         elif key == QtCore.Qt.Key_Down and not self._inReadline:
-            cmd = self.history().next()
+            cmd = self.history().next(self.pstrip.sub('', self._buffer))
             if cmd:
                 text = str(cmd)
                 text = text[0:len(text)-1]
@@ -619,17 +629,8 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
 
     def resizeEvent(self, e):
         QtGui.QPlainTextEdit.resizeEvent(self, e)
+        #self.ensureCursorVisible()
         return
-        cursor = self.textCursor()
-        oldPos = cursor.position()
-        cursor.movePosition(QtGui.QTextCursor.End)
-        self.setTextCursor(cursor)
-        self._lastCursorPos = self.textCursor().position()
-        self.ensureCursorVisible()
-        cursor.setPosition(oldPos)
-        self.setTextCursor(cursor)
-        self._lastCursorPos = self.textCursor().position()
-
         
     def mousePressEvent(self, e):
         QtGui.QPlainTextEdit.mousePressEvent(self, e)

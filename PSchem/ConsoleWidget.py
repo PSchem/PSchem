@@ -241,6 +241,7 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
         self.window = window
         #self.window = None
         self._buffer = None
+        self._rawBuffer = None
         
         self._synchronous = True
         self._syncFlag = False
@@ -481,8 +482,9 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
         elif key == QtCore.Qt.Key_Up and not self._inReadline:
             if not self._buffer:
                 self._buffer = self.commandText()
+                self._rawBuffer = self.commandRawText()
                 #self.history().setTransient(Command(self.commandRawText()+'\n', 'exec'))
-            cmd = self.history().previous(self.pstrip.sub('', self._buffer))
+            cmd = self.history().previous(self._rawBuffer)
             if cmd:
                 text = str(cmd)
                 text = text[0:len(text)-1]
@@ -492,7 +494,7 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
             self.setLastCursorPos()
                 
         elif key == QtCore.Qt.Key_Down and not self._inReadline:
-            cmd = self.history().next(self.pstrip.sub('', self._buffer))
+            cmd = self.history().next(self._rawBuffer)
             if cmd:
                 text = str(cmd)
                 text = text[0:len(text)-1]
@@ -503,6 +505,7 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
                 self.commandClear()
                 self.textCursor().insertText(self._buffer)
                 self._buffer = None
+                self._rawBuffer = None
                 self.ensureCursorVisible()
             self.setLastCursorPos()
         elif key == QtCore.Qt.Key_PageUp:

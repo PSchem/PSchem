@@ -246,10 +246,19 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
         self._synchronous = True
         self._syncFlag = False
                 
-        # font
         self.defaultFormat = self.currentCharFormat()
-        self.defaultFormat.setFontFamily("Courier")
+        fontFamilies = QtGui.QFontDatabase().families()
+        if "Consolas" in fontFamilies:
+            self.defaultFormat.setFontFamily("Consolas")
+        elif "Monospace" in fontFamilies:
+            self.defaultFormat.setFontFamily("Monospace")
+        elif "Courier New" in fontFamilies:
+            self.defaultFormat.setFontFamily("Courier New")
+        else:
+            self.defaultFormat.setFontFamily("Courier")
         self.defaultFormat.setFontFixedPitch(True)
+        self.defaultFormat.setFontItalic(False)
+        self.defaultFormat.setFontWeight(QtGui.QFont.Normal)
         self.setCurrentCharFormat(self.defaultFormat)
 
         self.setLineWrapMode(QtGui.QPlainTextEdit.NoWrap)
@@ -406,6 +415,11 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
         else:
             mode = QtGui.QTextCursor.MoveAnchor
 
+        cursor = self.textCursor()
+        if cursor.columnNumber <= offset or cursor.position() <= self._commandCursorPos:
+            cursor.setPosition(self._lastCursorPos, QtGui.QTextCursor.MoveAnchor)
+            self.setTextCursor(cursor)
+            
         if key == QtCore.Qt.Key_Backspace:
             cursor = self.textCursor()
             if cursor.position() == cursor.anchor():
@@ -414,6 +428,8 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
                     cursor.setPosition(cursor.position()-4, QtGui.QTextCursor.KeepAnchor)
                 if cursor.position() < self.refCursorPos():
                     cursor.setPosition(self.refCursorPos()+4, QtGui.QTextCursor.KeepAnchor)
+                cursor.removeSelectedText()
+            else:
                 cursor.removeSelectedText()
             self.setTextCursor(cursor)
             self.setLastCursorPos()

@@ -18,6 +18,7 @@
 # along with PSchem Database.  If not, see <http://www.gnu.org/licenses/>.
 
 from Database.Primitives import *
+from xml.etree import ElementTree as et
 
 class ConcreteInstance():
     def __init__(self, cellView, instance=None, parent=None, topLevel=None):
@@ -61,8 +62,9 @@ class ConcreteInstance():
 
 class CellView():
     def __init__(self, name):
-        self._name = name
+        self._name = 'cell_view'
         self._elems = set()
+        self._attribs = {}
         self._views = set()
         self._parent = None
 
@@ -71,6 +73,10 @@ class CellView():
         for elem in self._elems:
             elem.addToView(view)
 
+    def updateViews(self):
+        for v in self._views:
+            v.updateItem()
+            
     def addElem(self, elem):
         self._elems.add(elem)
         for view in self._views:
@@ -80,8 +86,8 @@ class CellView():
         elem.removeFromView()
         self._elems.remove(elem)
 
-    def attributes(self):
-        return filter(lambda e: isinstance(e, Attribute), self._elems)
+    def attributeLabels(self):
+        return filter(lambda e: isinstance(e, AttributeLabel), self._elems)
 
     def pins(self):
         return filter(lambda e: isinstance(e, Pin), self._elems)
@@ -94,6 +100,9 @@ class CellView():
 
     def elems(self):
         return self._elems
+
+    def attribs(self):
+        return self._attribs
 
     def setParent(self, parent):
         self._parent = parent
@@ -110,7 +119,36 @@ class CellView():
     def database(self):
         return self._parent.database()
         
+    def save(self):
+        root = et.Element(self._name)
+        tree = et.ElementTree(root)
+        for a in sorted(self.attribs()):
+            root.attrib[str(a)] = str(self.attribs()[a])
+        for e in sorted(self.elems(), key=Element.name):
+            xElem = e.toXml()
+            root.append(xElem)
+        self._indentET(tree.getroot())
+        et.dump(tree)
+        #return tree
         
+    def restore(self):
+        pass
+    
+    def _indentET(self, elem, level=0):
+        i = "\n" + level*"  "
+        if len(elem):
+            if not elem.text or not elem.text.strip():
+                elem.text = i + "  "
+            if not elem.tail or not elem.tail.strip():
+                elem.tail = i
+            for elem in elem:
+                self._indentET(elem, level+1)
+            if not elem.tail or not elem.tail.strip():
+                elem.tail = i
+        else:
+            if level and (not elem.tail or not elem.tail.strip()):
+                elem.tail = i
+    
     def remove(self):
         for e in list(self._elems):
             self.removeElem(e)
@@ -123,10 +161,12 @@ class Diagram(CellView):
         self._lines = set()
         self._rects = set()
         self._labels = set()
-        self._uu = 160 # default DB units per user units
-
+        #self._uu = 160 # default DB units per user units
+        self._attribs['uu'] = 160 # default DB units per user units
+        self._name = 'diagram'
+        
     def setUU(self, uu):
-        self._uu = uu
+        self._attribs['uu'] = uu
 
     def lines(self):
         return filter(lambda e: isinstance(e, Line), self.elems())
@@ -138,12 +178,13 @@ class Diagram(CellView):
         return filter(lambda e: isinstance(e, Label), self.elems())
 
     def uu(self):
-        return self._uu
+        return self._attribs['uu']
 
 
 class Schematic(Diagram):
     def __init__(self, name):
         Diagram.__init__(self, name)
+        self._name = 'schematic'
 
     def components(self):
         components = map(lambda i: i.cell(), self.instances())
@@ -223,10 +264,12 @@ class Schematic(Diagram):
 class Symbol(Diagram):
     def __init__(self, name):
         Diagram.__init__(self, name)
+        self._name = 'symbol'
 
 class Netlist(CellView):
     def __init__(self, name):
         CellView.__init__(self, name)
+        self._name = 'netlist'
 
 
 class Cell():

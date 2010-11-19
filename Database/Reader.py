@@ -89,7 +89,7 @@ class GedaReader(Reader):
     def parseVersion(self):
         pass
         #m=self.match
-        #a = Attribute(self.view, 'geda_version', [int(m.group(1)), int(m.group(2))])
+        #a = AttributeLabel(self.view, 'geda_version', [int(m.group(1)), int(m.group(2))])
         #self.last = a
         #self.view.addElem(a)
 
@@ -189,10 +189,10 @@ class GedaReader(Reader):
         key = m.group(1)
         val = m.group(2)
         if (self.inAttribute):
-            a = Attribute(self.last, self._database.layers(), key, val)
+            a = AttributeLabel(self.last, self._database.layers(), key, val)
             self.last.addAttribute(a)
         else:
-            a = Attribute(self.view, self._database.layers(), key, val)
+            a = AttributeLabel(self.view, self._database.layers(), key, val)
             self.view.addElem(a)
         a.setXY(int(mAttr.group(1)), int(mAttr.group(2)))
         #a.setLayer(None)  #int(mAttr.group(3))
@@ -203,18 +203,18 @@ class GedaReader(Reader):
         a.setAngle(int(mAttr.group(7)))
         align = int(mAttr.group(8))/3
         if align == 0:
-            a.setHAlign(Attribute.AlignLeft)
+            a.setHAlign(AttributeLabel.AlignLeft)
         elif align == 1:
-            a.setHAlign(Attribute.AlignCenter)
+            a.setHAlign(AttributeLabel.AlignCenter)
         else:
-            a.setHAlign(Attribute.AlignRight)
+            a.setHAlign(AttributeLabel.AlignRight)
         align = int(mAttr.group(8))%3
         if align == 0:
-            a.setVAlign(Attribute.AlignBottom)
+            a.setVAlign(AttributeLabel.AlignBottom)
         elif align == 1:
-            a.setVAlign(Attribute.AlignCenter)
+            a.setVAlign(AttributeLabel.AlignCenter)
         else:
-            a.setVAlign(Attribute.AlignTop)
+            a.setVAlign(AttributeLabel.AlignTop)
 
     def parseText(self):
         m=self.match

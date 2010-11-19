@@ -19,6 +19,8 @@
 
 from Database.Layers import *
 from Database.Cells import *
+from Database.Attributes import *
+from xml.etree import ElementTree as et
 
 class Element():
     def __init__(self, parent, layers):
@@ -26,7 +28,7 @@ class Element():
         self._views = set()
         self._layers = layers
         self._parent = parent
-        self._name = 'Abstract element'
+        self._name = 'element'
         self._layer = None
         self._x = 0
         self._y = 0
@@ -136,83 +138,19 @@ class Element():
 
     def visible(self):
         return self._visible
+        
+    def toXml(self):
+        elem = et.Element(self._name)
+        elem.attrib['x'] = str(self._x)
+        elem.attrib['y'] = str(self._y)
+        elem.attrib['angle'] = str(self._angle)
+        elem.attrib['hmirror'] = str(self._hmirror)
+        elem.attrib['vmirror'] = str(self._vmirror)
+        elem.attrib['visible'] = str(self._visible)
+        #elem.attrib['layer'] = str(self._layer)
+        return elem
 
-class Attribute(Element):
-    AlignLeft = 0
-    AlignCenter = 1
-    AlignRight = 2
-    AlignBottom = 0
-    AlignTop = 2
-    def __init__(self, parent, layers, key, val):
-        Element.__init__(self, parent, layers)
-        self._key = key
-        self._val = val
-        self._name = 'Attr '+str(key)+' '+str(val)
-        self._textSize = 1
-        self._visibleKey = True
-        self._hAlign = self.AlignLeft
-        self._vAlign = self.AlignCenter
-        self._layer = self.layers().layerByName('attribute', 'drawing')
-
-    def setText(self, text):
-        if self._editable:
-            self._val = text
-            self.updateViews()
-
-    def setHAlign(self, align):
-        if self._editable:
-            self._hAlign = align
-            self.updateViews()
-
-    def setVAlign(self, align):
-        if self._editable:
-            self._vAlign = align
-            self.updateViews()
-
-    def setTextSize(self, textSize): #int in uu
-        if self._editable:
-            self._textSize = textSize
-            self.updateViews()
-
-    def setVisibleKey(self, visible):
-        if self._editable:
-            self._visibleKey = visible
-            self.updateViews()
-
-    def setHAlign(self, align):
-        if self._editable:
-            self._hAlign = align
-            self.updateViews()
-
-    def setVAlign(self, align):
-        if self._editable:
-            self._vAlign = align
-            self.updateViews()
-
-    def textSize(self):
-        return self._textSize
-
-    def visibleKey(self):
-        return self._visibleKey
-
-    def hAlign(self):
-        return self._hAlign
-
-    def vAlign(self):
-        return self._vAlign
-
-    def addToView(self, view):
-        view.addAttribute(self)
-
-    def key(self):
-        return self._key
-
-    def value(self):
-        return self._val
-
-    def text(self):
-        return self._key + ': ' + self._val
-
+        
 class Line(Element):
     def __init__(self, parent, layers, x1, y1, x2, y2):
         Element.__init__(self, parent, layers)
@@ -221,7 +159,7 @@ class Line(Element):
         self._x2 = x2
         self._y2 = y2
         self._layer = self.layers().layerByName('annotation', 'drawing')
-        self._name = 'Line '+str(x1)+' '+str(y1)+' '+str(x2)+' '+str(y2)
+        self._name = 'line'
 
     def x1(self):
         return self._x
@@ -238,6 +176,14 @@ class Line(Element):
     def addToView(self, view):
         view.addLine(self)
 
+    def toXml(self):
+        elem = Element.toXml(self)
+        elem.attrib['x2'] = str(self._x2)
+        elem.attrib['y2'] = str(self._y2)
+        elem.attrib['layer'] = str(self._layer.name())
+        return elem
+        
+        
 class Pin(Element):
     def __init__(self, parent, layers, x1, y1, x2, y2):
         Element.__init__(self, parent, layers)
@@ -246,7 +192,7 @@ class Pin(Element):
         self._x2 = x2
         self._y2 = y2
         self._layer = self.layers().layerByName('pin', 'drawing')
-        self._name = 'Pin '+str(x1)+' '+str(y1)+' '+str(x2)+' '+str(y2)
+        self._name = 'pin'
 
     def x1(self):
         return self._x
@@ -270,7 +216,7 @@ class Rect(Element):
         self._y = y
         self._w = w
         self._h = h
-        self._name = 'Rect '+str(x)+' '+str(y)+' '+str(w)+' '+str(h)
+        self._name = 'rect'
         self._layer = self.layers().layerByName('annotation', 'drawing')
 
     def w(self):
@@ -286,7 +232,7 @@ class CustomPath(Element):
     move, line, curve, close = range(4)
     def __init__(self, parent, layers):
         Element.__init__(self, parent, layers)
-        self._name = 'Custom path'
+        self._name = 'custom_path'
         self._path = []
         self._layer = self.layers().layerByName('annotation', 'drawing')
 
@@ -323,7 +269,7 @@ class Ellipse(Element):
         self._y = y
         self._radiusX = radiusX
         self._radiusY = radiusY
-        self._name = 'Ellipse '+str(x)+' '+str(y)+' '+str(radiusX)+' '+str(radiusY)
+        self._name = 'ellipse'
         self._layer = self.layers().layerByName('annotation', 'drawing')
 
     def setRadius(self, radiusX, radiusY):
@@ -351,7 +297,7 @@ class EllipseArc(Element):
         self._radiusY = radiusY
         self._startAngle = startAngle
         self._spanAngle = spanAngle
-        self._name = 'EllipseArc '+str(x)+' '+str(y)+' '+str(radiusX)+' '+str(radiusY)
+        self._name = 'ellipse_arc '
         self._layer = self.layers().layerByName('annotation', 'drawing')
 
     def setRadius(self, radiusX, radiusY):
@@ -394,7 +340,7 @@ class Label(Element):
         self._text = ''
         self._hAlign = self.AlignLeft
         self._vAlign = self.AlignCenter
-        self._name = 'Label'
+        self._name = 'label'
         self._layer = self.layers().layerByName('annotation', 'drawing')
 
     def setText(self, text):
@@ -432,21 +378,78 @@ class Label(Element):
     def addToView(self, view):
         view.addLabel(self)
 
+    def toXml(self):
+        elem = Element.toXml(self)
+        elem.text = str(self._text)
+        elem.attrib['halign'] = str(self._hAlign)
+        elem.attrib['valign'] = str(self._vAlign)
+        elem.attrib['size'] = str(self._textSize)
+        return elem
+        
+class AttributeLabel(Label):
+    AlignLeft = 0
+    AlignCenter = 1
+    AlignRight = 2
+    AlignBottom = 0
+    AlignTop = 2
+    def __init__(self, parent, layers, key, val):
+        Label.__init__(self, parent, layers)
+        self._attribute = Attribute(key, val, Attribute.AInteger, self)
+        self._name = 'attributeLabel'
+        self._visibleKey = True
+        self._layer = self.layers().layerByName('attribute', 'drawing')
+
+    def setText(self, text):
+        if self._editable:
+            self._attribute.setVal(text)
+            self.updateViews()
+
+    def setVisibleKey(self, visible):
+        if self._editable:
+            self._visibleKey = visible
+            self.updateViews()
+
+    def visibleKey(self):
+        return self._visibleKey
+
+    def addToView(self, view):
+        view.addAttribute(self)
+
+    def key(self):
+        return self._attribute.name()
+
+    def value(self):
+        return self._attribute.val()
+
+    def text(self):
+        return self.key() + ': ' + self.value()
+
+    def toXml(self):
+        elem = Label.toXml(self)
+        elem.attrib['visibleKey'] = str(self._visibleKey)
+        attr = et.Element('attribute')
+        attr.attrib['name'] = self._attribute.name()
+        attr.attrib['type'] = self._attribute.type()
+        attr.text = self._attribute.val()
+        elem.append(attr)
+        return elem
+        
+        
 class NetSegment(Element):
     def __init__(self, parent, layers, x1, y1, x2, y2):
         Element.__init__(self, parent, layers)
-        self._x1 = x1
+        self._x = x1
         self._x2 = x2
-        self._y1 = y1
+        self._y = y1
         self._y2 = y2
         self._layer = self.layers().layerByName('net', 'drawing')
-        self._name = 'NetSegment '+str(x1)+' '+str(y1)+' '+str(x2)+' '+str(y2)
+        self._name = 'net_segment'
 
     def x1(self):
-        return self._x1
+        return self._x
 
     def y1(self):
-        return self._y1
+        return self._y
 
     def x2(self):
         return self._x2
@@ -455,35 +458,35 @@ class NetSegment(Element):
         return self._y2
 
     def minX(self):
-        return min(self._x1, self._x2)
+        return min(self._x, self._x2)
         
     def maxX(self):
-        return max(self._x1, self._x2)
+        return max(self._x, self._x2)
         
     def minY(self):
-        return min(self._y1, self._y2)
+        return min(self._y, self._y2)
         
     def maxY(self):
-        return max(self._y1, self._y2)
+        return max(self._y, self._y2)
         
     def addToView(self, view):
         view.addNetSegment(self)
     
     def contains (self, x, y):
-        c1 = (self._x1 == self._x2 and 
-            self._y1 == self._y2 and
-            self._x1 == x and
-            self._y1 == y)
-        c2 = (self._x1 == x and self._y1 == y)
+        c1 = (self._x == self._x2 and 
+            self._y == self._y2 and
+            self._x == x and
+            self._y == y)
+        c2 = (self._x == x and self._y == y)
         c3 = (self._x2 == x and self._y2 == y)
         return (c1 or c2 or c3)
 
     def containsInside (self, x, y):
-        c1 = (self._x1 == self._x2 == x and 
+        c1 = (self._x == self._x2 == x and 
             self.minY() < y < self.maxY())
-        c2 = (self._y1 == self._y2 == y and
+        c2 = (self._y == self._y2 == y and
             self.minX() < x < self.maxX())
-        #print self._x1, self._y1, self._x2, self._y2, x, y
+        #print self._x, self._y, self._x2, self._y2, x, y
         return (c1 or c2)
 
 class SolderDot(Element):
@@ -492,7 +495,7 @@ class SolderDot(Element):
         self._x = x
         self._y = y
         self._layer = self.layers().layerByName('net', 'drawing')
-        self._name = 'SolderDot '+str(x)+' '+str(y)
+        self._name = 'solder_dot'
 
     def addToView(self, view):
         view.addSolderDot(self)
@@ -510,7 +513,7 @@ class Instance(Element):
         self._libName = ''
         self._cellName = ''
         self._viewName = ''
-        self._name = 'I?'
+        self._name = 'instance'
 
         self._cell = None
         self._cellView = None

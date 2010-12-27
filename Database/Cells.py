@@ -333,6 +333,7 @@ class Library():
         self._cells.add(cell)
         cell.setParent(self)
         self._cellNames[cell.name()] = cell
+        self.database().updateViews()
 
     def cells(self):
         return self._cells
@@ -435,7 +436,7 @@ class Database():
 
     def setLayers(self, layers):
         self._layers = layers
-        self.updateViews()
+        #self.updateViews()
 
     def layers(self):
         return self._layers

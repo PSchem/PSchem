@@ -790,14 +790,21 @@ class PWindow(QtGui.QMainWindow):
         importer.importLibraryList(
             [
                 ['latch', '../geda/examples/latch'],
-                ['analog', '../geda/examples/sym/analog'],
-                ['font', '../geda/examples/sym/font'],
-                ['spice', '../geda/examples/sym/spice'],
-                ['titleblock', '../geda/examples/sym/titleblock'],
-                ],
+                ['analog2', '../geda/examples/sym/analog'],
+                ['analog', '../geda/symbols/analog'],
+                ['diode', '../geda/symbols/diode'],
+                ['io', '../geda/symbols/io'],
+                ['font', '../geda/symbols/font'],
+                ['spice', '../geda/symbols/spice'],
+                ['titleblock', '../geda/symbols/titleblock'],
+                ['lightning_detector', '../geda/examples/lightning_detector/sym'],
+                ['gTAG', '../geda/examples/gTAG'],
+            ],
             [
                 ['latch', '../geda/examples/latch'],
-                ])
+                ['lightning_detector', '../geda/examples/lightning_detector'],
+                ['gTAG', '../geda/examples/gTAG'],
+            ])
 
 
                 #['work', '.'],
@@ -828,6 +835,7 @@ class PWindow(QtGui.QMainWindow):
 
     def openViewByName(self, libName, cellName, viewName):
         view = self.database.viewByName(libName, cellName, viewName)
+        print view
         self.openView(view)
 
 

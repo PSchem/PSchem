@@ -541,6 +541,7 @@ class Instance(Element):
     def instanceCellView(self):
         if self._cellView:   #cache
             return self._cellView
+        print self._cellName
         self._cellView = self.instanceCell().viewByName('symbol')
         return self._cellView
 

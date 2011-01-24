@@ -314,10 +314,13 @@ class PWindow(QtGui.QMainWindow):
         self.mdiArea = QtGui.QMdiArea()
         #self.mdiArea = QtGui.QTabWidget()
         #self.mdiArea.addTab(None, '')
-        #self.mdiArea.setMovable(True)
-        #self.mdiArea.setTabsClosable(True)
+        versionMaj = QtCore.QT_VERSION / 256 / 256
+        versionMin = QtCore.QT_VERSION / 256 % 256
+        if versionMaj >= 4 and versionMin >=6:
+            self.mdiArea.setMovable(True)
+            self.mdiArea.setTabsClosable(True)
         
-        ##self.mdiArea.setViewMode(QtGui.QMdiArea.TabbedView)
+        self.mdiArea.setViewMode(QtGui.QMdiArea.TabbedView)
         #self.mdiArea.setTabShape(QtGui.QTabWidget.Triangular)
         self.setCentralWidget(self.mdiArea)
         self.connect(self.mdiArea, QtCore.SIGNAL("subWindowActivated(QMdiSubWindow *)"),
@@ -520,7 +523,7 @@ class PWindow(QtGui.QMainWindow):
         self.zoomIn2Act = QtGui.QAction(self.tr("Zoom In"), self)
         self.zoomIn2Act.setStatusTip(self.tr("Zoom the current view in"))
         self.zoomIn2Act.setShortcut(self.tr(']'))
-        self.zoomIn2Cmd = Command("currentView().scale(math.sqrt(2))")
+        self.zoomIn2Cmd = Command("currentView().zoom(math.sqrt(2))")
         self.connect(self.zoomIn2Act, QtCore.SIGNAL("triggered()"),
                     lambda: self.controller.execute(self.zoomIn2Cmd))
                     #lambda: self.controller.parse("window.currentView().scale(1.41421356237)"))
@@ -528,7 +531,7 @@ class PWindow(QtGui.QMainWindow):
         self.zoomOut2Act = QtGui.QAction(self.tr("Zoom Out"), self)
         self.zoomOut2Act.setStatusTip(self.tr("Zoom the current view out"))
         self.zoomOut2Act.setShortcut(self.tr('['))
-        self.zoomOut2Cmd = Command("currentView().scale(1/math.sqrt(2))")
+        self.zoomOut2Cmd = Command("currentView().zoom(1/math.sqrt(2))")
         self.connect(self.zoomOut2Act, QtCore.SIGNAL("triggered()"),
                     lambda: self.controller.execute(self.zoomOut2Cmd))
 
@@ -796,6 +799,7 @@ class PWindow(QtGui.QMainWindow):
                 ['io', '../geda/symbols/io'],
                 ['font', '../geda/symbols/font'],
                 ['spice', '../geda/symbols/spice'],
+ #               ['power', '../geda/symbols/power'],
                 ['titleblock', '../geda/symbols/titleblock'],
                 ['lightning_detector', '../geda/examples/lightning_detector/sym'],
                 ['gTAG', '../geda/examples/gTAG'],

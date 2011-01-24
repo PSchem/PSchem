@@ -542,7 +542,11 @@ class Instance(Element):
         if self._cellView:   #cache
             return self._cellView
         print self._cellName
-        self._cellView = self.instanceCell().viewByName('symbol')
+        cell = self.instanceCell()
+        if cell and cell.viewByName('symbol'):
+            self._cellView = cell.viewByName('symbol')
+        else:
+            self._cellView = self.database().viewByName('analog', 'voltage-1', 'symbol')
         return self._cellView
 
 

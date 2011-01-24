@@ -577,7 +577,7 @@ class InstanceItem(BaseItem):
         #self.prepareGeometryChange()
         #line = LineItem(QtCore.QLineF(l.x1/self.uu, l.y1/self.uu, l.x2/self.uu, l.y2/self.uu), None)
         line = LineItem(l, self)
-        print line.boundingRect()
+        #print line.boundingRect()
         line.setFlag(QtGui.QGraphicsItem.ItemStacksBehindParent, True)
         #line.setLineWidth(0.0)
         #self.addToGroup(line)

@@ -93,7 +93,9 @@ class SelectMode():
     
     def removeLasso(self):
         if self._lasso:
-            self._view.scene().removeItem(self._lasso)
+            scene = self._view.scene()
+            scene.removeItem(self._lasso)
+            scene.setSceneRect(scene.itemsBoundingRect())
             self._lasso = None
 
     def findItems(self, pos, modifiers=None):
@@ -218,8 +220,9 @@ class ZoomInMode(SelectMode):
     def mouseReleaseEvent(self, event, pos = None):
         if pos: # and event.button() == QtCore.Qt.LeftButton:
             if self.lassoRect():
-                self._view.fitRect(self.lassoRect())
+                lassoRect = self.lassoRect()
                 self.removeLasso()
+                self._view.fitRect(lassoRect)
             if self.transient():
                 self._view.modeStack.popMode()
         else:

@@ -21,6 +21,7 @@ import re
 #from PSchem.ConsoleWidget import *
 import sys
 import math
+from PyQt4 import QtGui, QtCore
 
 class Controller():
 

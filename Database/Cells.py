@@ -23,29 +23,21 @@ from xml.etree import ElementTree as et
 class CellView():
     def __init__(self, name):
         self._name = 'cell_view'
-        self._elems = set()
         self._attribs = {}
-        self._views = set()
-        self._parent = None
+        self._designs = set()
+        self._cell = None
 
-    def installUpdateHook(self, view):
-        self._views.add(view)
-        for elem in self._elems:
-            elem.addToView(view)
+    def installUpdateHook(self, design):
+        self._designs.add(design)
+        ##view.addElements()
+        #for elem in self._elems:
+        #    elem.addToView(view)
 
-    def updateViews(self):
-        for v in self._views:
-            v.updateItem()
+    def updateDesigns(self):
+        for d in self._designs:
+            d.updateDesign()
+            #v.updateItem()
             
-    def addElem(self, elem):
-        self._elems.add(elem)
-        for view in self._views:
-            elem.addToView(view)
-
-    def removeElem(self, elem):
-        elem.removeFromView()
-        self._elems.remove(elem)
-
     def attributeLabels(self):
         return filter(lambda e: isinstance(e, AttributeLabel), self._elems)
 
@@ -58,27 +50,83 @@ class CellView():
     def cell(self):
         return self._cell
 
-    def elems(self):
-        return self._elems
-
     def attribs(self):
         return self._attribs
 
+    def setCell(self, cell):
+        self._cell = cell
+
     def setParent(self, parent):
-        self._parent = parent
+        self.setCell(parent)
 
     def parent(self):
-        return self._parent
+        return self.cell()
 
-    def cell(self):
-        return self._parent
+    #def cell(self):
+    #    return self._parent
         
     def library(self):
-        return self._parent.library()
+        return self.cell().library()
         
     def database(self):
-        return self._parent.database()
+        return self.cell().database()
         
+    def save(self):
+        pass
+        
+    def restore(self):
+        pass
+
+    def remove(self):
+        self._cell = None
+        self._views = set()
+
+class Diagram(CellView):
+    def __init__(self, name):
+        CellView.__init__(self, name)
+        self._elems = set()
+        self._lines = set()
+        self._rects = set()
+        self._labels = set()
+        #self._uu = 160 # default DB units per user units
+        self._attribs['uu'] = 160 # default DB units per user units
+        self._name = 'diagram'
+        
+    def setUU(self, uu):
+        self._attribs['uu'] = uu
+
+    def elems(self):
+        return self._elems
+
+    def addElem(self, elem):
+        self._elems.add(elem)
+        for design in self._designs:
+            design.addElem(elem)
+        #    elem.addToView(view)
+
+    def removeElem(self, elem):
+        for design in self._designs:
+            design.removeElem(elem)
+        #elem.removeFromView()
+        self._elems.remove(elem)
+
+    def lines(self):
+        return filter(lambda e: isinstance(e, Line), self.elems())
+
+    def rects(self):
+        return filter(lambda e: isinstance(e, Rect), self.elems())
+
+    def labels(self):
+        return filter(lambda e: isinstance(e, Label), self.elems())
+
+    def uu(self):
+        return self._attribs['uu']
+
+    def remove(self):
+        for e in list(self._elems):
+            self.removeElem(e)
+        CellView.remove(self)
+
     def save(self):
         root = et.Element(self._name)
         tree = et.ElementTree(root)
@@ -109,38 +157,6 @@ class CellView():
             if level and (not elem.tail or not elem.tail.strip()):
                 elem.tail = i
     
-    def remove(self):
-        for e in list(self._elems):
-            self.removeElem(e)
-        self._parent = None
-        self._views = set()
-
-class Diagram(CellView):
-    def __init__(self, name):
-        CellView.__init__(self, name)
-        self._lines = set()
-        self._rects = set()
-        self._labels = set()
-        #self._uu = 160 # default DB units per user units
-        self._attribs['uu'] = 160 # default DB units per user units
-        self._name = 'diagram'
-        
-    def setUU(self, uu):
-        self._attribs['uu'] = uu
-
-    def lines(self):
-        return filter(lambda e: isinstance(e, Line), self.elems())
-
-    def rects(self):
-        return filter(lambda e: isinstance(e, Rect), self.elems())
-
-    def labels(self):
-        return filter(lambda e: isinstance(e, Label), self.elems())
-
-    def uu(self):
-        return self._attribs['uu']
-
-
 class Schematic(Diagram):
     def __init__(self, name):
         Diagram.__init__(self, name)
@@ -336,7 +352,7 @@ class Database():
         self._libraryNames = {}
         self._databaseViews = set()
         self._hierarchyViews = set()
-        self._topLevelOccurrences = set()
+        self._designs = set()
         self._layers = None
 
     def installUpdateDatabaseViewsHook(self, view):
@@ -385,16 +401,16 @@ class Database():
         else:
             return None
 
-    def addTopLevelOccurrence(self, cellView):
-        self._topLevelOccurrences.add(Occurrence(cellView))
+    def addDesign(self, design):
+        self._designs.add(design)
         self.updateHierarchyViews()
 
-    def removeTopLevelOccurrence(self, instance):
-        self._topLevelOccurrences.remove(instance)
+    def removeDesign(self, design):
+        self._designs.remove(design)
         self.updateHierarchyViews()
 
-    def topLevelOccurrences(self):
-        return self._topLevelOccurrences
+    def designs(self):
+        return self._designs
 
     def setLayers(self, layers):
         self._layers = layers

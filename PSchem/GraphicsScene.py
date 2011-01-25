@@ -22,15 +22,21 @@ from PSchem.GraphicsItems import *
 from Database.Primitives import *
 
 class GraphicsScene(QtGui.QGraphicsScene):
-    def __init__(self, cellView):
+    def __init__(self, design):
         QtGui.QGraphicsView.__init__(self)
-        self._cellView = cellView
-        self.uu = float(self._cellView.uu())
+        self._design = design
+        self.uu = float(self._design.cellView().uu())
 
-        self._cellView.installUpdateHook(self)
+        self._design.installUpdateHook(self)
 
+    def updateScene(self):
+        pass
+        
+    def design(self):
+        return self._design
+        
     def cellView(self):
-        return self._cellView
+        return self.design().cellView()
         
     def addElem(self, e):
         print 'Unknown element type', e
@@ -76,7 +82,7 @@ class GraphicsScene(QtGui.QGraphicsScene):
         self.addItem(ellipse)
 
     def addLabel(self, l):
-        return
+        ##return
         label = TextItem(l)
         #label.setFont(QtGui.QFont("Lucida", l.size/self.uu, QtGui.QFont.Normal, False))
         #label.setText(l.text())
@@ -87,7 +93,7 @@ class GraphicsScene(QtGui.QGraphicsScene):
         self.addItem(label)
 
     def addAttribute(self, a):
-        return
+        ##return
         attr = TextItem(a)
         #attr.setFont(QtGui.QFont("Lucida", a.size/self.uu, QtGui.QFont.Normal, False))
         #if a.visibleKey():
@@ -102,16 +108,17 @@ class GraphicsScene(QtGui.QGraphicsScene):
         self.addItem(attr)
 
 
-    def addInstance(self, i):
-        instance = InstanceItem(i)
-        instance.translate(i.x()/self.uu, i.y()/self.uu)
-        instance.rotate(i.angle())
-        if i.vMirror():
-            instance.scale(1, -1)
-        if i.hMirror():
-            instance.scale(-1, 1)
-        self.addItem(instance)
-        instance.updateMatrix()
+    def addOccurrence(self, o):
+        instance = o.instance()
+        occurrenceItem = OccurrenceItem(o)
+        occurrenceItem.translate(instance.x()/self.uu, instance.y()/self.uu)
+        occurrenceItem.rotate(instance.angle())
+        if instance.vMirror():
+            occurrenceItem.scale(1, -1)
+        if instance.hMirror():
+            occurrenceItem.scale(-1, 1)
+        self.addItem(occurrenceItem)
+        occurrenceItem.updateMatrix()
 
     #def mouseMoveEvent(self, event):
     #    print str(event.pos().x()) + ' ' + str(event.pos().y())

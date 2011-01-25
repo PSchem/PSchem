@@ -819,8 +819,9 @@ class PWindow(QtGui.QMainWindow):
         
     def openView(self, view):
         if view:
-            self.database.addTopLevelOccurrence(view)
-            scene = GraphicsScene(view)
+            design = Design(view)
+            self.database.addDesign(design)
+            scene = GraphicsScene(design)
             dView = DesignView(self, scene)
             subWin = SubWindow(self)
             subWin.setWidget(dView)

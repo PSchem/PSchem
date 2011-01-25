@@ -545,15 +545,15 @@ class EllipseArcItem(BaseItem):
 #class InstanceItem(QtGui.QGraphicsItemGroup):
 #    def __init__(self, instance, parent=None):
 #        QtGui.QGraphicsItemGroup.__init__(self, parent)
-class InstanceItem(BaseItem):
-    def __init__(self, instance, parent=None):
+class OccurrenceItem(BaseItem):
+    def __init__(self, occurrence, parent=None):
         BaseItem.__init__(self, parent)
-        self.model = instance
+        self.model = occurrence
         self._cellView = self.model.cellView()
         self.uu = float(self._cellView.uu())
         self._rect = QtCore.QRectF()
         self._shapePath = QtGui.QPainterPath()
-        #self.setZValue(self.model.layer().zValue())
+        #self.setZValue(self.model.instance().layer().zValue())
         self.setHandlesChildEvents(True)
         self.model.installUpdateHook(self)
         self._cellView.installUpdateHook(self)
@@ -561,12 +561,12 @@ class InstanceItem(BaseItem):
     def paint(self, painter, option, widget):
         if not self.parentItem():
             if self.selected():
-                pen = QtGui.QPen(self.model.layers().layerByName('selection', 'drawing').view().pen())
+                pen = QtGui.QPen(self.model.instance().layers().layerByName('selection', 'drawing').view().pen())
                 painter.setPen(pen)
                 #painter.drawRect(self.boundingRect())
                 painter.drawPath(self.shape())
             if self.preSelected():
-                pen = QtGui.QPen(self.model.layers().layerByName('preselection', 'drawing').view().pen())
+                pen = QtGui.QPen(self.model.instance().layers().layerByName('preselection', 'drawing').view().pen())
                 painter.setPen(pen)
                 #painter.drawRect(self.boundingRect())
                 painter.drawPath(self.shape())
@@ -652,7 +652,7 @@ class InstanceItem(BaseItem):
         #self.prepareGeometryChange()
         for c in self.childItems():
             if (isinstance(c, TextItem) or
-                isinstance(c, InstanceItem)):
+                isinstance(c, OccurrenceItem)):
                 c.updateMatrix()
         self.updateBoundingRect()
         

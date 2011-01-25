@@ -552,20 +552,26 @@ class Instance(Element):
         return self._cellView
 
 
-    def addToView(self, view): #graphics view
+    def addToView(self, view): #occurence
         view.addInstance(self)
 
-class Occurrence():
-    def __init__(self, cellView, instance=None, parentOccurrence=None):
+class Design():
+    def __init__(self, cellView):
         self._cellView = cellView
-        self._instance = instance
-        self._parentOccurrence = parentOccurrence
         self._childOccurrences = None
-        if self._parentOccurrence:
-            self._topLevelOccurrence = self._parentOccurrence.topLevelOccurrence()
-        else:
-            self._topLevelOccurrence = self
- 
+        self._cellView.installUpdateHook(self)
+        self._scene = None
+            
+    def installUpdateHook(self, scene):
+        self._scene = scene
+        for e in self.cellView().elems():
+            if isinstance(e, Instance):
+                occurrence = Occurrence(e, self)
+                #e.addToView(occurrence)
+                occurrence.addToView(scene)
+            else:
+                e.addToView(scene)
+            
     def childOccurrences(self):
         if self._childOccurrences:   #cache
             return self._childOccurrences
@@ -580,7 +586,62 @@ class Occurrence():
                 cv = c.implementation() #possibly schematic
                 if not cv:
                     cv = c.symbol() #symbol
-                self._childOccurrences.add(Occurrence(cv, i, self))
+                self._childOccurrences.add(Occurrence(i, self))
+        else:
+            self._childOccurrences = set()
+        return self._childOccurrences
+        
+    def cellView(self):
+        return self._cellView
+
+    def design(self):
+        return self
+
+    def updateDesign(self):
+        if self._scene:
+            self._scene.updateScene()
+
+    def addElem(self, elem):
+        if self._scene:
+            if isinstance(elem, Instance):
+                occurrence = Occurrence(elem, self)
+                self._scene.addOccurrence(occurrence)
+            else:
+                elem.addToView(self._scene)
+
+    def removeElem(self, elem):
+        elem.removeFromView()
+        self._elems.remove(elem)
+
+class Occurrence():
+    def __init__(self, instance, parentOccurrence):
+        self._instance = instance
+        self._parentOccurrence = parentOccurrence
+        self._childOccurrences = None
+        self._design = self._parentOccurrence.design()
+        self._instance.installUpdateHook(self)
+        self._view = None
+ 
+    def installUpdateHook(self, view):
+        self._view = view
+        for e in self._instance.cellView().elems():
+            e.addToView(view)
+
+    def childOccurrences(self):
+        if self._childOccurrences:   #cache
+            return self._childOccurrences
+        #if isinstance(self._cellView, Database.Cells.Schematic):
+        if self.cellView().name() == "schematic":
+            instances = self._cellView.instances()
+            self._childOccurrences = set()
+            for i in instances:
+                c = i.cell()
+                #print c
+                #cv = None
+                cv = c.implementation() #possibly schematic
+                if not cv:
+                    cv = c.symbol() #symbol
+                self._childOccurrences.add(Occurrence(i, self))
         else:
             self._childOccurrences = set()
         return self._childOccurrences
@@ -591,14 +652,20 @@ class Occurrence():
     def instance(self):
         return self._instance
 
-    def topLevelOccurrence(self):
-        return self._topLevelOccurrence
+    def design(self):
+        return self._design
 
     def cellView(self):
-        return self._cellView
+        return self._instance.cellView()
 
+    def updateItem(self):
+        if self._view:
+            self._view.updateItem()
 
+    def addToView(self, view): #graphics item
+        view.addOccurrence(self)
 
+        
 class Connectivity():
     def __init__(self):
         pass

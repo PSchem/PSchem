@@ -523,7 +523,7 @@ class PWindow(QtGui.QMainWindow):
         self.zoomIn2Act = QtGui.QAction(self.tr("Zoom In"), self)
         self.zoomIn2Act.setStatusTip(self.tr("Zoom the current view in"))
         self.zoomIn2Act.setShortcut(self.tr(']'))
-        self.zoomIn2Cmd = Command("currentView().zoom(math.sqrt(2))")
+        self.zoomIn2Cmd = Command("currentView().zoom(2.0)")
         self.connect(self.zoomIn2Act, QtCore.SIGNAL("triggered()"),
                     lambda: self.controller.execute(self.zoomIn2Cmd))
                     #lambda: self.controller.parse("window.currentView().scale(1.41421356237)"))
@@ -531,7 +531,7 @@ class PWindow(QtGui.QMainWindow):
         self.zoomOut2Act = QtGui.QAction(self.tr("Zoom Out"), self)
         self.zoomOut2Act.setStatusTip(self.tr("Zoom the current view out"))
         self.zoomOut2Act.setShortcut(self.tr('['))
-        self.zoomOut2Cmd = Command("currentView().zoom(1/math.sqrt(2))")
+        self.zoomOut2Cmd = Command("currentView().zoom(0.5)")
         self.connect(self.zoomOut2Act, QtCore.SIGNAL("triggered()"),
                     lambda: self.controller.execute(self.zoomOut2Cmd))
 
@@ -799,7 +799,7 @@ class PWindow(QtGui.QMainWindow):
                 ['io', '../geda/symbols/io'],
                 ['font', '../geda/symbols/font'],
                 ['spice', '../geda/symbols/spice'],
- #               ['power', '../geda/symbols/power'],
+                ['power', '../geda/symbols/power'],
                 ['titleblock', '../geda/symbols/titleblock'],
                 ['lightning_detector', '../geda/examples/lightning_detector/sym'],
                 ['gTAG', '../geda/examples/gTAG'],
@@ -819,7 +819,7 @@ class PWindow(QtGui.QMainWindow):
         
     def openView(self, view):
         if view:
-            self.database.addTopLevelInstance(view)
+            self.database.addTopLevelOccurrence(view)
             scene = GraphicsScene(view)
             dView = DesignView(self, scene)
             subWin = SubWindow(self)

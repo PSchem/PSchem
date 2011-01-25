@@ -18,7 +18,7 @@
 # along with PSchem Database.  If not, see <http://www.gnu.org/licenses/>.
 
 from Database.Layers import *
-from Database.Cells import *
+#from Database.Cells import *
 from Database.Attributes import *
 from xml.etree import ElementTree as et
 
@@ -101,13 +101,13 @@ class Element():
         return self._parent
 
     def cell(self):
-        return self._parent.parent()
+        return self._parent.cell()
 
     def library(self):
-        return self.cell().parent()
+        return self._parent.library()
 
     def database(self):
-        return self.library().parent()
+        return self._parent.database()
 
     def layers(self):
         return self._layers
@@ -526,7 +526,7 @@ class Instance(Element):
             self._viewName = viewName
             self.updateViews()
 
-    def instanceCell(self):
+    def cell(self):
         if self._cell:    #cache
             return self._cell
         if self._libName == '':
@@ -535,14 +535,16 @@ class Instance(Element):
         else:
             self._cell = self.database().cellByName(
                 self._libName, self._cellName)
+        if not self._cell:
+            self._cell = self.database().cellByName('analog', 'voltage-1')
         return self._cell
 
 
-    def instanceCellView(self):
+    def cellView(self):
         if self._cellView:   #cache
             return self._cellView
-        print self._cellName
-        cell = self.instanceCell()
+        #print self._cellName
+        cell = self.cell()
         if cell and cell.viewByName('symbol'):
             self._cellView = cell.viewByName('symbol')
         else:
@@ -553,6 +555,47 @@ class Instance(Element):
     def addToView(self, view): #graphics view
         view.addInstance(self)
 
+class Occurrence():
+    def __init__(self, cellView, instance=None, parentOccurrence=None):
+        self._cellView = cellView
+        self._instance = instance
+        self._parentOccurrence = parentOccurrence
+        self._childOccurrences = None
+        if self._parentOccurrence:
+            self._topLevelOccurrence = self._parentOccurrence.topLevelOccurrence()
+        else:
+            self._topLevelOccurrence = self
+ 
+    def childOccurrences(self):
+        if self._childOccurrences:   #cache
+            return self._childOccurrences
+        #if isinstance(self._cellView, Database.Cells.Schematic):
+        if self._cellView.name() == "schematic":
+            instances = self._cellView.instances()
+            self._childOccurrences = set()
+            for i in instances:
+                c = i.cell()
+                #print c
+                #cv = None
+                cv = c.implementation() #possibly schematic
+                if not cv:
+                    cv = c.symbol() #symbol
+                self._childOccurrences.add(Occurrence(cv, i, self))
+        else:
+            self._childOccurrences = set()
+        return self._childOccurrences
+
+    def parentOccurrence(self):
+        return self._parentOccurrence
+
+    def instance(self):
+        return self._instance
+
+    def topLevelOccurrence(self):
+        return self._topLevelOccurrence
+
+    def cellView(self):
+        return self._cellView
 
 
 
@@ -571,6 +614,3 @@ class CPin(Connectivity):
 class CInstancePin(Connectivity):
     def __init__(self):
         pass
-
-
-

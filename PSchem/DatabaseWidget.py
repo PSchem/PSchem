@@ -26,7 +26,7 @@ class DatabaseModel(QtCore.QAbstractItemModel):
     def __init__(self, database, parent=None):
         QtCore.QAbstractItemModel.__init__(self, parent)
         self.database = database
-        database.installUpdateViewsHook(self)
+        database.installUpdateDatabaseViewsHook(self)
 
     def update(self):
         self.emit(QtCore.SIGNAL("layoutChanged()"))

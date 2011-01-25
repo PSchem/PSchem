@@ -76,6 +76,7 @@ class GraphicsScene(QtGui.QGraphicsScene):
         self.addItem(ellipse)
 
     def addLabel(self, l):
+        return
         label = TextItem(l)
         #label.setFont(QtGui.QFont("Lucida", l.size/self.uu, QtGui.QFont.Normal, False))
         #label.setText(l.text())
@@ -86,6 +87,7 @@ class GraphicsScene(QtGui.QGraphicsScene):
         self.addItem(label)
 
     def addAttribute(self, a):
+        return
         attr = TextItem(a)
         #attr.setFont(QtGui.QFont("Lucida", a.size/self.uu, QtGui.QFont.Normal, False))
         #if a.visibleKey():

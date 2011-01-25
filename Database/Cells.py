@@ -20,46 +20,6 @@
 from Database.Primitives import *
 from xml.etree import ElementTree as et
 
-class ConcreteInstance():
-    def __init__(self, cellView, instance=None, parent=None, topLevel=None):
-        self._cellView = cellView
-        self._instance = instance
-        self._parent = parent
-        self._children = None
-        if topLevel:
-            self._topLevel = topLevel
-        else:
-            self._topLevel = self
-
-    def children(self):
-        if self._children:   #cache
-            return self._children
-        if isinstance(self._cellView, Schematic):
-            instances = self._cellView.instances()
-            self._children = set()
-            for i in instances:
-                c = i.instanceCell()
-                cv = c.implementation() #possibly schematic
-                if not cv:
-                    cv = c.symbol() #symbol
-                self._children.add(ConcreteInstance(cv, i, self, self._topLevel))
-        else:
-            self._children = set()
-        return self._children
-
-    def parentInstance(self):
-        return self._parent
-
-    def instance(self):
-        return self._instance
-
-    def topLevel(self):
-        return self._topLevel
-
-    def cellView(self):
-        return self._cellView
-
-
 class CellView():
     def __init__(self, name):
         self._name = 'cell_view'
@@ -283,11 +243,13 @@ class Cell():
         self._views.add(cellView)
         cellView.setParent(self)
         self._viewNames[cellView.name()] = cellView
+        self.database().updateDatabaseViews()
 
     def removeView(self, cellView):
         cellView.remove()
         self._views.remove(cellView)
         del(self._viewNames[cellView.name()])
+        self.database().updateDatabaseViews()
 
     def views(self):
         return self._views
@@ -333,7 +295,7 @@ class Library():
         self._cells.add(cell)
         cell.setParent(self)
         self._cellNames[cell.name()] = cell
-        self.database().updateViews()
+        self.database().updateDatabaseViews()
 
     def cells(self):
         return self._cells
@@ -372,30 +334,30 @@ class Database():
     def __init__(self):
         self._libraries = set()
         self._libraryNames = {}
-        self._views = set()
-        self._instanceViews = set()
-        self._topLevelInstances = set()
+        self._databaseViews = set()
+        self._hierarchyViews = set()
+        self._topLevelOccurrences = set()
         self._layers = None
 
-    def installUpdateViewsHook(self, view):
-        self._views.add(view)
+    def installUpdateDatabaseViewsHook(self, view):
+        self._databaseViews.add(view)
 
-    def installUpdateInstanceViewsHook(self, view):
-        self._instanceViews.add(view)
+    def installUpdateHierarchyViewsHook(self, view):
+        self._hierarchyViews.add(view)
 
-    def updateViews(self):
-        for v in self._views:
+    def updateDatabaseViews(self):
+        for v in self._databaseViews:
             v.update()
 
-    def updateInstanceViews(self):
-        for v in self._instanceViews:
+    def updateHierarchyViews(self):
+        for v in self._hierarchyViews:
             v.update()
 
     def addLibrary(self, library):
         self._libraries.add(library)
         library.setParent(self)
         self._libraryNames[library.name()] = library
-        self.updateViews()
+        self.updateDatabaseViews()
 
     def libraries(self):
         return self._libraries
@@ -423,16 +385,16 @@ class Database():
         else:
             return None
 
-    def addTopLevelInstance(self, cellView):
-        self._topLevelInstances.add(ConcreteInstance(cellView))
-        self.updateInstanceViews()
+    def addTopLevelOccurrence(self, cellView):
+        self._topLevelOccurrences.add(Occurrence(cellView))
+        self.updateHierarchyViews()
 
-    def removeTopLevelInstance(self, instance):
-        self._topLevelInstances.remove(instance)
-        self.updateInstanceViews()
+    def removeTopLevelOccurrence(self, instance):
+        self._topLevelOccurrences.remove(instance)
+        self.updateHierarchyViews()
 
-    def topLevelInstances(self):
-        return self._topLevelInstances
+    def topLevelOccurrences(self):
+        return self._topLevelOccurrences
 
     def setLayers(self, layers):
         self._layers = layers
@@ -454,5 +416,3 @@ class Importer:
         self._targetLibrary = 'work'
         self._overwrite = False
         self._recursive = True
-
-

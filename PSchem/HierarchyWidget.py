@@ -25,7 +25,7 @@ class HierarchyModel(QtCore.QAbstractItemModel):
     def __init__(self, database, parent=None):
         QtCore.QAbstractItemModel.__init__(self, parent)
         self.database = database
-        database.installUpdateInstanceViewsHook(self)
+        database.installUpdateHierarchyViewsHook(self)
 
     def update(self):
         self.emit(QtCore.SIGNAL("layoutChanged()"))
@@ -42,7 +42,7 @@ class HierarchyModel(QtCore.QAbstractItemModel):
 
         col = index.column()
         data = index.internalPointer()
-        if isinstance(data, ConcreteInstance):
+        if isinstance(data, Occurrence):
             if col == 0:
                 if data.instance():
                     return QtCore.QVariant(data.instance().name())
@@ -64,9 +64,9 @@ class HierarchyModel(QtCore.QAbstractItemModel):
             data = parent.internalPointer()
 
         if not parent.isValid():
-            children = list(self.database.topLevelInstances())
-        elif isinstance(data, ConcreteInstance):
-            children = list(data.children()) #+ list(data.pins()) + list(data.nets() - data.pins())
+            children = list(self.database.topLevelOccurrences())
+        elif isinstance(data, Occurrence):
+            children = list(data.childOccurrences()) #+ list(data.pins()) + list(data.nets() - data.pins())
         else:
             return QtCore.QModelIndex()
 
@@ -77,16 +77,16 @@ class HierarchyModel(QtCore.QAbstractItemModel):
             return QtCore.QModelIndex()
 
         data = index.internalPointer()
-        if isinstance(data, ConcreteInstance):
-            parent = data.parentInstance()
+        if isinstance(data, Occurrence):
+            parent = data.parentOccurrence()
             if parent:
-                pparent = parent.parentInstance()
+                pparent = parent.parentOccurrence()
                 if pparent:
-                    d = list(pparent.children())
+                    d = list(pparent.childOccurrences())
                     n = d.index(parent)
                     return self.createIndex(n, 0, parent)
                 else:
-                    d = list(self.database.topLevelInstances())
+                    d = list(self.database.topLevelOccurrences())
                     n = d.index(parent)
                     return self.createIndex(n, 0, parent)
         return QtCore.QModelIndex()
@@ -95,8 +95,8 @@ class HierarchyModel(QtCore.QAbstractItemModel):
         if not parent.isValid():
             return True
         data = parent.internalPointer()
-        if isinstance(data, ConcreteInstance):
-            return len(data.children()) > 0
+        if isinstance(data, Occurrence):
+            return len(data.childOccurrences()) > 0
         else:
             return False
 
@@ -105,18 +105,18 @@ class HierarchyModel(QtCore.QAbstractItemModel):
         #    return 0
 
         if not parent.isValid():
-            return len(self.database.topLevelInstances())
+            return len(self.database.topLevelOccurrences())
 
         data = parent.internalPointer()
-        if isinstance(data, ConcreteInstance):
-            return len(data.children()) #+ list(data.pins()) + list(data.nets() - data.pins())
+        if isinstance(data, Occurrence):
+            return len(data.childOccurrences()) #+ list(data.pins()) + list(data.nets() - data.pins())
         return 0
 
     def columnCount(self, parent):
         if not parent.isValid():
             return 3
         data = parent.internalPointer()
-        if isinstance(data, ConcreteInstance):
+        if isinstance(data, Occurrence):
             return 3
         return 0
 
@@ -124,7 +124,7 @@ class HierarchyModel(QtCore.QAbstractItemModel):
     def headerData(self, section, orientation, role):
         if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
             if section == 0:
-                return QtCore.QVariant(self.tr("Instance"))
+                return QtCore.QVariant(self.tr("Occurrence"))
             elif section == 1:
                 return QtCore.QVariant(self.tr("Cell"))
             elif section == 2:

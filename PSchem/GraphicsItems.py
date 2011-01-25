@@ -65,7 +65,7 @@ class TextItemInt(QtGui.QGraphicsSimpleTextItem):
         #    painter.drawRect(self.boundingRect())
 
     def updateMatrix(self):
-        self.prepareGeometryChange()
+        #self.prepareGeometryChange()
         sm = self.transform()
         s11 = sm.m11()
         s12 = sm.m12()
@@ -116,8 +116,8 @@ class TextItemInt(QtGui.QGraphicsSimpleTextItem):
             s11*(cmp(m11, 0)+cmp(m12, 0)), 0,
             0, s22*(-cmp(m22,0)+cmp(m21, 0)),
             hOffs+dx, vOffs+dy)
-        self.prepareGeometryChange()
-        self.parentItem().prepareGeometryChange()
+        #self.prepareGeometryChange()
+        #self.parentItem().prepareGeometryChange()
         self.setTransform(transform)
         #self.prepareGeometryChange()
         
@@ -144,7 +144,7 @@ class TextItem(BaseItem):
         self.model.installUpdateHook(self)
 
     def updateItem(self):
-        self._labelItem.prepareGeometryChange()
+        #self._labelItem.prepareGeometryChange()
         uu = float(self.model.parent().uu())
         text = self.model.text()
         #text = ''
@@ -191,6 +191,7 @@ class TextItem(BaseItem):
         self.updateBoundingRect()
         
     def updateBoundingRect(self):
+        self.prepareGeometryChange()
         r = self._labelItem.boundingRect()
         pos = self._labelItem.pos()
         matrix = self._labelItem.transform() * QtGui.QTransform().translate(pos.x(), pos.y())
@@ -260,12 +261,13 @@ class CustomPathItem(BaseItem):
                 self._path.closeSubpath()
         #self._width = self.model.width()
         self.setZValue(self.model.layer().zValue())
-        self.prepareGeometryChange()
+        #self.prepareGeometryChange()
         #self.setPath(p)
         self.updateBoundingRect()
         
 
     def updateBoundingRect(self):
+        self.prepareGeometryChange()
         self._rect = self._path.controlPointRect()
         a = self.model.layer().lineWidth()/2.0
         self._rect.adjust(-a,-a,a,a)
@@ -316,7 +318,7 @@ class LineItem(BaseItem):
             painter.drawLine(self._lineShape)
 
     def updateItem(self):
-        self.prepareGeometryChange()
+        #self.prepareGeometryChange()
         l = self.model
         uu = float(l.parent().uu())
         self._lineShape = QtCore.QLineF(
@@ -329,6 +331,7 @@ class LineItem(BaseItem):
         self.update()
 
     def updateBoundingRect(self):
+        self.prepareGeometryChange()
         l = self._lineShape
         d = 1e-20
         x = min(l.x1(), l.x2())
@@ -382,7 +385,7 @@ class RectItem(BaseItem):
             painter.drawRect(self.boundingRect())
 
     def updateItem(self):
-        self.prepareGeometryChange()
+        #self.prepareGeometryChange()
         r = self.model
         uu = float(r.parent().uu())
         self._rectShape = QtCore.QRectF(
@@ -398,6 +401,7 @@ class RectItem(BaseItem):
         self.update(self.boundingRect())
 
     def updateBoundingRect(self):
+        self.prepareGeometryChange()
         self._rect = self._rectShape
         a = self.model.layer().lineWidth()/2.0
         self._rect.adjust(-a,-a,a,a)
@@ -444,7 +448,7 @@ class EllipseItem(BaseItem):
             painter.drawRect(self.boundingRect())
 
     def updateItem(self):
-        self.prepareGeometryChange()
+        #self.prepareGeometryChange()
         e = self.model
         self.updateBoundingRect()
         #self.setRect(e.x()/uu-cx/2.0, e.y()/uu-cy/2.0, cx, cy)
@@ -452,6 +456,7 @@ class EllipseItem(BaseItem):
         self.update(self.boundingRect())
 
     def updateBoundingRect(self):
+        self.prepareGeometryChange()
         e = self.model
         uu = float(e.parent().uu())
         cx = e.radiusX()/uu
@@ -509,7 +514,7 @@ class EllipseArcItem(BaseItem):
             painter.drawRect(self.boundingRect())
 
     def updateItem(self):
-        self.prepareGeometryChange()
+        #self.prepareGeometryChange()
         e = self.model
         self._startAngle = -e.startAngle()*16
         self._spanAngle = -e.spanAngle()*16
@@ -518,6 +523,7 @@ class EllipseArcItem(BaseItem):
         self.update(self.boundingRect())
 
     def updateBoundingRect(self): #needs tightening
+        self.prepareGeometryChange()
         e = self.model
         uu = float(e.parent().uu())
         cx = e.radiusX()/uu
@@ -543,7 +549,7 @@ class InstanceItem(BaseItem):
     def __init__(self, instance, parent=None):
         BaseItem.__init__(self, parent)
         self.model = instance
-        self._cellView = self.model.instanceCellView()
+        self._cellView = self.model.cellView()
         self.uu = float(self._cellView.uu())
         self._rect = QtCore.QRectF()
         self._shapePath = QtGui.QPainterPath()
@@ -570,7 +576,7 @@ class InstanceItem(BaseItem):
     #    self._transformHooks.add(cb)
 
     def addElem(self, e):
-        self.prepareGeometryChange()
+        #self.prepareGeometryChange()
         print 'Unknown element type', e
 
     def addLine(self, l):
@@ -643,7 +649,7 @@ class InstanceItem(BaseItem):
         self.update(self.boundingRect())
 
     def updateMatrix(self):
-        self.prepareGeometryChange()
+        #self.prepareGeometryChange()
         for c in self.childItems():
             if (isinstance(c, TextItem) or
                 isinstance(c, InstanceItem)):

@@ -108,9 +108,13 @@ class GedaReader(Reader):
 
     def parsePin(self):
         m=self.match
-        p = Pin(self.view, self._database.layers(), int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)))
+        if self.inSymbol:
+            p = SymbolPin(self.view, self._database.layers(), int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)))
+            self.view.addElem(p)
+        elif self.inSchematic:
+            p = Pin(self.view, self._database.layers(), int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)))
+            self.view.addElem(p)
         self.last = p
-        self.view.addElem(p)
 
     def parseNet(self):
         m=self.match
@@ -314,14 +318,14 @@ class GedaReader(Reader):
         #if not self.cell:
         #    self.cell = Cell(cellName)
         #    self.library.addCell(self.cell)
-        ##self.view = self.cell.viewByName(fileName)
-        #self.view = self.cell.viewByName('schematic')
+        ##self.view = self.cell.cellViewByName(fileName)
+        #self.view = self.cell.cellViewByName('schematic')
         #if self.view:
         #    print 'Overwriting cell view: '+self.library.name()+'/'+cellName+'/schematic'
         #    self.cell.removeView(self.view)
         #self.view = self.database.makeSchematic(fileName)
         ##self.view = Schematic('schematic')
-        #self.cell.addView(self.view)
+        #self.cell.addCellView(self.view)
         self.view.setUU(self.uu)
         schematic = self.parseFile(fileName, mode)
         schematic.checkNetSegments()
@@ -339,15 +343,15 @@ class GedaReader(Reader):
         #if not self.cell:
         #    self.cell = Cell(cellName)
         #    self.library.addCell(self.cell)
-        #self.view = self.cell.viewByName(fileName)
-        #self.view = self.cell.viewByName('symbol')
+        #self.view = self.cell.cellViewByName(fileName)
+        #self.view = self.cell.cellViewByName('symbol')
         #if self.view:
         #    return self.view
         #    print 'Overwriting cell view: '+self.library.name()+'/'+cellName+'/symbol'
         #    self.cell.removeView(self.view)
         #self.view = self.database.makeSymbol(fileName)
         ##self.view = Symbol('symbol')
-        #self.cell.addView(self.view)
+        #self.cell.addCellView(self.view)
         self.view.setUU(self.uu)
         return self.parseFile(fileName, mode)
 
@@ -372,13 +376,13 @@ class GedaImporter(Importer):
             self.importSourceLibrary(l)
                 
     def findCellSymbolLibrary(self, cellName):
-        cell = self.database.viewByName(self.library.name(), cellName, 'symbol')
+        cell = self.database.cellViewByName(self.library.name(), cellName, 'symbol')
         if cell:
             return self.library
         else:
             for l in self.database.libraries():
                 if not l == self.library:
-                    cell = self.database.viewByName(l.name(), cellName, 'symbol')
+                    cell = self.database.cellViewByName(l.name(), cellName, 'symbol')
                     #print l.name, cell
                     if cell:
                         return l
@@ -406,7 +410,7 @@ class GedaImporter(Importer):
                 #f = os.path.join(directory, f)
                 #print f, os.path.isfile(f) #, self.psymStrip.search(f)
                 #if os.path.isfile(f) and self.psymStrip.search(f):
-                if (not self.database.viewByName(library, self.cellName(f), 'symbol')):
+                if (not self.database.cellViewByName(library, self.cellName(f), 'symbol')):
                     print 'Importing component symbol', f
                     self.library = self.database.libraryByName(library)
                     if not self.library:
@@ -416,14 +420,14 @@ class GedaImporter(Importer):
                     if not self.cell:
                         self.cell = Cell(self.cellName(f))
                         self.library.addCell(self.cell)
-                    cv = self.cell.viewByName('symbol')
+                    cv = self.cell.cellViewByName('symbol')
                     if not cv:
                         cv = Symbol('symbol')
-                        self.cell.addView(cv)
+                        self.cell.addCellView(cv)
                         r = GedaReader(self)
                         cv = r.parseSymbol(f, cv)
                     #cv = r.parseSymbol(f)
-                    #self.cell.addView(cv)
+                    #self.cell.addCellView(cv)
                 else:
                     print 'Skipping component symbol', f
 
@@ -443,7 +447,7 @@ class GedaImporter(Importer):
                 files)
             for f in files:
                 #f = os.path.join(directory, f)
-                if (not self.database.viewByName(library, self.cellName(f), 'schematic')):
+                if (not self.database.cellViewByName(library, self.cellName(f), 'schematic')):
                     print 'Importing component schematic', f
                     self.library = self.database.libraryByName(library)
                     if not self.library:
@@ -453,13 +457,13 @@ class GedaImporter(Importer):
                     if not self.cell:
                         self.cell = Cell(self.cellName(f))
                         self.library.addCell(self.cell)
-                    cv = self.cell.viewByName('schematic')
+                    cv = self.cell.cellViewByName('schematic')
                     if not cv:
                         cv = Schematic('schematic')
-                        self.cell.addView(cv)
+                        self.cell.addCellView(cv)
                         r = GedaReader(self)
                         r.parseSchematic(f, cv)
-                    #self.cell.addView(cv)
+                    #self.cell.addCellView(cv)
                 else:
                     print 'Skipping component schematic', f
 

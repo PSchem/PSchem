@@ -24,19 +24,7 @@ class CellView():
     def __init__(self, name):
         self._name = 'cell_view'
         self._attribs = {}
-        self._designs = set()
         self._cell = None
-
-    def installUpdateHook(self, design):
-        self._designs.add(design)
-        ##view.addElements()
-        #for elem in self._elems:
-        #    elem.addToView(view)
-
-    def updateDesigns(self):
-        for d in self._designs:
-            d.updateDesign()
-            #v.updateItem()
             
     def attributeLabels(self):
         return filter(lambda e: isinstance(e, AttributeLabel), self._elems)
@@ -47,24 +35,15 @@ class CellView():
     def name(self):
         return self._name
 
+    def setCell(self, cell):
+        self._cell = cell
+
     def cell(self):
         return self._cell
 
     def attribs(self):
         return self._attribs
 
-    def setCell(self, cell):
-        self._cell = cell
-
-    def setParent(self, parent):
-        self.setCell(parent)
-
-    def parent(self):
-        return self.cell()
-
-    #def cell(self):
-    #    return self._parent
-        
     def library(self):
         return self.cell().library()
         
@@ -84,40 +63,127 @@ class CellView():
 class Diagram(CellView):
     def __init__(self, name):
         CellView.__init__(self, name)
-        self._elems = set()
+        #self._elems = set()
         self._lines = set()
         self._rects = set()
+        self._customPaths = set()
+        self._ellipses = set()
+        self._ellipseArcs = set()
         self._labels = set()
+        self._attributeLabels = set()
         #self._uu = 160 # default DB units per user units
         self._attribs['uu'] = 160 # default DB units per user units
         self._name = 'diagram'
-        
+        self._occurrences = set()
+       
+    def installUpdateHook(self, occurrence):
+        self._occurrences.add(occurrence)
+        view = occurrence.view()
+        for e in self.elems():
+            e.addToView(view)
+
+    def updateOccurrences(self):
+        for d in self._occurrences:
+            d.updateOccurrence()
+            #v.updateItem()
+
     def setUU(self, uu):
         self._attribs['uu'] = uu
 
     def elems(self):
-        return self._elems
+        return self.lines() | self.rects() | self.labels() | \
+            self.attributeLabels() | self.customPaths() | \
+            self.ellipses() | self.ellipseArcs()
 
     def addElem(self, elem):
-        self._elems.add(elem)
-        for design in self._designs:
-            design.addElem(elem)
-        #    elem.addToView(view)
+        "main entry point for adding new elements to diagram"
+        #self._elems.add(elem)
+        elem.addToDiagram(self)
+        for occurrence in self._occurrences:
+            elem.addToOccurrence(occurrence)
 
     def removeElem(self, elem):
-        for design in self._designs:
-            design.removeElem(elem)
-        #elem.removeFromView()
-        self._elems.remove(elem)
+        "main entry point for removing elements from diagram"
+        for occurrence in self._occurrences:
+            elem.removeFromOccurence(occurrence)
+        elem.removeFromDiagram(self)
 
+    def addLine(self, line):
+        "call only from addToDiagram"
+        self._lines.add(line)
+        
+    def removeLine(self, line):
+        "call only from removeFromDiagram"
+        self._lines.remove(line)
+        
     def lines(self):
-        return filter(lambda e: isinstance(e, Line), self.elems())
+        return self._lines
 
+    def addRect(self, rect):
+        "call only from addToDiagram"
+        self._rects.add(rect)
+        
+    def removeRect(self, rect):
+        "call only from removeFromDiagram"
+        self._rects.remove(rect)
+        
     def rects(self):
-        return filter(lambda e: isinstance(e, Rect), self.elems())
+        return self._rects
 
+    def addCustomPath(self, customPath):
+        "call only from addToDiagram"
+        self._customPaths.add(customPath)
+        
+    def removeCustomPath(self, customPath):
+        "call only from removeFromDiagram"
+        self._customPaths.remove(customPath)
+        
+    def customPaths(self):
+        return self._customPaths
+
+    def addEllipse(self, ellipse):
+        "call only from addToDiagram"
+        self._ellipses.add(ellipse)
+        
+    def removeEllipse(self, ellipse):
+        "call only from removeFromDiagram"
+        self._ellipses.remove(ellipse)
+        
+    def ellipses(self):
+        return self._ellipses
+
+    def addEllipseArc(self, ellipseArc):
+        "call only from addToDiagram"
+        self._ellipseArcs.add(ellipseArc)
+        
+    def removeEllipseArc(self, ellipseArc):
+        "call only from removeFromDiagram"
+        self._ellipseArcs.remove(ellipseArc)
+        
+    def ellipseArcs(self):
+        return self._ellipseArcs
+
+    def addLabel(self, label):
+        "call only from addToDiagram"
+        self._labels.add(label)
+        
+    def removeLabel(self, label):
+        "call only from removeFromDiagram"
+        self._labels.remove(label)
+        
     def labels(self):
-        return filter(lambda e: isinstance(e, Label), self.elems())
+        return self._labels
+
+    def addAttributeLabel(self, attributeLabel):
+        "call only from addToDiagram"
+        self._attributeLabels.add(attributeLabel)
+        
+    def removeAttributeLabel(self, attributeLabel):
+        "call only from removeFromDiagram"
+        self._attributeLabels.remove(attributeLabel)
+        
+    def attributeLabels(self):
+        return self._attributeLabels
 
     def uu(self):
         return self._attribs['uu']
@@ -161,28 +227,87 @@ class Schematic(Diagram):
     def __init__(self, name):
         Diagram.__init__(self, name)
         self._name = 'schematic'
+        self._pins = set()
+        self._instances = set()
+        self._netSegments = set()
+        self._solderDots = set()
+        self._nets = set()
 
-    def components(self):
-        components = map(lambda i: i.cell(), self.instances())
-        return components.sort()
+    def installUpdateHook(self, occurrence):
+        self._occurrences.add(occurrence)
+        view = occurrence.view()
+        for e in self.elems()-self.instances():
+            e.addToView(view)
+        for i in self.instances():
+            i.addToView(occurrence)
 
+    #def components(self):
+    #    components = map(lambda i: i.cell(), self.instances())
+    #    return components.sort()
+
+    def elems(self):
+        return Diagram.elems(self) | self.pins() | self.instances() | self.netSegments() | self.solderDots()
+
+    def addPin(self, pin):
+        "call only from addToDiagram"
+        self._pins.add(pin)
+       
+    def removePin(self, pin):
+        "call only from removeFromDiagram"
+        self._pins.remove(pin)
+        
+    def pins(self):
+        return self._pins
+
+    def addInstance(self, instance):
+        "call only from addToDiagram"
+        self._instances.add(instance)
+        
+    def removeInstance(self, instance):
+        "call only from removeFromDiagram"
+        self._instances.remove(instance)
+        
     def instances(self):
-        return filter(lambda e: isinstance(e, Instance), self.elems())
+        return self._instances
 
-    def nets(self):
-        return filter(lambda e: isinstance(e, Net), self.elems())
+    #def addNet(self, net):
+    #    "call only from addToDiagram"
+    #    self._nets.add(net)
+        
+    #def removeNet(self, net):
+    #    "call only from removeFromDiagram"
+    #    self._nets.remove(net)
+        
+    #def nets(self):
+    #    return self._nets #filter(lambda e: isinstance(e, CNet), self.elems())
 
+    def addNetSegment(self, netSegment):
+        "call only from addToDiagram"
+        self._netSegments.add(netSegment)
+        
+    def removeNetSegment(self, netSegment):
+        "call only from removeFromDiagram"
+        self._netSegments.remove(netSegment)
+        
     def netSegments(self):
-        return filter(lambda e: isinstance(e, NetSegment), self.elems())
+        return self._netSegments
 
+    def addSolderDot(self, solderDot):
+        "call only from addToDiagram"
+        self._solderDots.add(solderDot)
+        
+    def removeSolderDot(self, solderDot):
+        "call only from removeFromDiagram"
+        self._solderDots.remove(solderDot)
+        
     def solderDots(self):
-        return filter(lambda e: isinstance(e, SolderDot), self.elems())
+        return self._solderDots
 
     def checkNetSegments(self, segments = None):
         if not segments:
             segments = self.netSegments()
         origNetSegments = segments
-        for n in origNetSegments:
+        for n in list(origNetSegments):
             splitPoints = set()
             for n2 in origNetSegments:
                 if n.containsInside(n2.x1(), n2.y1()):
@@ -241,6 +366,27 @@ class Symbol(Diagram):
     def __init__(self, name):
         Diagram.__init__(self, name)
         self._name = 'symbol'
+        self._symbolPins = set()
+
+    def installUpdateHook(self, occurrence):
+        self._occurrences.add(occurrence)
+        view = occurrence.view()
+        for e in self.elems():
+            e.addToView(view)
+
+    def elems(self):
+        return Diagram.elems(self) | self.symbolPins()
+        
+    def addSymbolPin(self, symbolPin):
+        "call only from addToDiagram"
+        self._symbolPins.add(symbolPin)
+       
+    def removeSymbolPin(self, symbolPin):
+        "call only from removeFromDiagram"
+        self._symbolPins.remove(symbolPin)
+        
+    def symbolPins(self):
+        return self._symbolPins
 
 class Netlist(CellView):
     def __init__(self, name):
@@ -250,32 +396,32 @@ class Netlist(CellView):
 
 class Cell():
     def __init__(self, name):
-        self._views = set()
-        self._viewNames = {}
+        self._cellViews = set()
+        self._cellViewNames = {}
         self._name = name
-        self._parent = None
+        self._library = None
 
-    def addView(self, cellView):
-        self._views.add(cellView)
-        cellView.setParent(self)
-        self._viewNames[cellView.name()] = cellView
+    def addCellView(self, cellView):
+        self._cellViews.add(cellView)
+        cellView.setCell(self)
+        self._cellViewNames[cellView.name()] = cellView
         self.database().updateDatabaseViews()
 
-    def removeView(self, cellView):
+    def removeCellView(self, cellView):
         cellView.remove()
-        self._views.remove(cellView)
-        del(self._viewNames[cellView.name()])
+        self._cellViews.remove(cellView)
+        del(self._cellViewNames[cellView.name()])
         self.database().updateDatabaseViews()
 
-    def views(self):
-        return self._views
+    def cellViews(self):
+        return self._cellViews
 
-    def viewNames(self):
-        return self._viewNames.keys()
+    def cellViewNames(self):
+        return self._cellViewNames.keys()
 
-    def viewByName(self, viewName):
-        if self._viewNames.has_key(viewName):
-            return self._viewNames[viewName]
+    def cellViewByName(self, cellViewName):
+        if self._cellViewNames.has_key(cellViewName):
+            return self._cellViewNames[cellViewName]
         else:
             return None
 
@@ -283,33 +429,33 @@ class Cell():
         return self._name
 
     def implementation(self):
-        return self.viewByName('schematic')  #currently assume it is 'schematic'
+        return self.cellViewByName('schematic')  #currently assume it is 'schematic'
 
     def symbol(self):
-        return self.viewByName('symbol')  #currently assume it is 'symbol'
+        return self.cellViewByName('symbol')  #currently assume it is 'symbol'
 
-    def setParent(self, parent):
-        self._parent = parent
+    def setLibrary(self, library):
+        self._library = library
         
-    def parent(self):
-        return self._parent
-
     def library(self):
-        return self._parent
+        return self._library
         
     def database(self):
-        return self._parent.database()
+        return self.library().database()
 
 class Library():
     def __init__(self, name):
         self._cells = set()
         self._cellNames = {}
+        self._libraries = set()
+        self._libraryNames = {}
+        self._parentLibrary = None
         self._name = name
-        self._parent = None
+        self._database = None
 
     def addCell(self, cell):
         self._cells.add(cell)
-        cell.setParent(self)
+        cell.setLibrary(self)
         self._cellNames[cell.name()] = cell
         self.database().updateDatabaseViews()
 
@@ -319,30 +465,53 @@ class Library():
     def cellNames(self):
         return self._cellNames.keys()
 
+    def addLibrary(self, library):
+        self._libraries.add(library)
+        cell.setLibrary(self)
+        self._libraryNames[library.name()] = library
+        self.database().updateDatabaseViews()
+
+    def libraries(self):
+        return self._libraries
+
+    def libraryNames(self):
+        return self._libraryNames.keys()
+
+    def libraryByName(self, libraryName):
+        if self._libraryNames.has_key(libraryName):
+            return self._libraryNames[libraryName]
+        else:
+            return None
+
     def cellByName(self, cellName):
         if self._cellNames.has_key(cellName):
             return self._cellNames[cellName]
         else:
             return None
 
-    def viewByName(self, cellName, viewName):
+    def cellViewByName(self, cellName, cellViewName):
         cell = self.cellByName(cellName)
         if cell:
-            return cell.viewByName(viewName)
+            return cell.cellViewByName(cellViewName)
         else:
             return None
 
     def name(self):
         return self._name
 
-    def setParent(self, parent):
-        self._parent = parent
-        
-    def parent(self):
-        return self._parent
+    def setDatabase(self, database):
+        self._database = database
         
     def database(self):
-        return self._parent
+        if not self._database:
+            return self.parentLibrary().database()
+        return self._database
+        
+    def setParentLibrary(self):
+        return self._setParentLibrary
+
+    def parentLibrary(self):
+        return self._parentLibrary
 
     
 
@@ -371,7 +540,7 @@ class Database():
 
     def addLibrary(self, library):
         self._libraries.add(library)
-        library.setParent(self)
+        library.setDatabase(self)
         self._libraryNames[library.name()] = library
         self.updateDatabaseViews()
 
@@ -394,10 +563,10 @@ class Database():
         else:
             return None
 
-    def viewByName(self, libraryName, cellName, viewName):
+    def cellViewByName(self, libraryName, cellName, cellViewName):
         lib = self.libraryByName(libraryName)
         if lib:
-            return lib.viewByName(cellName, viewName)
+            return lib.cellViewByName(cellName, cellViewName)
         else:
             return None
 

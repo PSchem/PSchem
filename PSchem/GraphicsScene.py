@@ -92,7 +92,7 @@ class GraphicsScene(QtGui.QGraphicsScene):
         #label.setVisible(l.visible())
         self.addItem(label)
 
-    def addAttribute(self, a):
+    def addAttributeLabel(self, a):
         ##return
         attr = TextItem(a)
         #attr.setFont(QtGui.QFont("Lucida", a.size/self.uu, QtGui.QFont.Normal, False))

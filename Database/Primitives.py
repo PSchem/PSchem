@@ -48,6 +48,14 @@ class Element():
         for v in self._views:
             v.updateItem()
 
+    def addToDiagram(self, diagram):
+        "add element to a diagram, must be reimplemented"
+        print self.__class__.__name__, "Unimplemented addToDiagram method"
+        
+    def removeFromDiagram(self, diagram):
+        "remove element from a diagram, must be reimplemented"
+        print self.__class__.__name__, "Unimplemented removeFromDiagram method"
+        
     def addToView(self, view):
         view.addElem()
 
@@ -173,6 +181,14 @@ class Line(Element):
     def y2(self):
         return self._y2
 
+    def addToDiagram(self, diagram):
+        "add itself to a diagram"
+        diagram.addLine(self)
+        
+    def removeFromDiagram(self, diagram):
+        "remove itself from a diagram"
+        diagram.removeLine(self)
+        
     def addToView(self, view):
         view.addLine(self)
 
@@ -183,32 +199,6 @@ class Line(Element):
         elem.attrib['layer'] = str(self._layer.name())
         return elem
         
-        
-class Pin(Element):
-    def __init__(self, parent, layers, x1, y1, x2, y2):
-        Element.__init__(self, parent, layers)
-        self._x = x1
-        self._y = y1
-        self._x2 = x2
-        self._y2 = y2
-        self._layer = self.layers().layerByName('pin', 'drawing')
-        self._name = 'pin'
-
-    def x1(self):
-        return self._x
-
-    def y1(self):
-        return self._y
-
-    def x2(self):
-        return self._x2
-
-    def y2(self):
-        return self._y2
-
-    def addToView(self, view):
-        view.addPin(self)
-
 class Rect(Element):
     def __init__(self, parent, layers, x, y, w, h):
         Element.__init__(self, parent, layers)
@@ -225,6 +215,14 @@ class Rect(Element):
     def h(self):
         return self._h
 
+    def addToDiagram(self, diagram):
+        "add itself to a diagram"
+        diagram.addRect(self)
+        
+    def removeFromDiagram(self, diagram):
+        "remove itself from a diagram"
+        diagram.removeRect(self)
+        
     def addToView(self, view):
         view.addRect(self)
 
@@ -262,6 +260,23 @@ class CustomPath(Element):
     def path(self):
         return self._path
 
+    def addToDiagram(self, diagram):
+        "add itself to a diagram"
+        diagram.addCustomPath(self)
+        
+    def removeFromDiagram(self, diagram):
+        "remove itself from a diagram"
+        diagram.removeCustomPath(self)
+        
+    def addToOccurrence(self, occurrence):
+        "add itself to an occurence"
+        occurrence.view().addCustomPath(self)
+        
+    def removeFromOccurence(self, occurrence):
+        "remove itself from an occurrence"
+        occurrence.view().removeCustomPath(self)
+        
+        
 class Ellipse(Element):
     def __init__(self, parent, layers, x, y, radiusX, radiusY):
         Element.__init__(self, parent, layers)
@@ -284,6 +299,14 @@ class Ellipse(Element):
     def radiusY(self):
         return self._radiusY
 
+    def addToDiagram(self, diagram):
+        "add itself to a diagram"
+        diagram.addEllipse(self)
+        
+    def removeFromDiagram(self, diagram):
+        "remove itself from a diagram"
+        diagram.removeEllipse(self)
+        
     def addToView(self, view):
         view.addEllipse(self)
 
@@ -324,8 +347,15 @@ class EllipseArc(Element):
     def spanAngle(self):
         return self._spanAngle
 
+    def addToDiagram(self, diagram):
+        "add itself to a diagram"
+        diagram.addEllipseArc(self)
+        
+    def removeFromDiagram(self, diagram):
+        "remove itself from a diagram"
+        diagram.removeEllipseArc(self)
+        
     def addToView(self, view):
-        #pass
         view.addEllipseArc(self)
 
 class Label(Element):
@@ -375,6 +405,14 @@ class Label(Element):
     def text(self):
         return self._text
 
+    def addToDiagram(self, diagram):
+        "add itself to a diagram"
+        diagram.addLabel(self)
+        
+    def removeFromDiagram(self, diagram):
+        "remove itself from a diagram"
+        diagram.removeLabel(self)
+        
     def addToView(self, view):
         view.addLabel(self)
 
@@ -412,8 +450,16 @@ class AttributeLabel(Label):
     def visibleKey(self):
         return self._visibleKey
 
+    def addToDiagram(self, diagram):
+        "add itself to a diagram"
+        diagram.addAttributeLabel(self)
+        
+    def removeFromDiagram(self, diagram):
+        "remove itself from a diagram"
+        diagram.removeAttributeLabel(self)
+        
     def addToView(self, view):
-        view.addAttribute(self)
+        view.addAttributeLabel(self)
 
     def key(self):
         return self._attribute.name()
@@ -469,6 +515,14 @@ class NetSegment(Element):
     def maxY(self):
         return max(self._y, self._y2)
         
+    def addToDiagram(self, diagram):
+        "add itself to a diagram"
+        diagram.addNetSegment(self)
+        
+    def removeFromDiagram(self, diagram):
+        "remove itself from a diagram"
+        diagram.removeNetSegment(self)
+        
     def addToView(self, view):
         view.addNetSegment(self)
     
@@ -497,6 +551,14 @@ class SolderDot(Element):
         self._layer = self.layers().layerByName('net', 'drawing')
         self._name = 'solder_dot'
 
+    def addToDiagram(self, diagram):
+        "add itself to a diagram"
+        diagram.addSolderDot(self)
+        
+    def removeFromDiagram(self, diagram):
+        "remove itself from a diagram"
+        diagram.removeSolderDot(self)
+        
     def addToView(self, view):
         view.addSolderDot(self)
         
@@ -512,18 +574,18 @@ class Instance(Element):
         Element.__init__(self, parent, layers)
         self._libName = ''
         self._cellName = ''
-        self._viewName = ''
+        self._cellViewName = ''
         self._name = 'instance'
 
         self._cell = None
         self._cellView = None
         self._layer = self.layers().layerByName('instance', 'drawing')
 
-    def setCell(self, libName, cellName, viewName): #string
+    def setCell(self, libName, cellName, cellViewName): #string
         if self._editable:
             self._libName = libName
             self._cellName = cellName
-            self._viewName = viewName
+            self._cellViewName = cellViewName
             self.updateViews()
 
     def cell(self):
@@ -545,110 +607,118 @@ class Instance(Element):
             return self._cellView
         #print self._cellName
         cell = self.cell()
-        if cell and cell.viewByName('symbol'):
-            self._cellView = cell.viewByName('symbol')
+        if cell and cell.cellViewByName('symbol'):
+            self._cellView = cell.cellViewByName('symbol')
         else:
-            self._cellView = self.database().viewByName('analog', 'voltage-1', 'symbol')
+            self._cellView = self.database().cellViewByName('analog', 'voltage-1', 'symbol')
         return self._cellView
 
 
+    def addToDiagram(self, diagram):
+        "add itself to a diagram"
+        diagram.addInstance(self)
+        
+    def removeFromDiagram(self, diagram):
+        "remove itself from a diagram"
+        diagram.removeInstance(self)
+        
     def addToView(self, view): #occurence
         view.addInstance(self)
 
-class Design():
-    def __init__(self, cellView):
-        self._cellView = cellView
-        self._childOccurrences = None
-        self._cellView.installUpdateHook(self)
-        self._scene = None
-            
-    def installUpdateHook(self, scene):
-        self._scene = scene
-        for e in self.cellView().elems():
-            if isinstance(e, Instance):
-                occurrence = Occurrence(e, self)
-                #e.addToView(occurrence)
-                occurrence.addToView(scene)
-            else:
-                e.addToView(scene)
-            
-    def childOccurrences(self):
-        if self._childOccurrences:   #cache
-            return self._childOccurrences
-        #if isinstance(self._cellView, Database.Cells.Schematic):
-        if self._cellView.name() == "schematic":
-            instances = self._cellView.instances()
-            self._childOccurrences = set()
-            for i in instances:
-                c = i.cell()
-                #print c
-                #cv = None
-                cv = c.implementation() #possibly schematic
-                if not cv:
-                    cv = c.symbol() #symbol
-                self._childOccurrences.add(Occurrence(i, self))
-        else:
-            self._childOccurrences = set()
-        return self._childOccurrences
+class Pin(Instance):
+    def __init__(self, parent, layers, x1, y1, x2, y2):
+        Instance.__init__(self, parent, layers)
+        self._x = x1
+        self._y = y1
+        self._x2 = x2
+        self._y2 = y2
+        self._layer = self.layers().layerByName('pin', 'drawing')
+        self._name = 'pin'
+
+    def x1(self):
+        return self._x
+
+    def y1(self):
+        return self._y
+
+    def x2(self):
+        return self._x2
+
+    def y2(self):
+        return self._y2
+
+    def addToDiagram(self, diagram):
+        "add itself to a diagram"
+        diagram.addPin(self)
         
-    def cellView(self):
-        return self._cellView
+    def removeFromDiagram(self, diagram):
+        "remove itself from a diagram"
+        diagram.removePin(self)
+        
+    def addToView(self, view):
+        view.addPin(self)
 
-    def design(self):
-        return self
+class SymbolPin(Instance):
+    def __init__(self, parent, layers, x1, y1, x2, y2):
+        Instance.__init__(self, parent, layers)
+        self._x = x1
+        self._y = y1
+        self._x2 = x2
+        self._y2 = y2
+        self._layer = self.layers().layerByName('pin', 'drawing')
+        self._name = 'pin'
 
-    def updateDesign(self):
-        if self._scene:
-            self._scene.updateScene()
+    def x1(self):
+        return self._x
 
-    def addElem(self, elem):
-        if self._scene:
-            if isinstance(elem, Instance):
-                occurrence = Occurrence(elem, self)
-                self._scene.addOccurrence(occurrence)
-            else:
-                elem.addToView(self._scene)
+    def y1(self):
+        return self._y
 
-    def removeElem(self, elem):
-        elem.removeFromView()
-        self._elems.remove(elem)
+    def x2(self):
+        return self._x2
+
+    def y2(self):
+        return self._y2
+
+    def addToDiagram(self, diagram):
+        "add itself to a diagram"
+        diagram.addSymbolPin(self)
+        
+    def removeFromDiagram(self, diagram):
+        "remove itself from a diagram"
+        diagram.removeSymbolPin(self)
+        
+    def addToView(self, view):
+        view.addPin(self)
 
 class Occurrence():
     def __init__(self, instance, parentOccurrence):
         self._instance = instance
         self._parentOccurrence = parentOccurrence
-        self._childOccurrences = None
+        self._childOccurrences = {} #set()
         self._design = self._parentOccurrence.design()
-        self._instance.installUpdateHook(self)
         self._view = None
  
     def installUpdateHook(self, view):
         self._view = view
-        for e in self._instance.cellView().elems():
-            e.addToView(view)
+        self._instance.cellView().installUpdateHook(self)
 
     def childOccurrences(self):
-        if self._childOccurrences:   #cache
+        if len(self._childOccurrences) > 0:   #cache
             return self._childOccurrences
-        #if isinstance(self._cellView, Database.Cells.Schematic):
-        if self.cellView().name() == "schematic":
-            instances = self._cellView.instances()
-            self._childOccurrences = set()
-            for i in instances:
-                c = i.cell()
-                #print c
-                #cv = None
-                cv = c.implementation() #possibly schematic
-                if not cv:
-                    cv = c.symbol() #symbol
-                self._childOccurrences.add(Occurrence(i, self))
-        else:
-            self._childOccurrences = set()
+        schematic = self.cellView().cell().cellViewByName("schematic")
+        
+        if schematic:
+            for i in schematic.instances():
+                self._childOccurrences[i] = Occurrence(i, self)
         return self._childOccurrences
 
     def parentOccurrence(self):
         return self._parentOccurrence
 
+    def view(self):
+        return self._view
+    
     def instance(self):
         return self._instance
 
@@ -662,8 +732,44 @@ class Occurrence():
         if self._view:
             self._view.updateItem()
 
-    def addToView(self, view): #graphics item
-        view.addOccurrence(self)
+    def addInstance(self, instance):
+        occurrence = self._childOccurrences.get(instance)
+        if not occurrence:
+            occurrence = Occurrence(instance, self)
+            self._childOccurrences[instance] = occurrence
+        self.view().addOccurrence(occurrence)
+    
+    def removeInstance(self, instance):
+        occurrence = self._childOccurrences.get(instance)
+        if occurrence:
+            self.view().removeOccurrence(occurrence)
+            del self._childOccurrences[instance]
+            
+    
+
+        
+class Design(Occurrence):
+    def __init__(self, cellView):
+        self._cellView = cellView
+        self._childOccurrences = {}
+        self._view = None
+            
+    def installUpdateHook(self, scene):
+        self._view = scene
+        self._cellView.installUpdateHook(self)
+            
+    def cellView(self):
+        return self._cellView
+
+    def design(self):
+        return self
+
+    def parentOccurrence(self):
+        return None
+    
+    def updateDesign(self):
+        if self._scene:
+            self._scene.updateScene()
 
         
 class Connectivity():

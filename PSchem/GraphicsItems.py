@@ -556,7 +556,7 @@ class OccurrenceItem(BaseItem):
         #self.setZValue(self.model.instance().layer().zValue())
         self.setHandlesChildEvents(True)
         self.model.installUpdateHook(self)
-        self._cellView.installUpdateHook(self)
+        #self._cellView.installUpdateHook(self)
         
     def paint(self, painter, option, widget):
         if not self.parentItem():
@@ -635,7 +635,7 @@ class OccurrenceItem(BaseItem):
         label.updateMatrix()
         self.updateBoundingRect()
 
-    def addAttribute(self, a):
+    def addAttributeLabel(self, a):
         #return
         #self.prepareGeometryChange()
         attr = TextItem(a, self)

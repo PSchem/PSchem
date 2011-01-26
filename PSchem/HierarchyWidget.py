@@ -70,7 +70,7 @@ class HierarchyModel(QtCore.QAbstractItemModel):
         #if isinstance(data, Design):
             children = list(self.database.designs())
         elif isinstance(data, Design) or isinstance(data, Occurrence):
-            children = list(data.childOccurrences()) #+ list(data.pins()) + list(data.nets() - data.pins())
+            children = data.childOccurrences().values() #+ list(data.pins()) + list(data.nets() - data.pins())
         else:
             return QtCore.QModelIndex()
 
@@ -83,16 +83,16 @@ class HierarchyModel(QtCore.QAbstractItemModel):
         data = index.internalPointer()
         if isinstance(data, Occurrence):
             parent = data.parentOccurrence()
-            #if parent:
-            pparent = parent.parentOccurrence()
-            if pparent:
-                d = list(pparent.childOccurrences())
-                n = d.index(parent)
-                return self.createIndex(n, 0, parent)
-            else:
-                d = list(self.database.designs())
-                n = d.index(parent)
-                return self.createIndex(n, 0, parent)
+            if parent:
+                pparent = parent.parentOccurrence()
+                if pparent:
+                    d = pparent.childOccurrences().values()
+                    n = d.index(parent)
+                    return self.createIndex(n, 0, parent)
+                else:
+                    d = list(self.database.designs())
+                    n = d.index(parent)
+                    return self.createIndex(n, 0, parent)
         return QtCore.QModelIndex()
 
     def hasChildren(self, parent):

@@ -72,7 +72,7 @@ class DatabaseModel(QtCore.QAbstractItemModel):
         elif isinstance(data, Library):
             children = list(data.cells())
         elif isinstance(data, Cell):
-            children = list(data.views())
+            children = list(data.cellViews())
         else:
             return QtCore.QModelIndex()
 
@@ -89,16 +89,16 @@ class DatabaseModel(QtCore.QAbstractItemModel):
         elif isinstance(data, Library):
             return QtCore.QModelIndex()
         elif isinstance(data, Cell):
-            #d = list(data.parent().cells())
+            #d = list(data.library().cells())
             d = list(self.database.libraries())
             #d.sort(lambda a, b: cmp(a.name(), b.name()))
-            n = d.index(data.parent())
-            return self.createIndex(n, 0, data.parent())
+            n = d.index(data.library())
+            return self.createIndex(n, 0, data.library())
         elif isinstance(data, CellView):
-            d = list(data.parent().parent().cells())
+            d = list(data.library().cells())
             #d.sort(lambda a, b: cmp(a.name(), b.name()))
-            n = d.index(data.parent())
-            return self.createIndex(n, 0, data.parent())
+            n = d.index(data.cell())
+            return self.createIndex(n, 0, data.cell())
         else:
             return QtCore.QModelIndex()
 
@@ -111,7 +111,7 @@ class DatabaseModel(QtCore.QAbstractItemModel):
         elif isinstance(data, Library):
             return len(data.cells()) > 0
         elif isinstance(data, Cell):
-            return len(data.views()) > 0
+            return len(data.cellViews()) > 0
         else:
             return False
 
@@ -129,7 +129,7 @@ class DatabaseModel(QtCore.QAbstractItemModel):
         elif isinstance(data, Library):
             return len(data.cells())
         elif isinstance(data, Cell):
-            return len(data.views())
+            return len(data.cellViews())
         else:
             return 0
 
@@ -226,11 +226,11 @@ class DatabaseWidget(QtGui.QWidget):
         self.connect(self.treeView,
                      #QtCore.SIGNAL("doubleClicked(QModelIndex)"),
                      QtCore.SIGNAL("activated(QModelIndex)"),
-                     self.openView)
+                     self.openCellView)
 
         self.setLayout(layout)
 
-    def openView(self, index):
+    def openCellView(self, index):
         indexSource = self.proxyModel.mapToSource(index)
         if not indexSource.isValid():
             return
@@ -239,11 +239,11 @@ class DatabaseWidget(QtGui.QWidget):
 
         if isinstance(data, CellView):
             #if self.window:
-                cell = data.parent()
-                lib = cell.parent()
+                cell = data.cell()
+                lib = cell.library()
                 self.window.controller.execute(
                     Command(
-                        'window.openViewByName(\'' +lib.name()+
+                        'window.openCellViewByName(\'' +lib.name()+
                         '\', \''+cell.name()+'\', \''+data.name()+'\')'))
 
 
@@ -263,8 +263,8 @@ class DatabaseWidget(QtGui.QWidget):
         self.treeView.setModel(self.proxyModel)
         #self.treeView.setModel(self.sourceModel)
 
-    def selectedView(self):
-        #return self.sourceModel.database.viewByName('latch', 'comparator', 'schematic')
-        return self.sourceModel.database.viewByName('latch', 'analoglatch', 'schematic')
+    def selectedCellView(self):
+        #return self.sourceModel.database.cellViewByName('latch', 'comparator', 'schematic')
+        return self.sourceModel.database.cellViewByName('latch', 'analoglatch', 'schematic')
     #return None
 

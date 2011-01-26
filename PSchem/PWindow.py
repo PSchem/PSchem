@@ -380,12 +380,12 @@ class PWindow(QtGui.QMainWindow):
         #self.readActionsArray(self.helpActions, 'actions/help')
 
 
-        self.openViewAct = QtGui.QAction(self.tr("&Open view"), self)
-        self.openViewAct.setShortcut(self.tr("Ctrl+O"))
-        self.openViewAct.setStatusTip(self.tr("Open selected view"))
-        self.openViewCmd = Command("window.openView(window.databaseWidget.selectedView())")
-        self.connect(self.openViewAct, QtCore.SIGNAL("triggered()"),
-                    lambda: self.controller.execute(self.openViewCmd))
+        self.openCellViewAct = QtGui.QAction(self.tr("&Open cellview"), self)
+        self.openCellViewAct.setShortcut(self.tr("Ctrl+O"))
+        self.openCellViewAct.setStatusTip(self.tr("Open selected cellview"))
+        self.openCellViewCmd = Command("window.openCellView(window.databaseWidget.selectedCellView())")
+        self.connect(self.openCellViewAct, QtCore.SIGNAL("triggered()"),
+                    lambda: self.controller.execute(self.openCellViewCmd))
 
 
         self.exitAct = QtGui.QAction(self.tr("E&xit"), self)
@@ -608,7 +608,7 @@ class PWindow(QtGui.QMainWindow):
                         self.databaseToolBar.addAction(action)
         self.actions.endArray()
 
-        self.databaseMenu.addAction(self.openViewAct)
+        self.databaseMenu.addAction(self.openCellViewAct)
         self.databaseMenu.addAction(self.newSchematicAct)
         self.databaseMenu.addAction(self.toggleDocksAct)
         self.databaseMenu.addAction(self.zoomInAct)
@@ -817,20 +817,20 @@ class PWindow(QtGui.QMainWindow):
                 #['font', '/usr/share/gEDA/sym/font'],
                 #['work', '.'],
         
-    def openView(self, view):
-        if view:
-            design = Design(view)
-            self.database.addDesign(design)
+    def openCellView(self, cellView):
+        if cellView:
+            design = Design(cellView)
             scene = GraphicsScene(design)
+            self.database.addDesign(design)
             dView = DesignView(self, scene)
             subWin = SubWindow(self)
             subWin.setWidget(dView)
             subWin.setAttribute(QtCore.Qt.WA_DeleteOnClose)
             subWin.setWindowFilePath(
-                view.parent().name())
+                cellView.cell().name())
             subWin.setWindowModified(True)
             self.mdiArea.addSubWindow(subWin)
-            #self.mdiArea.addTab(dView, view.parent().name())
+            #self.mdiArea.addTab(dView, cellView.cell().name())
             subWin.showMaximized()
             #subWin.setWindowState(subWin.windowState() | QtCore.Qt.WindowMaximized)
             #subWin.show()
@@ -838,9 +838,9 @@ class PWindow(QtGui.QMainWindow):
             #subWin.show()
             #self.setCurrentView(dView)
 
-    def openViewByName(self, libName, cellName, viewName):
-        view = self.database.viewByName(libName, cellName, viewName)
-        print view
-        self.openView(view)
+    def openCellViewByName(self, libName, cellName, viewName):
+        cellView = self.database.cellViewByName(libName, cellName, viewName)
+        print self.__class__.__name__, cellView
+        self.openCellView(cellView)
 
 

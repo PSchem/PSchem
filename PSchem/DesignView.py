@@ -138,6 +138,7 @@ class DesignView(QtGui.QGraphicsView):
         self.modeStack = ModeStack(self)
         self.undoViewStack = UndoViewStack(self)
 
+        self._lastMousePos = None
         self.mousePressedPos = None
         self.mousePressedButton = QtCore.Qt.NoButton
         
@@ -281,6 +282,7 @@ class DesignView(QtGui.QGraphicsView):
 
     def mousePressEvent(self, event):
         self._mousePressedPosView = event.pos()
+        self._lastMousePos = event.pos() #point
         self.mousePressedPos = self.snapToGrid(self.mapToScene(event.pos()))
         self.mousePressedButton = event.button()
         self.mouseLasso = None

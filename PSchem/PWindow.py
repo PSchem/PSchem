@@ -316,9 +316,9 @@ class PWindow(QtGui.QMainWindow):
         #self.mdiArea.addTab(None, '')
         versionMaj = QtCore.QT_VERSION / 256 / 256
         versionMin = QtCore.QT_VERSION / 256 % 256
-        if versionMaj >= 4 and versionMin >=6:
-            self.mdiArea.setMovable(True)
-            self.mdiArea.setTabsClosable(True)
+        #if versionMaj >= 4 and versionMin >=6:
+        #    self.mdiArea.setMovable(True)
+        #    self.mdiArea.setTabsClosable(True)
         
         self.mdiArea.setViewMode(QtGui.QMdiArea.TabbedView)
         #self.mdiArea.setTabShape(QtGui.QTabWidget.Triangular)

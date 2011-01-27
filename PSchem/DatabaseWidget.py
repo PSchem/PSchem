@@ -70,7 +70,7 @@ class DatabaseModel(QtCore.QAbstractItemModel):
         if not parent.isValid() or isinstance(data, Database):
             children = list(self.database.libraries())
         elif isinstance(data, Library):
-            children = list(data.cells())
+            children = list(data.libraries()) + list(data.cells())
         elif isinstance(data, Cell):
             children = list(data.cellViews())
         else:
@@ -87,10 +87,24 @@ class DatabaseModel(QtCore.QAbstractItemModel):
         if isinstance(data, Database):
             return QtCore.QModelIndex()
         elif isinstance(data, Library):
+            parentLibrary = data.parentLibrary()
+            if parentLibrary:
+                pParentLibrary = parentLibrary.parentLibrary()
+                if pParentLibrary:
+                    d = list(pParentLibrary.libraries()) + list(pParentLibrary.cells())
+                else:
+                    d = list(self.database.libraries())
+                n = d.index(parentLibrary)
+                return self.createIndex(n, 0, parentLibrary)
             return QtCore.QModelIndex()
         elif isinstance(data, Cell):
+            parentLibrary = data.library().parentLibrary()
+            if parentLibrary:
+                d = list(parentLibrary.libraries()) + list(parentLibrary.cells())
+            else:
+                d = list(self.database.libraries())
             #d = list(data.library().cells())
-            d = list(self.database.libraries())
+            #d = list(self.database.libraries())
             #d.sort(lambda a, b: cmp(a.name(), b.name()))
             n = d.index(data.library())
             return self.createIndex(n, 0, data.library())
@@ -109,7 +123,7 @@ class DatabaseModel(QtCore.QAbstractItemModel):
         if isinstance(data, Database):
             return len(data.libraries()) > 0
         elif isinstance(data, Library):
-            return len(data.cells()) > 0
+            return len(data.libraries()) + len(data.cells()) > 0
         elif isinstance(data, Cell):
             return len(data.cellViews()) > 0
         else:
@@ -127,7 +141,7 @@ class DatabaseModel(QtCore.QAbstractItemModel):
         if isinstance(data, Database):
             return len(data.libraries())
         elif isinstance(data, Library):
-            return len(data.cells())
+            return len(data.libraries()) + len(data.cells())
         elif isinstance(data, Cell):
             return len(data.cellViews())
         else:
@@ -243,7 +257,7 @@ class DatabaseWidget(QtGui.QWidget):
                 lib = cell.library()
                 self.window.controller.execute(
                     Command(
-                        'window.openCellViewByName(\'' +lib.name()+
+                        'window.openCellViewByName(\'' +lib.fullName()+
                         '\', \''+cell.name()+'\', \''+data.name()+'\')'))
 
 
@@ -265,6 +279,7 @@ class DatabaseWidget(QtGui.QWidget):
 
     def selectedCellView(self):
         #return self.sourceModel.database.cellViewByName('latch', 'comparator', 'schematic')
-        return self.sourceModel.database.cellViewByName('latch', 'analoglatch', 'schematic')
+        #return self.sourceModel.database.cellViewByName('latch', 'analoglatch', 'schematic')
+        return self.sourceModel.database.cellViewByName('/examples/gTAG', 'gTAG', 'schematic')
     #return None
 

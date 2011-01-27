@@ -20,6 +20,7 @@
 from PyQt4 import QtCore, QtGui
 from Database.Primitives import *
 from Database.Cells import *
+#import sys
 
 class HierarchyModel(QtCore.QAbstractItemModel):
     def __init__(self, database, parent=None):
@@ -44,18 +45,18 @@ class HierarchyModel(QtCore.QAbstractItemModel):
         data = index.internalPointer()
         if isinstance(data, Design):
             if col == 0:
-                return QtCore.QVariant('-')
+                return QtCore.QVariant('')
             elif col == 1:
                 return QtCore.QVariant(data.cellView().cell().name())
             else:
-                return QtCore.QVariant(data.cellView().library().name())
-        if isinstance(data, Occurrence):
+                return QtCore.QVariant(data.cellView().library().fullName())
+        elif isinstance(data, Occurrence):
             if col == 0:
                 return QtCore.QVariant(data.instance().name())
             elif col == 1:
-                return QtCore.QVariant(data.cellView().cell().name())
+                return QtCore.QVariant(data.instance().instanceCellName())
             else:
-                return QtCore.QVariant(data.cellView().library().name())
+                return QtCore.QVariant(data.instance().instanceLibraryName())
         else:
             return QtCore.QVariant()
 
@@ -69,7 +70,7 @@ class HierarchyModel(QtCore.QAbstractItemModel):
         if not parent.isValid():
         #if isinstance(data, Design):
             children = list(self.database.designs())
-        elif isinstance(data, Design) or isinstance(data, Occurrence):
+        elif isinstance(data, Occurrence):
             children = data.childOccurrences().values() #+ list(data.pins()) + list(data.nets() - data.pins())
         else:
             return QtCore.QModelIndex()
@@ -81,11 +82,15 @@ class HierarchyModel(QtCore.QAbstractItemModel):
             return QtCore.QModelIndex()
 
         data = index.internalPointer()
+        if isinstance(data, Design):
+            return QtCore.QModelIndex()
         if isinstance(data, Occurrence):
             parent = data.parentOccurrence()
+            #sys.stderr.write('parent' + parent.cellView().cell().name() + "\n")
             if parent:
                 pparent = parent.parentOccurrence()
                 if pparent:
+                    #sys.stderr.write('pparent' + pparent.cellView().cell().name() + "\n")
                     d = pparent.childOccurrences().values()
                     n = d.index(parent)
                     return self.createIndex(n, 0, parent)
@@ -99,7 +104,7 @@ class HierarchyModel(QtCore.QAbstractItemModel):
         if not parent.isValid():
             return True
         data = parent.internalPointer()
-        if isinstance(data, Design) or isinstance(data, Occurrence):
+        if isinstance(data, Occurrence):
             return len(data.childOccurrences()) > 0
         else:
             return False
@@ -112,7 +117,7 @@ class HierarchyModel(QtCore.QAbstractItemModel):
             return len(self.database.designs())
 
         data = parent.internalPointer()
-        if isinstance(data, Design) or isinstance(data, Occurrence):
+        if isinstance(data, Occurrence):
             return len(data.childOccurrences()) #+ list(data.pins()) + list(data.nets() - data.pins())
         return 0
 
@@ -120,7 +125,7 @@ class HierarchyModel(QtCore.QAbstractItemModel):
         if not parent.isValid():
             return 3
         data = parent.internalPointer()
-        if isinstance(data, Design) or isinstance(data, Occurrence):
+        if isinstance(data, Occurrence):
             return 3
         return 0
 
@@ -151,17 +156,17 @@ class ProxyModel(QtGui.QSortFilterProxyModel):
         if not source_idx.isValid():
             return True
 
-        data = source_idx.internalPointer()
-        if isinstance(data, Library) and not self.libRegExp.isEmpty():
-            text = self.sourceModel().data(
-                source_idx, QtCore.Qt.DisplayRole).toString()
-            return text.contains(self.libRegExp)
-        elif isinstance(data, Cell) and not self.cellRegExp.isEmpty():
-            text = self.sourceModel().data(
-                source_idx, QtCore.Qt.DisplayRole).toString()
-            return text.contains(self.cellRegExp)
-        else:
-            return True
+        #data = source_idx.internalPointer()
+        #if isinstance(data, Library) and not self.libRegExp.isEmpty():
+        #    text = self.sourceModel().data(
+        #        source_idx, QtCore.Qt.DisplayRole).toString()
+        #    return text.contains(self.libRegExp)
+        #elif isinstance(data, Cell) and not self.cellRegExp.isEmpty():
+        #    text = self.sourceModel().data(
+        #        source_idx, QtCore.Qt.DisplayRole).toString()
+        #    return text.contains(self.cellRegExp)
+        #else:
+        return True
 
     def setRegExps(self, libRegExp, cellRegExp):
         self.libRegExp = libRegExp

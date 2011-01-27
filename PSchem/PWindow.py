@@ -779,43 +779,27 @@ class PWindow(QtGui.QMainWindow):
         #lib = self.database.makeLibrary('work')
         #self.database.addLibrary(lib)
         importer = Reader.GedaImporter(self.database)
-        #importer.importLibraryList(
-        #    [
-        #        ['latch', 'geda\examples\latch'],
-        #        ['analog', 'geda\examples\sym\analog'],
-        #        ['font', 'geda\examples\sym\font'],
-        #        ['spice', 'geda\examples\sym\spice'],
-        #        ['titleblock', 'geda\examples\sym\titleblock'],
-        #        ],
-        #    [
-        #        ['latch', 'geda\examples\latch'],
-        #        ])
         importer.importLibraryList(
             [
-                ['latch', '../geda/examples/latch'],
-                ['analog2', '../geda/examples/sym/analog'],
-                ['analog', '../geda/symbols/analog'],
-                ['diode', '../geda/symbols/diode'],
-                ['io', '../geda/symbols/io'],
-                ['font', '../geda/symbols/font'],
-                ['spice', '../geda/symbols/spice'],
-                ['power', '../geda/symbols/power'],
-                ['titleblock', '../geda/symbols/titleblock'],
-                ['lightning_detector', '../geda/examples/lightning_detector/sym'],
-                ['gTAG', '../geda/examples/gTAG'],
+                ['/spnet/latch', '../spNet/latch'],
+                ['/spnet/sym/analog', '../spNet/sym/analog'],
+                ['/spnet/sym/titleblock', '../spNet/sym/titleblock'],
+                ['/spnet/sym/spice', '../spNet/sym/spice'],
+                ['/sym/analog', '../geda/symbols/analog'],
+                ['/sym/diode', '../geda/symbols/diode'],
+                ['/sym/io', '../geda/symbols/io'],
+                ['/sym/font', '../geda/symbols/font'],
+                ['/sym/spice', '../geda/symbols/spice'],
+                ['/sym/power', '../geda/symbols/power'],
+                ['/sym/titleblock', '../geda/symbols/titleblock'],
+                ['/examples/lightning_detector', '../geda/examples/lightning_detector/sym'],
+                ['/examples/gTAG', '../geda/examples/gTAG'],
             ],
             [
-                ['latch', '../geda/examples/latch'],
-                ['lightning_detector', '../geda/examples/lightning_detector'],
-                ['gTAG', '../geda/examples/gTAG'],
+                ['/spnet/latch', '../spNet/latch'],
+                ['/examples/lightning_detector', '../geda/examples/lightning_detector'],
+                ['/examples/gTAG', '../geda/examples/gTAG'],
             ])
-
-
-                #['work', '.'],
-                #['analog', '/usr/share/gEDA/sym/analog'],
-                #['asic', '/usr/share/gEDA/sym/asic'],
-                #['font', '/usr/share/gEDA/sym/font'],
-                #['work', '.'],
         
     def openCellView(self, cellView):
         if cellView:

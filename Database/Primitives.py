@@ -572,48 +572,77 @@ class SolderDot(Element):
 class Instance(Element):
     def __init__(self, parent, layers):
         Element.__init__(self, parent, layers)
-        self._libName = ''
-        self._cellName = ''
-        self._cellViewName = ''
+        self._instanceLibName = ''
+        self._instanceCellName = ''
+        self._instanceCellViewName = ''
         self._name = 'instance'
 
-        self._cell = None
-        self._cellView = None
+        self._instanceLibrary = None
+        self._instanceCell = None
+        self._instanceCellView = None
+        self._requestedInstanceCellView = None
         self._layer = self.layers().layerByName('instance', 'drawing')
 
-    def setCell(self, libName, cellName, cellViewName): #string
+    def setInstanceCell(self, libName, cellName, cellViewName): #string
         if self._editable:
-            self._libName = libName
-            self._cellName = cellName
-            self._cellViewName = cellViewName
+            self._instanceLibName = libName
+            self._instanceCellName = cellName
+            self._instanceCellViewName = cellViewName
             self.updateViews()
 
-    def cell(self):
-        if self._cell:    #cache
-            return self._cell
-        if self._libName == '':
-            lib = self.library()
-            self._cell = lib.cellByName(self._cellName)
+    def requestedInstanceCellView(self):
+        if self.instanceLibraryName() == '':
+            self._requestedInstanceCellView = self.library().cellViewByName(self.instanceCellName(), self.instanceCellViewName())
         else:
-            self._cell = self.database().cellByName(
-                self._libName, self._cellName)
-        if not self._cell:
-            self._cell = self.database().cellByName('analog', 'voltage-1')
-        return self._cell
-
-
-    def cellView(self):
-        if self._cellView:   #cache
-            return self._cellView
-        #print self._cellName
-        cell = self.cell()
-        if cell and cell.cellViewByName('symbol'):
-            self._cellView = cell.cellViewByName('symbol')
+            self._requestedInstanceCellView = self.database().cellViewByName(self.instanceFullLibraryName(), self.instanceCellName(), self.instanceCellViewName())
+        return self._requestedInstanceCellView
+        
+    def instanceLibrary(self):
+        if self._instanceLibrary:    #cache
+            return self._instanceLibrary
+        cv = self.requestedInstanceCellView()
+        if cv:
+            self._instanceLibrary = cv.library()
         else:
-            self._cellView = self.database().cellViewByName('analog', 'voltage-1', 'symbol')
-        return self._cellView
+            self._instanceLibrary = self.database().libraryByName('/sym/analog')
+        return self._instanceLibrary
+
+    def instanceCell(self):
+        if self._instanceCell:    #cache
+            return self._instanceCell
+        cv = self.requestedInstanceCellView()
+        if cv:
+            self._instanceCell = cv.cell()
+        else:
+            self._instanceCell = self.database().cellByName('/sym/analog', 'voltage-1')
+        return self._instanceCell
 
 
+    def instanceCellView(self):
+        if self._instanceCellView:   #cache
+            return self._instanceCellView
+        cv = self.requestedInstanceCellView()
+        if cv:
+            self._instanceCellView = cv
+        else:
+            self._instanceCellView = self.database().cellViewByName('/sym/analog', 'voltage-1', 'symbol')
+        return self._instanceCellView
+
+    def instanceLibraryName(self):
+        return self._instanceLibName
+        
+    def instanceFullLibraryName(self):
+        instLibName = self.instanceLibraryName()        
+        name = self.library().concatenateLibraryNames(self.library().fullName(), self.instanceLibraryName())
+        #print instLibName, self.library().fullName(), name
+        return name
+
+    def instanceCellName(self):
+        return self._instanceCellName
+        
+    def instanceCellViewName(self):
+        return self._instanceCellViewName
+        
     def addToDiagram(self, diagram):
         "add itself to a diagram"
         diagram.addInstance(self)
@@ -701,7 +730,7 @@ class Occurrence():
  
     def installUpdateHook(self, view):
         self._view = view
-        self._instance.cellView().installUpdateHook(self)
+        self._instance.instanceCellView().installUpdateHook(self)
 
     def childOccurrences(self):
         if len(self._childOccurrences) > 0:   #cache
@@ -726,17 +755,17 @@ class Occurrence():
         return self._design
 
     def cellView(self):
-        return self._instance.cellView()
+        return self.instance().instanceCellView()
 
     def updateItem(self):
         if self._view:
             self._view.updateItem()
 
     def addInstance(self, instance):
-        occurrence = self._childOccurrences.get(instance)
-        if not occurrence:
-            occurrence = Occurrence(instance, self)
-            self._childOccurrences[instance] = occurrence
+        #occurrence = self._childOccurrences.get(instance)
+        #if not occurrence:
+        occurrence = Occurrence(instance, self)
+        self._childOccurrences[instance] = occurrence
         self.view().addOccurrence(occurrence)
     
     def removeInstance(self, instance):

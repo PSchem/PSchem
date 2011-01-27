@@ -56,9 +56,11 @@ class CellView():
     def restore(self):
         pass
 
-    def remove(self):
-        self._cell = None
-        self._views = set()
+    #def delete(self):
+    #    for e in self.elems():
+    #        name = e.name()
+            #e.delete()
+            #self._elems.remove(e)
 
 class Diagram(CellView):
     def __init__(self, name):
@@ -443,6 +445,13 @@ class Cell():
     def database(self):
         return self.library().database()
 
+    def delete(self):
+        for c in self.cellViews():
+            name = c.name()
+            c.delete()
+            self._cellViews.remove(c)
+            del self._cellViewNames[name]
+
 class Library():
     def __init__(self, name):
         self._cells = set()
@@ -467,7 +476,7 @@ class Library():
 
     def addLibrary(self, library):
         self._libraries.add(library)
-        cell.setLibrary(self)
+        library.setParentLibrary(self)
         self._libraryNames[library.name()] = library
         self.database().updateDatabaseViews()
 
@@ -477,11 +486,54 @@ class Library():
     def libraryNames(self):
         return self._libraryNames.keys()
 
+    def newLibrary(self, libraryName):
+        if libraryName == '':
+            return self
+        (first, sep, rest) = libraryName.partition('/')
+        if first == '..':
+            return self.parentLibrary().newLibrary(rest)
+        elif first == '.':
+            return self.newLibrary(rest)
+        elif first == '':
+            return self.database().newLibrary(rest)
+        lib = self.libraryByName(first)
+        if not lib:
+            lib = Library(first)
+            self.addLibrary(lib)
+        return lib.newLibrary(rest)
+
     def libraryByName(self, libraryName):
-        if self._libraryNames.has_key(libraryName):
-            return self._libraryNames[libraryName]
+        (first, sep, rest) = libraryName.partition('/')
+        if first == '..':
+            return self.parentLibrary().libraryByName(rest)
+        elif first == '.':
+            return self.libraryByName(rest)
+        elif first == '':
+            return self.database().libraryByName(rest)
+        elif self._libraryNames.has_key(first):
+            if rest == '':
+                return self._libraryNames[first]
+            else:
+                return self._libraryNames[first].libraryByName(rest)
         else:
             return None
+
+    @staticmethod
+    def concatenateLibraryNames(libName1, libName2):
+        (beginning1, sep, last1) = libName1.rpartition('/') # /examples / gTAG
+        (first2, sep, rest2) = libName2.partition('/') # . / 
+        if libName2.find('/') == 0: #is absolute
+            return libName2
+        elif len(libName2) == 0:
+            return libName1
+        elif first2 == '.':
+            return Library.concatenateLibraryNames(libName1, rest2)
+        elif first2 == '..' and beginning1 != '':
+            return Library.concatenateLibraryNames(beginning1, rest2)
+        elif first2 == '..':
+            return '/' + libName2
+        else:
+            return libName1 + '/' + libName2
 
     def cellByName(self, cellName):
         if self._cellNames.has_key(cellName):
@@ -499,21 +551,40 @@ class Library():
     def name(self):
         return self._name
 
+    def fullName(self):
+        if self.parentLibrary():
+            return self.parentLibrary().fullName() + '/' + self.name()
+        else:
+            return '/' + self.name()
+
     def setDatabase(self, database):
         self._database = database
         
     def database(self):
         if not self._database:
-            return self.parentLibrary().database()
+            self._database = self.parentLibrary().database()
         return self._database
         
-    def setParentLibrary(self):
-        return self._setParentLibrary
+    def setParentLibrary(self, parentLibrary):
+        self._parentLibrary = parentLibrary
 
     def parentLibrary(self):
         return self._parentLibrary
+        
+    def delete(self):
+        for c in self.cells():
+            name = c.name()
+            c.delete()
+            self._cells.remove(c)
+            del self._cellNames[name]
+        for l in self.libraries():
+            name = l.name()
+            l.delete()
+            self._libraries.remove(l)
+            del self._libraryNames[name]
 
-    
+    #def parseLibraryName(self, name):
+    #    return name.split('/')
 
 class Database():
     def __init__(self):
@@ -544,17 +615,48 @@ class Database():
         self._libraryNames[library.name()] = library
         self.updateDatabaseViews()
 
+    def deleteLibrary(self, library):
+        name = library.name()
+        library.delete()
+        self._libraries.remove(library)
+        del self._libraryNames[name]
+        self.updateDatabaseViews()
+
     def libraries(self):
         return self._libraries
 
     def libraryNames(self):
         return self._libraryNames.keys()
 
+    def newLibrary(self, libraryName):
+        if libraryName == '':
+            return None
+        (first, sep, rest) = libraryName.partition('/')
+        if first == '' or first == '.':
+            return self.newLibrary(rest)
+        lib = self.libraryByName(first)
+        if not lib:
+            lib = Library(first)
+            self.addLibrary(lib)
+        return lib.newLibrary(rest)
+        
     def libraryByName(self, libraryName):
-        if self._libraryNames.has_key(libraryName):
-            return self._libraryNames[libraryName]
+        if libraryName == '':
+            return None
+        (first, sep, rest) = libraryName.partition('/')
+        if first == '' or first == '.':
+            return self.libraryByName(rest)
+        elif self._libraryNames.has_key(first):
+            if rest == '':
+                return self._libraryNames[first]
+            else:
+                return self._libraryNames[first].libraryByName(rest)
         else:
             return None
+        #if self._libraryNames.has_key(libraryName):
+        #    return self._libraryNames[libraryName]
+        #else:
+        #    return None
 
     def cellByName(self, libraryName, cellName):
         lib = self.libraryByName(libraryName)

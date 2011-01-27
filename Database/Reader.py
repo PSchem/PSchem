@@ -169,20 +169,20 @@ class GedaReader(Reader):
         #c = r.parseSymbol(symbolName)
         cellName = self.psymStrip.sub('', m.group(6))
         lib = self.importer.findCellSymbolLibrary(cellName)
-        #print lib
         #print m.group(6)
         #c = self.importer.getCellByName(m.group(6))
         #c = lib.cellByName(m.group(6))
         i = Instance(self.view, self._database.layers())
+        
         i.setXY(int(m.group(1)), int(m.group(2)))
         i.setAngle(int(m.group(4)))
         i.setHMirror(int(m.group(5)) == 1)
 
-        if not lib or lib == self.importer.library:
-            i.setCell('', cellName, 'symbol')
+        if not lib: # or lib == self.importer.library:
+            i.setInstanceCell('', cellName, 'symbol')
             #i = Instance(self.view, int(m.group(1)), int(m.group(2)), int(m.group(4)), int(m.group(5)), '', cellName, 'symbol')
         else:
-            i.setCell(lib.name(), cellName, 'symbol')
+            i.setInstanceCell(self.importer.libNameAbsToRel(lib.fullName()), cellName, 'symbol')
             #i = Instance(self.view, int(m.group(1)), int(m.group(2)), int(m.group(4)), int(m.group(5)), lib.name(), cellName, 'symbol')
         self.last = i
         #self.view.addComponent(c)
@@ -375,7 +375,41 @@ class GedaImporter(Importer):
         for l in self.sourceLibraryList:
             self.importSourceLibrary(l)
                 
-    def findCellSymbolLibrary(self, cellName):
+    def libNameAbsToRel(self, libName):
+        l = self.library.fullName()
+        #print libName, l
+        (abs, sep, lib) = l.rpartition('/')
+        if libName.find(l) == 0:
+            return libName.replace(l, '.')
+        elif len(abs) > 0 and libName.find(abs) == 0:
+            return libName.replace(abs, '..')
+        else:
+            return libName
+    
+    def findCellSymbolLibrary(self, cellName, library=None, checkAbove=True):
+        if not library:
+            library = self.library
+        #print self.__class__.__name__, library.fullName()
+        #first current library
+        if library.cellViewByName(cellName, 'symbol'):
+            return library
+        #then recursively any sub-libraries (without going above)
+        for l in library.libraries():
+            lib = self.findCellSymbolLibrary(cellName, l, False)
+            if lib:
+                return lib
+        #if that fails try recursively one level above
+        if checkAbove:
+            if library.parentLibrary():
+                return self.findCellSymbolLibrary(cellName, library.parentLibrary())
+            else:
+                for l in library.database().libraries():
+                    lib = self.findCellSymbolLibrary(cellName, l, False)
+                    if lib:
+                        return lib
+        return None
+
+    def findCellSymbolLibrary_(self, cellName):
         cell = self.database.cellViewByName(self.library.name(), cellName, 'symbol')
         if cell:
             return self.library
@@ -414,8 +448,9 @@ class GedaImporter(Importer):
                     print 'Importing component symbol', f
                     self.library = self.database.libraryByName(library)
                     if not self.library:
-                        self.library = Library(library)
-                        self.database.addLibrary(self.library)
+                        self.library = self.database.newLibrary(library)
+                        #self.library = Library(library)
+                        #self.database.addLibrary(self.library)
                     self.cell = self.library.cellByName(self.cellName(f))
                     if not self.cell:
                         self.cell = Cell(self.cellName(f))
@@ -448,11 +483,12 @@ class GedaImporter(Importer):
             for f in files:
                 #f = os.path.join(directory, f)
                 if (not self.database.cellViewByName(library, self.cellName(f), 'schematic')):
-                    print 'Importing component schematic', f
+                    print 'Importing schematic', f
                     self.library = self.database.libraryByName(library)
                     if not self.library:
-                        self.library = Library(library)
-                        self.database.addLibrary(self.library)
+                        self.library = self.database.newLibrary(library)
+                        #self.library = Library(library)
+                        #self.database.addLibrary(self.library)
                     self.cell = self.library.cellByName(self.cellName(f))
                     if not self.cell:
                         self.cell = Cell(self.cellName(f))

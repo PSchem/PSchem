@@ -113,6 +113,7 @@ class DesignView(QtGui.QGraphicsView):
         self.flipY = -1
 
         self.setFrameStyle(QtGui.QFrame.NoFrame)
+        self.setMouseTracking(True)
 
         #self.setOptimizationFlags(QtGui.QGraphicsView.DontClipPainter)
         #self.setCacheMode(QtGui.QGraphicsView.CacheBackground)

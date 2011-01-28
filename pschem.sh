@@ -1,4 +1,4 @@
-﻿#!/bin/sh
+#!/bin/sh
 
 set style = polyester
 #set style = oxygen

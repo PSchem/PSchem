@@ -21,10 +21,11 @@ from Database.Primitives import *
 from xml.etree import ElementTree as et
 
 class CellView():
-    def __init__(self, name):
-        self._name = 'cell_view'
+    def __init__(self, name, cell):
+        self._name = name
         self._attribs = {}
-        self._cell = None
+        self._cell = cell
+        cell.cellViewAdded(self)
             
     def attributeLabels(self):
         return filter(lambda e: isinstance(e, AttributeLabel), self._elems)
@@ -35,13 +36,10 @@ class CellView():
     def name(self):
         return self._name
 
-    def setCell(self, cell):
-        self._cell = cell
-
     def cell(self):
         return self._cell
 
-    def attribs(self):
+    def attributes(self):
         return self._attribs
 
     def library(self):
@@ -56,15 +54,14 @@ class CellView():
     def restore(self):
         pass
 
-    #def delete(self):
-    #    for e in self.elems():
-    #        name = e.name()
-            #e.delete()
-            #self._elems.remove(e)
+    def remove(self):
+        for a in list(self.attributes()):
+            a.remove()
+        self.cell().cellViewRemoved(self)
 
 class Diagram(CellView):
-    def __init__(self, name):
-        CellView.__init__(self, name)
+    def __init__(self, name, cell):
+        CellView.__init__(self, name, cell)
         #self._elems = set()
         self._lines = set()
         self._rects = set()
@@ -75,7 +72,7 @@ class Diagram(CellView):
         self._attributeLabels = set()
         #self._uu = 160 # default DB units per user units
         self._attribs['uu'] = 160 # default DB units per user units
-        self._name = 'diagram'
+        #self._name = 'diagram'
         self._occurrences = set()
        
     def installUpdateHook(self, occurrence):
@@ -191,8 +188,12 @@ class Diagram(CellView):
         return self._attribs['uu']
 
     def remove(self):
-        for e in list(self._elems):
-            self.removeElem(e)
+        for e in list(self.elems()):
+            e.remove()
+            #self.removeElem(e)
+        for o in list(self.occurrences()):
+            o.remove()
+            #self.removeOccurrence(o)
         CellView.remove(self)
 
     def save(self):
@@ -226,9 +227,9 @@ class Diagram(CellView):
                 elem.tail = i
     
 class Schematic(Diagram):
-    def __init__(self, name):
-        Diagram.__init__(self, name)
-        self._name = 'schematic'
+    def __init__(self, name, cell):
+        Diagram.__init__(self, name, cell)
+        #self._name = 'schematic'
         self._pins = set()
         self._instances = set()
         self._netSegments = set()
@@ -365,9 +366,9 @@ class Schematic(Diagram):
                     self.removeElem(solder2)
                 
 class Symbol(Diagram):
-    def __init__(self, name):
-        Diagram.__init__(self, name)
-        self._name = 'symbol'
+    def __init__(self, name, cell):
+        Diagram.__init__(self, name, cell)
+        #self._name = 'symbol'
         self._symbolPins = set()
 
     def installUpdateHook(self, occurrence):
@@ -391,17 +392,18 @@ class Symbol(Diagram):
         return self._symbolPins
 
 class Netlist(CellView):
-    def __init__(self, name):
-        CellView.__init__(self, name)
-        self._name = 'netlist'
+    def __init__(self, name, cell):
+        CellView.__init__(self, name, cell)
+        #self._name = 'netlist'
 
 
 class Cell():
-    def __init__(self, name):
+    def __init__(self, name, library):
         self._cellViews = set()
         self._cellViewNames = {}
         self._name = name
-        self._library = None
+        self._library = library
+        library.cellAdded(self)
 
     def addCellView(self, cellView):
         self._cellViews.add(cellView)
@@ -427,6 +429,19 @@ class Cell():
         else:
             return None
 
+    def cellViewAdded(self, cellView):
+        self._cellViews.add(cellView)
+        self._cellViewNames[cellView.name()] = cellView
+        self.library().cellChanged(self)
+
+    def cellViewRemoved(self, cellView):
+        self._cellViews.remove(cellView)
+        del self._cellViewNames[cellView.name()]
+        self.library().cellChanged(self)
+        
+    def cellViewChanged(self, cellView):
+        self.library().cellChanged(self)
+
     def name(self):
         return self._name
 
@@ -436,37 +451,29 @@ class Cell():
     def symbol(self):
         return self.cellViewByName('symbol')  #currently assume it is 'symbol'
 
-    def setLibrary(self, library):
-        self._library = library
-        
     def library(self):
         return self._library
         
     def database(self):
         return self.library().database()
 
-    def delete(self):
-        for c in self.cellViews():
-            name = c.name()
-            c.delete()
-            self._cellViews.remove(c)
-            del self._cellViewNames[name]
+    def remove(self):
+        for c in list(self.cellViews()):
+            c.remove()
 
 class Library():
-    def __init__(self, name):
+    def __init__(self, name, database, parentLibrary = None):
         self._cells = set()
         self._cellNames = {}
         self._libraries = set()
         self._libraryNames = {}
-        self._parentLibrary = None
+        self._parentLibrary = parentLibrary
         self._name = name
-        self._database = None
-
-    def addCell(self, cell):
-        self._cells.add(cell)
-        cell.setLibrary(self)
-        self._cellNames[cell.name()] = cell
-        self.database().updateDatabaseViews()
+        self._database = database
+        if parentLibrary:
+            parentLibrary.libraryAdded(self)
+        else:
+            database.libraryAdded(self)
 
     def cells(self):
         return self._cells
@@ -474,11 +481,31 @@ class Library():
     def cellNames(self):
         return self._cellNames.keys()
 
-    def addLibrary(self, library):
+    def cellAdded(self, cell):
+        self._cells.add(cell)
+        self._cellNames[cell.name()] = cell
+        self.database().libraryChanged(self)
+
+    def cellRemoved(self, cell):
+        self._cells.remove(cell)
+        del self._cellNames[cell.name()]
+        self.database().libraryChanged(self)
+        
+    def cellChanged(self, cell):
+        self.database().libraryChanged(self)
+
+    def libraryAdded(self, library):
         self._libraries.add(library)
-        library.setParentLibrary(self)
         self._libraryNames[library.name()] = library
-        self.database().updateDatabaseViews()
+        self.database().libraryChanged(self)
+
+    def libraryRemoved(self, library):
+        self._libraries.remove(library)
+        del self._libraryNames[library.name()]
+        self.database().libraryChanged(self)
+        
+    def libraryChanged(self, library):
+        self.database().libraryChanged(self)
 
     def libraries(self):
         return self._libraries
@@ -486,54 +513,38 @@ class Library():
     def libraryNames(self):
         return self._libraryNames.keys()
 
-    def newLibrary(self, libraryName):
-        if libraryName == '':
-            return self
-        (first, sep, rest) = libraryName.partition('/')
+    def libraryByPath(self, libraryPath):
+        (first, sep, rest) = libraryPath.partition('/')
         if first == '..':
-            return self.parentLibrary().newLibrary(rest)
+            return self.parentLibrary().libraryByPath(rest)
         elif first == '.':
-            return self.newLibrary(rest)
+            return self.libraryByPath(rest)
         elif first == '':
-            return self.database().newLibrary(rest)
-        lib = self.libraryByName(first)
-        if not lib:
-            lib = Library(first)
-            self.addLibrary(lib)
-        return lib.newLibrary(rest)
-
-    def libraryByName(self, libraryName):
-        (first, sep, rest) = libraryName.partition('/')
-        if first == '..':
-            return self.parentLibrary().libraryByName(rest)
-        elif first == '.':
-            return self.libraryByName(rest)
-        elif first == '':
-            return self.database().libraryByName(rest)
+            return self.database().libraryByPath(rest)
         elif self._libraryNames.has_key(first):
             if rest == '':
                 return self._libraryNames[first]
             else:
-                return self._libraryNames[first].libraryByName(rest)
+                return self._libraryNames[first].libraryByPath(rest)
         else:
             return None
 
     @staticmethod
-    def concatenateLibraryNames(libName1, libName2):
-        (beginning1, sep, last1) = libName1.rpartition('/') # /examples / gTAG
-        (first2, sep, rest2) = libName2.partition('/') # . / 
-        if libName2.find('/') == 0: #is absolute
-            return libName2
-        elif len(libName2) == 0:
-            return libName1
+    def concatenateLibraryPaths(libPath1, libPath2):
+        (beginning1, sep, last1) = libPath1.rpartition('/')
+        (first2, sep, rest2) = libPath2.partition('/') 
+        if libPath2.find('/') == 0: #is absolute
+            return libPath2
+        elif len(libPath2) == 0:
+            return libPath1
         elif first2 == '.':
-            return Library.concatenateLibraryNames(libName1, rest2)
+            return Library.concatenateLibraryPaths(libPath1, rest2)
         elif first2 == '..' and beginning1 != '':
-            return Library.concatenateLibraryNames(beginning1, rest2)
+            return Library.concatenateLibraryPaths(beginning1, rest2)
         elif first2 == '..':
-            return '/' + libName2
+            return '/' + libPath2
         else:
-            return libName1 + '/' + libName2
+            return libPath1 + '/' + libPath2
 
     def cellByName(self, cellName):
         if self._cellNames.has_key(cellName):
@@ -551,40 +562,32 @@ class Library():
     def name(self):
         return self._name
 
-    def fullName(self):
+    def path(self):
         if self.parentLibrary():
-            return self.parentLibrary().fullName() + '/' + self.name()
+            return self.parentLibrary().path() + '/' + self.name()
         else:
             return '/' + self.name()
 
-    def setDatabase(self, database):
-        self._database = database
-        
     def database(self):
         if not self._database:
             self._database = self.parentLibrary().database()
         return self._database
         
-    def setParentLibrary(self, parentLibrary):
-        self._parentLibrary = parentLibrary
-
     def parentLibrary(self):
         return self._parentLibrary
         
-    def delete(self):
-        for c in self.cells():
-            name = c.name()
-            c.delete()
-            self._cells.remove(c)
-            del self._cellNames[name]
-        for l in self.libraries():
-            name = l.name()
-            l.delete()
-            self._libraries.remove(l)
-            del self._libraryNames[name]
-
-    #def parseLibraryName(self, name):
-    #    return name.split('/')
+    def remove(self):
+        # remove child libraries&cells
+        for c in list(self.cells()):
+            c.remove()
+        for l in list(self.libraries()):
+            l.remove()
+        # notify parent library or database
+        if self.parentLibrary():
+            self.parentLibrary().libraryRemoved(self)
+        else:
+            self.database().libraryRemoved(self)
+        
 
 class Database():
     def __init__(self):
@@ -601,25 +604,44 @@ class Database():
     def installUpdateHierarchyViewsHook(self, view):
         self._hierarchyViews.add(view)
 
+    def updateDatabaseViewsPreparation(self):
+        """
+        Some views may require notification before layout
+        of the database changes
+        """
+        for v in self._databaseViews:
+            v.prepareForUpdate()
+        
     def updateDatabaseViews(self):
+        "Notify views that the database layout has changed"
         for v in self._databaseViews:
             v.update()
 
+    def updateDatabaseViewsPreparation(self):
+        """
+        Some views may require notification before layout
+        of the design hierarchy changes
+        """
+        for v in self._databaseViews:
+            v.prepareForUpdate()
+        
     def updateHierarchyViews(self):
+        "Notify views that the design hierarchy layout has changed"
         for v in self._hierarchyViews:
             v.update()
 
-    def addLibrary(self, library):
+    def libraryAdded(self, library):
         self._libraries.add(library)
-        library.setDatabase(self)
+        #library.setDatabase(self)
         self._libraryNames[library.name()] = library
         self.updateDatabaseViews()
 
-    def deleteLibrary(self, library):
-        name = library.name()
-        library.delete()
+    def libraryRemoved(self, library):
         self._libraries.remove(library)
-        del self._libraryNames[name]
+        del self._libraryNames[library.name()]
+        self.updateDatabaseViews()
+        
+    def libraryChanged(self, library):
         self.updateDatabaseViews()
 
     def libraries(self):
@@ -628,45 +650,47 @@ class Database():
     def libraryNames(self):
         return self._libraryNames.keys()
 
-    def newLibrary(self, libraryName):
-        if libraryName == '':
+    def makeLibraryFromPath(self, libraryPath, rootLib=None):
+        (first, sep, rest) = libraryPath.partition('/')
+        if libraryPath == '' or first == '..':
             return None
-        (first, sep, rest) = libraryName.partition('/')
         if first == '' or first == '.':
-            return self.newLibrary(rest)
-        lib = self.libraryByName(first)
-        if not lib:
-            lib = Library(first)
-            self.addLibrary(lib)
-        return lib.newLibrary(rest)
+            return self.makeLibraryFromPath(rest)
+        if rootLib:
+            lib = rootLib.libraryByPath(first)
+            if not lib:
+                lib = Library(first, self, rootLib)
+        else:
+            lib = self.libraryByPath(first)
+            if not lib:
+                lib = Library(first, self)
+        if rest == '':
+            return lib
+        return self.makeLibraryFromPath(rest, lib)
         
-    def libraryByName(self, libraryName):
-        if libraryName == '':
+    def libraryByPath(self, libraryPath):
+        if libraryPath == '':
             return None
-        (first, sep, rest) = libraryName.partition('/')
+        (first, sep, rest) = libraryPath.partition('/')
         if first == '' or first == '.':
-            return self.libraryByName(rest)
+            return self.libraryByPath(rest)
         elif self._libraryNames.has_key(first):
             if rest == '':
                 return self._libraryNames[first]
             else:
-                return self._libraryNames[first].libraryByName(rest)
+                return self._libraryNames[first].libraryByPath(rest)
         else:
             return None
-        #if self._libraryNames.has_key(libraryName):
-        #    return self._libraryNames[libraryName]
-        #else:
-        #    return None
 
-    def cellByName(self, libraryName, cellName):
-        lib = self.libraryByName(libraryName)
+    def cellByName(self, libraryPath, cellName):
+        lib = self.libraryByPath(libraryPath)
         if lib:
             return lib.cellByName(cellName)
         else:
             return None
 
-    def cellViewByName(self, libraryName, cellName, cellViewName):
-        lib = self.libraryByName(libraryName)
+    def cellViewByName(self, libraryPath, cellName, cellViewName):
+        lib = self.libraryByPath(libraryPath)
         if lib:
             return lib.cellViewByName(cellName, cellViewName)
         else:

@@ -550,7 +550,7 @@ class OccurrenceItem(BaseItem):
         BaseItem.__init__(self, parent)
         self.model = occurrence
         self._cellView = self.model.cellView()
-        #print self.__class__.__name__, occurrence, occurrence.instance().instanceLibraryName(), occurrence.instance().instanceCellName(), occurrence.instance().instanceCellViewName(), self._cellView
+        #print self.__class__.__name__, occurrence, occurrence.instance().instanceLibraryPath(), occurrence.instance().instanceCellName(), occurrence.instance().instanceCellViewName(), self._cellView
         self.uu = float(self._cellView.uu())
         self._rect = QtCore.QRectF()
         self._shapePath = QtGui.QPainterPath()

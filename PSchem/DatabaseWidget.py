@@ -25,8 +25,15 @@ import os
 class DatabaseModel(QtCore.QAbstractItemModel):
     def __init__(self, database, parent=None):
         QtCore.QAbstractItemModel.__init__(self, parent)
+        #self.modelThread = QtCore.QThread()
+        #self.modelThread.start()
+        #self.moveToThread(self.modelThread)
         self.database = database
         database.installUpdateDatabaseViewsHook(self)
+        #print 'model ', self.thread()
+
+    def prepareForUpdate(self):
+        self.emit(QtCore.SIGNAL("layoutAboutToBeChanged()"))
 
     def update(self):
         self.emit(QtCore.SIGNAL("layoutChanged()"))
@@ -77,7 +84,10 @@ class DatabaseModel(QtCore.QAbstractItemModel):
             return QtCore.QModelIndex()
 
         #children.sort(lambda a, b: cmp(a.name(), b.name()))
-        return self.createIndex(row, column, children[row])
+        if row >= 0 and len(children) > row:
+            return self.createIndex(row, column, children[row])
+        else:
+            return QtCore.QModelIndex()
 
     def parent(self, index):
         if not index.isValid():
@@ -181,6 +191,7 @@ class ProxyModel(QtGui.QSortFilterProxyModel):
         QtGui.QSortFilterProxyModel.__init__(self)
         self.libRegExp = QtCore.QRegExp()
         self.cellRegExp = QtCore.QRegExp()
+        #print 'proxy ', self.thread()
 
     def filterAcceptsRow(self, row, parent):
         source_idx = self.sourceModel().index(row, 0, parent)
@@ -208,7 +219,7 @@ class ProxyModel(QtGui.QSortFilterProxyModel):
 class DatabaseWidget(QtGui.QWidget):
     def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
-
+        #print 'view ', self.thread()
         self.window = parent
         self.proxyModel = ProxyModel()
         self.proxyModel.setDynamicSortFilter(True)
@@ -257,7 +268,7 @@ class DatabaseWidget(QtGui.QWidget):
                 lib = cell.library()
                 self.window.controller.execute(
                     Command(
-                        'window.openCellViewByName(\'' +lib.fullName()+
+                        'window.openCellViewByName(\'' +lib.path()+
                         '\', \''+cell.name()+'\', \''+data.name()+'\')'))
 
 

@@ -572,7 +572,7 @@ class SolderDot(Element):
 class Instance(Element):
     def __init__(self, parent, layers):
         Element.__init__(self, parent, layers)
-        self._instanceLibName = ''
+        self._instanceLibPath = ''
         self._instanceCellName = ''
         self._instanceCellViewName = ''
         self._name = 'instance'
@@ -583,18 +583,18 @@ class Instance(Element):
         self._requestedInstanceCellView = None
         self._layer = self.layers().layerByName('instance', 'drawing')
 
-    def setInstanceCell(self, libName, cellName, cellViewName): #string
+    def setInstanceCell(self, libPath, cellName, cellViewName): #string
         if self._editable:
-            self._instanceLibName = libName
+            self._instanceLibPath = libPath
             self._instanceCellName = cellName
             self._instanceCellViewName = cellViewName
             self.updateViews()
 
     def requestedInstanceCellView(self):
-        if self.instanceLibraryName() == '':
+        if self.instanceLibraryPath() == '':
             self._requestedInstanceCellView = self.library().cellViewByName(self.instanceCellName(), self.instanceCellViewName())
         else:
-            self._requestedInstanceCellView = self.database().cellViewByName(self.instanceFullLibraryName(), self.instanceCellName(), self.instanceCellViewName())
+            self._requestedInstanceCellView = self.database().cellViewByName(self.instanceAbsolutePath(), self.instanceCellName(), self.instanceCellViewName())
         return self._requestedInstanceCellView
         
     def instanceLibrary(self):
@@ -604,7 +604,7 @@ class Instance(Element):
         if cv:
             self._instanceLibrary = cv.library()
         else:
-            self._instanceLibrary = self.database().libraryByName('/sym/analog')
+            self._instanceLibrary = self.database().libraryByPath('/sym/analog')
         return self._instanceLibrary
 
     def instanceCell(self):
@@ -628,14 +628,12 @@ class Instance(Element):
             self._instanceCellView = self.database().cellViewByName('/sym/analog', 'voltage-1', 'symbol')
         return self._instanceCellView
 
-    def instanceLibraryName(self):
-        return self._instanceLibName
+    def instanceLibraryPath(self):
+        return self._instanceLibPath
         
-    def instanceFullLibraryName(self):
-        instLibName = self.instanceLibraryName()        
-        name = self.library().concatenateLibraryNames(self.library().fullName(), self.instanceLibraryName())
-        #print instLibName, self.library().fullName(), name
-        return name
+    def instanceAbsolutePath(self):
+        path = self.library().concatenateLibraryPaths(self.library().path(), self.instanceLibraryPath())
+        return path
 
     def instanceCellName(self):
         return self._instanceCellName

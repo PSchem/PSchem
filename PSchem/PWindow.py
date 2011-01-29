@@ -822,8 +822,8 @@ class PWindow(QtGui.QMainWindow):
             #subWin.show()
             #self.setCurrentView(dView)
 
-    def openCellViewByName(self, libName, cellName, viewName):
-        cellView = self.database.cellViewByName(libName, cellName, viewName)
+    def openCellViewByName(self, libPath, cellName, viewName):
+        cellView = self.database.cellViewByName(libPath, cellName, viewName)
         print self.__class__.__name__, cellView
         self.openCellView(cellView)
 

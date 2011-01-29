@@ -182,7 +182,7 @@ class GedaReader(Reader):
             i.setInstanceCell('', cellName, 'symbol')
             #i = Instance(self.view, int(m.group(1)), int(m.group(2)), int(m.group(4)), int(m.group(5)), '', cellName, 'symbol')
         else:
-            i.setInstanceCell(self.importer.libNameAbsToRel(lib.fullName()), cellName, 'symbol')
+            i.setInstanceCell(self.importer.libPathAbsToRel(lib.path()), cellName, 'symbol')
             #i = Instance(self.view, int(m.group(1)), int(m.group(2)), int(m.group(4)), int(m.group(5)), lib.name(), cellName, 'symbol')
         self.last = i
         #self.view.addComponent(c)
@@ -316,7 +316,7 @@ class GedaReader(Reader):
         #cellName = self.pschStrip.sub('', fileName)
         #self.cell = self.importer.library.cellByName(cellName)
         #if not self.cell:
-        #    self.cell = Cell(cellName)
+        #    self.cell = Cell(cellName, self.importer.library)
         #    self.library.addCell(self.cell)
         ##self.view = self.cell.cellViewByName(fileName)
         #self.view = self.cell.cellViewByName('schematic')
@@ -341,7 +341,7 @@ class GedaReader(Reader):
         #self.cell = self.importer.cell
         #self.library.cellByName(cellName)
         #if not self.cell:
-        #    self.cell = Cell(cellName)
+        #    self.cell = Cell(cellName, self.importer.library)
         #    self.library.addCell(self.cell)
         #self.view = self.cell.cellViewByName(fileName)
         #self.view = self.cell.cellViewByName('symbol')
@@ -375,21 +375,21 @@ class GedaImporter(Importer):
         for l in self.sourceLibraryList:
             self.importSourceLibrary(l)
                 
-    def libNameAbsToRel(self, libName):
-        l = self.library.fullName()
-        #print libName, l
+    def libPathAbsToRel(self, libPath):
+        l = self.library.path()
+        #print libPath, l
         (abs, sep, lib) = l.rpartition('/')
-        if libName.find(l) == 0:
-            return libName.replace(l, '.')
-        elif len(abs) > 0 and libName.find(abs) == 0:
-            return libName.replace(abs, '..')
+        if libPath.find(l) == 0:
+            return libPath.replace(l, '.')
+        elif len(abs) > 0 and libPath.find(abs) == 0:
+            return libPath.replace(abs, '..')
         else:
-            return libName
+            return libPath
     
     def findCellSymbolLibrary(self, cellName, library=None, checkAbove=True):
         if not library:
             library = self.library
-        #print self.__class__.__name__, library.fullName()
+        #print self.__class__.__name__, library.path()
         #first current library
         if library.cellViewByName(cellName, 'symbol'):
             return library
@@ -446,19 +446,20 @@ class GedaImporter(Importer):
                 #if os.path.isfile(f) and self.psymStrip.search(f):
                 if (not self.database.cellViewByName(library, self.cellName(f), 'symbol')):
                     print 'Importing component symbol', f
-                    self.library = self.database.libraryByName(library)
+                    self.library = self.database.libraryByPath(library)
                     if not self.library:
-                        self.library = self.database.newLibrary(library)
-                        #self.library = Library(library)
+                        #self.library = self.database.newLibrary(library)
+                        self.library = self.database.makeLibraryFromPath(library)
+                        #self.library = Library(library, self.database)
                         #self.database.addLibrary(self.library)
                     self.cell = self.library.cellByName(self.cellName(f))
                     if not self.cell:
-                        self.cell = Cell(self.cellName(f))
-                        self.library.addCell(self.cell)
+                        self.cell = Cell(self.cellName(f), self.library)
+                        #self.library.addCell(self.cell)
                     cv = self.cell.cellViewByName('symbol')
                     if not cv:
-                        cv = Symbol('symbol')
-                        self.cell.addCellView(cv)
+                        cv = Symbol('symbol', self.cell)
+                        #self.cell.addCellView(cv)
                         r = GedaReader(self)
                         cv = r.parseSymbol(f, cv)
                     #cv = r.parseSymbol(f)
@@ -484,19 +485,20 @@ class GedaImporter(Importer):
                 #f = os.path.join(directory, f)
                 if (not self.database.cellViewByName(library, self.cellName(f), 'schematic')):
                     print 'Importing schematic', f
-                    self.library = self.database.libraryByName(library)
+                    self.library = self.database.libraryByPath(library)
                     if not self.library:
-                        self.library = self.database.newLibrary(library)
+                        #self.library = self.database.newLibrary(library)
+                        self.library = self.database.makeLibraryFromPath(library)
                         #self.library = Library(library)
                         #self.database.addLibrary(self.library)
                     self.cell = self.library.cellByName(self.cellName(f))
                     if not self.cell:
-                        self.cell = Cell(self.cellName(f))
-                        self.library.addCell(self.cell)
+                        self.cell = Cell(self.cellName(f), self.library)
+                        #self.library.addCell(self.cell)
                     cv = self.cell.cellViewByName('schematic')
                     if not cv:
-                        cv = Schematic('schematic')
-                        self.cell.addCellView(cv)
+                        cv = Schematic('schematic', self.cell)
+                        #self.cell.addCellView(cv)
                         r = GedaReader(self)
                         r.parseSchematic(f, cv)
                     #self.cell.addCellView(cv)

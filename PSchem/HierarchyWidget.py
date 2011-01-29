@@ -56,7 +56,7 @@ class HierarchyModel(QtCore.QAbstractItemModel):
             elif col == 1:
                 return QtCore.QVariant(data.instance().instanceCellName())
             else:
-                return QtCore.QVariant(data.instance().instanceLibraryName())
+                return QtCore.QVariant(data.instance().instanceLibraryPath())
         else:
             return QtCore.QVariant()
 
@@ -75,7 +75,10 @@ class HierarchyModel(QtCore.QAbstractItemModel):
         else:
             return QtCore.QModelIndex()
 
-        return self.createIndex(row, column, children[row])
+        if row >= 0 and len(children) > row:
+            return self.createIndex(row, column, children[row])
+        else:
+            return QtCore.QModelIndex()
 
     def parent(self, index):
         if not index.isValid():

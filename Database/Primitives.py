@@ -17,10 +17,14 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with PSchem Database.  If not, see <http://www.gnu.org/licenses/>.
 
-from Database.Layers import *
-#from Database.Cells import *
+#print 'Primitives in'
+
+#from Database.Layers import *
+from Database.Cells import *
 from Database.Attributes import *
 from xml.etree import ElementTree as et
+
+#print 'Primitives out'
 
 class Element():
     def __init__(self, diagram, layers):
@@ -44,6 +48,9 @@ class Element():
 
     def installUpdateHook(self, view):
         self._views.add(view)
+
+    def itemAdded(self, item):
+        self._views.add(item)
 
     def updateViews(self):
         for v in self._views:
@@ -570,7 +577,7 @@ class Instance(Element):
         return self._instanceLibPath
         
     def instanceAbsolutePath(self):
-        path = self.library().concatenateLibraryPaths(self.library().path(), self.instanceLibraryPath())
+        path = Library.concatenateLibraryPaths(self.library().path(), self.instanceLibraryPath())
         return path
 
     def instanceCellName(self):
@@ -579,7 +586,7 @@ class Instance(Element):
     def instanceCellViewName(self):
         return self._instanceCellViewName
         
-    def addToView(self, view): #occurence
+    def addToView(self, view):
         view.addInstance(self)
 
 class Pin(Instance):

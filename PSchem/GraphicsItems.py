@@ -549,16 +549,19 @@ class InstanceItem(BaseItem):
     def __init__(self, instance, parent=None):
         BaseItem.__init__(self, parent)
         self.model = instance
-        self._cellView = self.model.cellView()
-        #print self.__class__.__name__, instance, instance.instance().instanceLibraryPath(), instance.instance().instanceCellName(), instance.instance().instanceCellViewName(), self._cellView
-        self.uu = float(self._cellView.uu())
+        self._cellView = self.model.instanceCellView()
+        #print self.__class__.__name__, instance, instance.instanceLibraryPath(), instance.instanceCellName(), instance.instanceCellViewName(), self._cellView
+        self.uu = float(self.cellView().uu())
         self._rect = QtCore.QRectF()
         self._shapePath = QtGui.QPainterPath()
-        #self.setZValue(self.model.instance().layer().zValue())
+        #self.setZValue(self.model.layer().zValue())
         self.setHandlesChildEvents(True)
-        self.model.viewAdded(self)
-        #self._cellView.installUpdateHook(self)
+        self.model.itemAdded(self)
+        self.cellView().addedInstanceItem(self)
 
+    def cellView(self):
+        return self._cellView
+        
     def instanceRemoved(self):
         self.model = None
         self._cellView = None
@@ -567,12 +570,12 @@ class InstanceItem(BaseItem):
     def paint(self, painter, option, widget):
         if not self.parentItem():
             if self.selected():
-                pen = QtGui.QPen(self.model.instance().layers().layerByName('selection', 'drawing').view().pen())
+                pen = QtGui.QPen(self.model.layers().layerByName('selection', 'drawing').view().pen())
                 painter.setPen(pen)
                 #painter.drawRect(self.boundingRect())
                 painter.drawPath(self.shape())
             if self.preSelected():
-                pen = QtGui.QPen(self.model.instance().layers().layerByName('preselection', 'drawing').view().pen())
+                pen = QtGui.QPen(self.model.layers().layerByName('preselection', 'drawing').view().pen())
                 painter.setPen(pen)
                 #painter.drawRect(self.boundingRect())
                 painter.drawPath(self.shape())

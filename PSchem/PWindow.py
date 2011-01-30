@@ -31,7 +31,7 @@ from PSchem.DesignView import *
 from PSchem.GraphicsScene import *
 from PSchem.LayerView import *
 from PSchem.Resources_rc import *
-from Database import *
+from Database import Cells, Reader
 import os
 
 class SubWindow(QtGui.QMdiSubWindow):

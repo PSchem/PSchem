@@ -17,13 +17,17 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with PSchem Database.  If not, see <http://www.gnu.org/licenses/>.
 
+#print 'Reader in'
+
 import re
 import os
 from Database.Primitives import *
+from Database.CellViews import *
 from Database.Cells import *
 from Database.Layers import *
 #from Database.Primitives import Database
 
+#print 'Reader out'
 
 class Reader():
     def __init__(self, database):

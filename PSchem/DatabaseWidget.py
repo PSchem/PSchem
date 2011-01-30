@@ -19,6 +19,7 @@
 
 from PyQt4 import QtCore, QtGui
 from Database.Cells import *
+from Database.CellViews import *
 from PSchem.ConsoleWidget import Command
 import os
 

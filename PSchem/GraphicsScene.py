@@ -27,10 +27,10 @@ class GraphicsScene(QtGui.QGraphicsScene):
         self._design = design
         self.uu = float(self._design.cellView().uu())
 
-        self._design.viewAdded(self)
+        self._design.sceneAdded(self)
 
-    def updateScene(self):
-        pass
+    def designChanged(self):
+        pass #all changes triggered by items
         
     def design(self):
         return self._design
@@ -112,17 +112,25 @@ class GraphicsScene(QtGui.QGraphicsScene):
 
 
     def addInstance(self, i):
-        instance = i.instance()
+        #instance = i.instance()
         instanceItem = InstanceItem(i)
-        instanceItem.translate(instance.x()/self.uu, instance.y()/self.uu)
-        instanceItem.rotate(instance.angle())
-        if instance.vMirror():
+        instanceItem.translate(i.x()/self.uu, i.y()/self.uu)
+        instanceItem.rotate(i.angle())
+        if i.vMirror():
             instanceItem.scale(1, -1)
-        if instance.hMirror():
+        if i.hMirror():
             instanceItem.scale(-1, 1)
         self.addItem(instanceItem)
         instanceItem.updateMatrix()
 
+    def remove(self):
+        pass
+        #for i in self.items():
+        #    i.remove()
+        #if self.design():
+        #    self.design().sceneRemoved()
+        
+        
     #def mouseMoveEvent(self, event):
     #    print str(event.pos().x()) + ' ' + str(event.pos().y())
     #    QtGui.QGraphicsScene.mouseMoveEvent(self, event)

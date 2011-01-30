@@ -17,10 +17,14 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with PSchem Database.  If not, see <http://www.gnu.org/licenses/>.
 
-from Database.Primitives import *
+#print 'Design in'
+
+#from Database.Primitives import *
 #from Database.Cells import *
-from Database.Attributes import *
+#from Database.Attributes import *
 from xml.etree import ElementTree as et
+
+#print 'Design out'
 
 class DesignUnit():
     def __init__(self, instance, parentDesignUnit):
@@ -28,11 +32,11 @@ class DesignUnit():
         self._parentDesignUnit = parentDesignUnit
         self._childDesignUnits = {} #set()
         self._design = parentDesignUnit.design()
-        self._view = None
+        self._scene = None
         parentDesignUnit.childDesignUnitAdded(self)
  
-    def viewAdded(self, view):
-        self._view = view
+    def sceneAdded(self, scene):
+        self._scene = scene
         self.cellView().designUnitAdded(self)
 
     def childDesignUnits(self):
@@ -61,8 +65,8 @@ class DesignUnit():
     def parentDesignUnit(self):
         return self._parentDesignUnit
 
-    def view(self):
-        return self._view
+    def scene(self):
+        return self._scene
     
     def instance(self):
         return self._instance
@@ -74,61 +78,69 @@ class DesignUnit():
         return self.instance().instanceCellView()
 
     def updateItem(self):
-        if self._view:
-            self._view.updateItem()
+        if self.scene():
+            self.scene().updateItem()
 
     def addInstance(self, instance):
         #designUnit = self._childDesignUnits.get(instance)
         #if not designUnit:
         designUnit = DesignUnit(instance, self)
         self._childDesignUnits[instance] = designUnit
-        self.view().addInstance(designUnit)
+        self.scene().addInstance(designUnit)
     
     def removeInstance(self, instance):
         designUnit = self._childDesignUnits.get(instance)
         if designUnit:
-            self.view().removeInstance(designUnit)
+            self.scene().removeInstance(designUnit)
             del self._childDesignUnits[instance]
             
     def remove(self):
         for co in self.childDesignUnits().values():
             co.remove()
-        if self.view():
-            self.view().instanceRemoved()
+        if self.scene():
+            self.scene().instanceRemoved()
             self.cellView().DesignUnitRemoved(self)
         self.parentDesignUnit().childDesignUnitRemoved(self)
         
 class Design(DesignUnit):
-    def __init__(self, cellView, database):
+    def __init__(self, cellView, designs):
         self._cellView = cellView
-        self._database = database
+        self._designs = designs
         self._childDesignUnits = {}
-        self._view = None
-        database.designAdded(self)
+        self._scene = None
+        designs.designAdded(self)
             
-    def viewAdded(self, view):
-        self._view = view
+    def sceneAdded(self, scene):
+        self._scene = scene
         self.cellView().designUnitAdded(self)
             
+    def sceneRemoved(self):
+        self._scene = None
+        self.cellView().designUnitRemoved(self)
+
     def cellView(self):
         return self._cellView
 
+    def cellViewRemoved(self):
+        if self.scene():
+            self.scene().designRemoved()
+            
     def design(self):
         return self
 
     def parentDesignUnit(self):
         return None
     
-    def database(self):
-        return self._database
+    def designs(self):
+        return self._designs
         
     def remove(self):
         for co in self.childDesignUnits().values():
             co.remove()
-        if self.view():
-            self.view().designRemoved()
+        if self.scene():
+            self.scene().designRemoved()
         self.cellView().designUnitRemoved(self)
-        self.database().designRemoved(self)
+        self.designs().designRemoved(self)
 
 class Designs(set):
     def __init__(self):

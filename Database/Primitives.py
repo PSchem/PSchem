@@ -242,13 +242,13 @@ class CustomPath(Element):
     def path(self):
         return self._path
 
-    def addToOccurrence(self, occurrence):
-        "add itself to an occurence"
-        occurrence.view().addCustomPath(self)
+    def addToDesignUnit(self, designUnit):
+        "add itself to an design unit"
+        designUnit.view().addCustomPath(self)
         
-    def removeFromOccurence(self, occurrence):
-        "remove itself from an occurrence"
-        occurrence.view().removeCustomPath(self)
+    def removeFromOccurence(self, designUnit):
+        "remove itself from an design unit"
+        designUnit.view().removeCustomPath(self)
         
         
 class Ellipse(Element):
@@ -654,114 +654,6 @@ class SymbolPin(Instance):
 
     def addToView(self, view):
         view.addPin(self)
-
-class Occurrence():
-    def __init__(self, instance, parentOccurrence):
-        self._instance = instance
-        self._parentOccurrence = parentOccurrence
-        self._childOccurrences = {} #set()
-        self._design = parentOccurrence.design()
-        self._view = None
-        parentOccurrence.childOccurrenceAdded(self)
- 
-    def viewAdded(self, view):
-        self._view = view
-        self.cellView().occurrenceAdded(self)
-
-    def childOccurrences(self):
-        """
-        Get a dictionary of child occurrences (instance->occurrence)
-        The dictionary is computed lazily by this function
-        (so that it descends down the hierarchy only when the user wants to see it)
-        and is cached for future invocations.
-        """
-        if len(self._childOccurrences) > 0:   #cache
-            return self._childOccurrences
-        schematic = self.cellView().cell().cellViewByName("schematic")
-        
-        if schematic:
-            for i in schematic.instances():
-                Occurrence(i, self) # it should add itself to parent occurrence
-                #self._childOccurrences[i] = Occurrence(i, self)
-        return self._childOccurrences
-
-    def childOccurrenceAdded(self, occurrence):
-        self._childOccurrences[occurrence.instance()] = occurrence
-        
-    def childOccurrenceRemoved(self, occurrence):
-        del self._childOccurrences[occurrence.instance()]
-
-    def parentOccurrence(self):
-        return self._parentOccurrence
-
-    def view(self):
-        return self._view
-    
-    def instance(self):
-        return self._instance
-
-    def design(self):
-        return self._design
-
-    def cellView(self):
-        return self.instance().instanceCellView()
-
-    def updateItem(self):
-        if self._view:
-            self._view.updateItem()
-
-    def addInstance(self, instance):
-        #occurrence = self._childOccurrences.get(instance)
-        #if not occurrence:
-        occurrence = Occurrence(instance, self)
-        self._childOccurrences[instance] = occurrence
-        self.view().addOccurrence(occurrence)
-    
-    def removeInstance(self, instance):
-        occurrence = self._childOccurrences.get(instance)
-        if occurrence:
-            self.view().removeOccurrence(occurrence)
-            del self._childOccurrences[instance]
-            
-    def remove(self):
-        for co in self.childOccurrences().values():
-            co.remove()
-        if self.view():
-            self.view().occurrenceRemoved()
-            self.cellView().occurrenceRemoved(self)
-        self.parentOccurrence().childOccurrenceRemoved(self)
-        
-class Design(Occurrence):
-    def __init__(self, cellView, database):
-        self._cellView = cellView
-        self._database = database
-        self._childOccurrences = {}
-        self._view = None
-        database.designAdded(self)
-            
-    def viewAdded(self, view):
-        self._view = view
-        self.cellView().occurrenceAdded(self)
-            
-    def cellView(self):
-        return self._cellView
-
-    def design(self):
-        return self
-
-    def parentOccurrence(self):
-        return None
-    
-    def database(self):
-        return self._database
-        
-    def remove(self):
-        for co in self.childOccurrences().values():
-            co.remove()
-        if self.view():
-            self.view().designRemoved()
-        self.cellView().occurrenceRemoved(self)
-        self.database().designRemoved(self)
         
 class Connectivity():
     def __init__(self):

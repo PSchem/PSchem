@@ -123,7 +123,7 @@ class PWindow(QtGui.QMainWindow):
         self.dockH = QtGui.QDockWidget(self.tr("Hierarchy"), self)
         self.dockH.setObjectName('hierarchyDock')
         self.docks.add(self.dockH)
-        self.hierarchyModel = HierarchyModel(self.database)
+        self.hierarchyModel = HierarchyModel(self.database.designs())
         self.hierarchyWidget = HierarchyWidget(self)
         self.hierarchyWidget.setSourceModel(self.hierarchyModel)
         
@@ -803,7 +803,7 @@ class PWindow(QtGui.QMainWindow):
         
     def openCellView(self, cellView):
         if cellView:
-            design = Design(cellView, self.database)
+            design = Design(cellView, self.database.designs())
             scene = GraphicsScene(design)
             #self.database.addDesign(design)
             dView = DesignView(self, scene)

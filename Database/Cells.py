@@ -18,6 +18,7 @@
 # along with PSchem Database.  If not, see <http://www.gnu.org/licenses/>.
 
 from Database.Primitives import *
+from Database.Design import *
 from xml.etree import ElementTree as et
 
 class CellView():
@@ -67,20 +68,20 @@ class Diagram(CellView):
         #self._uu = 160 # default DB units per user units
         self._attribs['uu'] = 160 # default DB units per user units
         #self._name = 'diagram'
-        self._occurrences = set()
+        self._designUnits = set()
        
-    def occurrenceAdded(self, occurrence):
-        self._occurrences.add(occurrence)
-        view = occurrence.view()
+    def designUnitAdded(self, designUnit):
+        self._designUnits.add(designUnit)
+        view = designUnit.view()
         for e in self.elems():
             e.addToView(view)
 
-    def occurrenceRemoved(self, occurrence):
-        self._occurrences.remove(occurrence)
+    def designUnitRemoved(self, designUnit):
+        self._designUnits.remove(designUnit)
 
-    #def updateOccurrences(self):
-    #    for d in self._occurrences:
-    #        d.updateOccurrence()
+    #def updateDesignUnits(self):
+    #    for d in self._designUnits:
+    #        d.updateDesignUnit()
     #        #v.updateItem()
 
     def setUU(self, uu):
@@ -92,24 +93,24 @@ class Diagram(CellView):
             self.ellipses() | self.ellipseArcs()
             
     def elementAdded(self, elem):
-        for occurrence in self._occurrences:
-            elem.addToOccurrence(occurrence)
+        for designUnit in self._designUnits:
+            elem.addToDesignUnit(designUnit)
 
     def elementRemoved(self, elem):
-        for occurrence in self._occurrences:
-            elem.removeFromOccurence(occurrence)
+        for designUnit in self._designUnits:
+            elem.removeFromDesignUnit(designUnit)
         
     def addElem(self, elem):
         "main entry point for adding new elements to diagram"
         #self._elems.add(elem)
         elem.addToDiagram(self)
-        for occurrence in self._occurrences:
-            elem.addToOccurrence(occurrence)
+        for designUnit in self._designUnits:
+            elem.addToDesignUnit(designUnit)
 
     def removeElem(self, elem):
         "main entry point for removing elements from diagram"
-        for occurrence in self._occurrences:
-            elem.removeFromOccurence(occurrence)
+        for designUnit in self._designUnits:
+            elem.removeFromDesignUnit(designUnit)
         elem.removeFromDiagram(self)
 
     def lineAdded(self, line):
@@ -182,9 +183,9 @@ class Diagram(CellView):
         for e in list(self.elems()):
             e.remove()
             #self.removeElem(e)
-        for o in list(self.occurrences()):
+        for o in list(self.designUnits()):
             o.remove()
-            #self.removeOccurrence(o)
+            #self.removeDesignUnit(o)
         CellView.remove(self)
 
     def save(self):
@@ -227,13 +228,13 @@ class Schematic(Diagram):
         self._solderDots = set()
         self._nets = set()
 
-    def occurrenceAdded(self, occurrence):
-        self._occurrences.add(occurrence)
-        view = occurrence.view()
+    def designUnitAdded(self, designUnit):
+        self._designUnits.add(designUnit)
+        view = designUnit.view()
         for e in self.elems()-self.instances():
             e.addToView(view)
         for i in self.instances():
-            i.addToView(occurrence)
+            i.addToView(designUnit)
 
     #def components(self):
     #    components = map(lambda i: i.cell(), self.instances())
@@ -356,9 +357,9 @@ class Symbol(Diagram):
         #self._name = 'symbol'
         self._symbolPins = set()
 
-    def occurrenceAdded(self, occurrence):
-        self._occurrences.add(occurrence)
-        view = occurrence.view()
+    def designUnitAdded(self, designUnit):
+        self._designUnits.add(designUnit)
+        view = designUnit.view()
         for e in self.elems():
             e.addToView(view)
 
@@ -577,15 +578,11 @@ class Database():
         self._libraries = set()
         self._libraryNames = {}
         self._databaseViews = set()
-        self._hierarchyViews = set()
-        self._designs = set()
         self._layers = None
+        self._designs = Designs()
 
     def installUpdateDatabaseViewsHook(self, view):
         self._databaseViews.add(view)
-
-    def installUpdateHierarchyViewsHook(self, view):
-        self._hierarchyViews.add(view)
 
     def updateDatabaseViewsPreparation(self):
         """
@@ -608,11 +605,6 @@ class Database():
         for v in self._databaseViews:
             v.prepareForUpdate()
         
-    def updateHierarchyViews(self):
-        "Notify views that the design hierarchy layout has changed"
-        for v in self._hierarchyViews:
-            v.update()
-
     def libraryAdded(self, library):
         self._libraries.add(library)
         #library.setDatabase(self)
@@ -679,31 +671,15 @@ class Database():
         else:
             return None
 
-    def designAdded(self, design):
-        self._designs.add(design)
-        self.updateHierarchyViews()
-
-    def designRemoved(self, design):
-        self._designs.remove(design)
-        self.updateHierarchyViews()
-
-    #def addDesign(self, design):
-    #    self._designs.add(design)
-    #    self.updateHierarchyViews()
-
-    #def removeDesign(self, design):
-    #    self._designs.remove(design)
-    #    self.updateHierarchyViews()
-
-    def designs(self):
-        return self._designs
-
     def setLayers(self, layers):
         self._layers = layers
         #self.updateViews()
 
     def layers(self):
         return self._layers
+        
+    def designs(self):
+        return self._designs
 
 
 class Importer:

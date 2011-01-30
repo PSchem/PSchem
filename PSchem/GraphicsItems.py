@@ -545,12 +545,12 @@ class EllipseArcItem(BaseItem):
 #class InstanceItem(QtGui.QGraphicsItemGroup):
 #    def __init__(self, instance, parent=None):
 #        QtGui.QGraphicsItemGroup.__init__(self, parent)
-class OccurrenceItem(BaseItem):
-    def __init__(self, occurrence, parent=None):
+class InstanceItem(BaseItem):
+    def __init__(self, instance, parent=None):
         BaseItem.__init__(self, parent)
-        self.model = occurrence
+        self.model = instance
         self._cellView = self.model.cellView()
-        #print self.__class__.__name__, occurrence, occurrence.instance().instanceLibraryPath(), occurrence.instance().instanceCellName(), occurrence.instance().instanceCellViewName(), self._cellView
+        #print self.__class__.__name__, instance, instance.instance().instanceLibraryPath(), instance.instance().instanceCellName(), instance.instance().instanceCellViewName(), self._cellView
         self.uu = float(self._cellView.uu())
         self._rect = QtCore.QRectF()
         self._shapePath = QtGui.QPainterPath()
@@ -559,7 +559,7 @@ class OccurrenceItem(BaseItem):
         self.model.viewAdded(self)
         #self._cellView.installUpdateHook(self)
 
-    def occurrenceRemoved(self):
+    def instanceRemoved(self):
         self.model = None
         self._cellView = None
         self.scene().removeItem(self)
@@ -658,7 +658,7 @@ class OccurrenceItem(BaseItem):
         #self.prepareGeometryChange()
         for c in self.childItems():
             if (isinstance(c, TextItem) or
-                isinstance(c, OccurrenceItem)):
+                isinstance(c, InstanceItem)):
                 c.updateMatrix()
         self.updateBoundingRect()
         

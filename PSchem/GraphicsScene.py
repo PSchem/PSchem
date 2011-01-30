@@ -111,17 +111,17 @@ class GraphicsScene(QtGui.QGraphicsScene):
         self.addItem(attr)
 
 
-    def addOccurrence(self, o):
-        instance = o.instance()
-        occurrenceItem = OccurrenceItem(o)
-        occurrenceItem.translate(instance.x()/self.uu, instance.y()/self.uu)
-        occurrenceItem.rotate(instance.angle())
+    def addInstance(self, i):
+        instance = i.instance()
+        instanceItem = InstanceItem(i)
+        instanceItem.translate(instance.x()/self.uu, instance.y()/self.uu)
+        instanceItem.rotate(instance.angle())
         if instance.vMirror():
-            occurrenceItem.scale(1, -1)
+            instanceItem.scale(1, -1)
         if instance.hMirror():
-            occurrenceItem.scale(-1, 1)
-        self.addItem(occurrenceItem)
-        occurrenceItem.updateMatrix()
+            instanceItem.scale(-1, 1)
+        self.addItem(instanceItem)
+        instanceItem.updateMatrix()
 
     #def mouseMoveEvent(self, event):
     #    print str(event.pos().x()) + ' ' + str(event.pos().y())

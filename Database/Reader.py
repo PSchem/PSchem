@@ -97,36 +97,30 @@ class GedaReader(Reader):
         m=self.match
         l = Line(self.view, self._database.layers(), int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)))
         self.last = l
-        self.view.addElem(l)
 
     def parseArc(self):
         m=self.match
         radius = 2 * int(m.group(3))
         e = EllipseArc(self.view, self._database.layers(), int(m.group(1)), int(m.group(2)), radius, radius, int(m.group(4)), int(m.group(5)))
         self.last = e
-        self.view.addElem(e)
 
     def parsePin(self):
         m=self.match
         if self.inSymbol:
             p = SymbolPin(self.view, self._database.layers(), int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)))
-            self.view.addElem(p)
         elif self.inSchematic:
             p = Pin(self.view, self._database.layers(), int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)))
-            self.view.addElem(p)
         self.last = p
 
     def parseNet(self):
         m=self.match
         n = NetSegment(self.view, self._database.layers(), int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)))
         self.last = n
-        self.view.addElem(n)
 
     def parseBox(self):
         m=self.match
         r = Rect(self.view, self._database.layers(), int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)))
         self.last = r
-        self.view.addElem(r)
 
     def parseCustomPath(self):
         m=self.match
@@ -152,14 +146,12 @@ class GedaReader(Reader):
                 p.closePath()
         p.setLayer(self._database.layers().layerByName('annotation2', 'drawing'))
         self.last = p
-        self.view.addElem(p)
 
     def parseCircle(self):
         m=self.match
         radius = 2 * int(m.group(3))
         c = Ellipse(self.view, self._database.layers(), int(m.group(1)), int(m.group(2)), radius, radius)
         self.last = c
-        self.view.addElem(c)
 
     def parseComponent(self):
         m=self.match
@@ -186,18 +178,20 @@ class GedaReader(Reader):
             #i = Instance(self.view, int(m.group(1)), int(m.group(2)), int(m.group(4)), int(m.group(5)), lib.name(), cellName, 'symbol')
         self.last = i
         #self.view.addComponent(c)
-        self.view.addElem(i)
 
     def parseAttribute(self, mAttr):
         m=self.match
         key = m.group(1)
         val = m.group(2)
         if (self.inAttribute):
-            a = AttributeLabel(self.last, self._database.layers(), key, val)
-            self.last.addAttribute(a)
+            # to be fixed
+            a = AttributeLabel(self.view, self._database.layers(), key, val)
+            #self.view.addElem(a)
+            #a = AttributeLabel(self.last.instanceCellView(), self._database.layers(), key, val)
+            #self.last.addAttribute(a)
         else:
             a = AttributeLabel(self.view, self._database.layers(), key, val)
-            self.view.addElem(a)
+            #self.view.addElem(a)
         a.setXY(int(mAttr.group(1)), int(mAttr.group(2)))
         #a.setLayer(None)  #int(mAttr.group(3))
         a.setTextSize(int(mAttr.group(4))*13.888)
@@ -252,7 +246,6 @@ class GedaReader(Reader):
             else:
                 l.setVAlign(Label.AlignTop)
             self.last = l
-            self.view.addElem(l)
 
     def regExpSearch(self, regExp, text):
         self.match = regExp.search(text)

@@ -49,7 +49,7 @@ class HierarchyModel(QtCore.QAbstractItemModel):
             elif col == 1:
                 return QtCore.QVariant(data.cellView().cell().name())
             else:
-                return QtCore.QVariant(data.cellView().library().fullName())
+                return QtCore.QVariant(data.cellView().library().path())
         elif isinstance(data, Occurrence):
             if col == 0:
                 return QtCore.QVariant(data.instance().name())

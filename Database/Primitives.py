@@ -23,11 +23,11 @@ from Database.Attributes import *
 from xml.etree import ElementTree as et
 
 class Element():
-    def __init__(self, parent, layers):
+    def __init__(self, diagram, layers):
         self._attributes = set()
         self._views = set()
         self._layers = layers
-        self._parent = parent
+        self._diagram = diagram
         self._name = 'element'
         self._layer = None
         self._x = 0
@@ -37,6 +37,7 @@ class Element():
         self._vmirror = False
         self._visible = True
         self._editable = True
+        diagram.elementAdded(self)
 
     def addAttribute(self, attrib):
         self._attributes.add(attrib)
@@ -48,14 +49,6 @@ class Element():
         for v in self._views:
             v.updateItem()
 
-    def addToDiagram(self, diagram):
-        "add element to a diagram, must be reimplemented"
-        print self.__class__.__name__, "Unimplemented addToDiagram method"
-        
-    def removeFromDiagram(self, diagram):
-        "remove element from a diagram, must be reimplemented"
-        print self.__class__.__name__, "Unimplemented removeFromDiagram method"
-        
     def addToView(self, view):
         view.addElem()
 
@@ -105,17 +98,17 @@ class Element():
     def views(self):
         return self._views
 
-    def parent(self):
-        return self._parent
+    def diagram(self):
+        return self._diagram
 
     def cell(self):
-        return self._parent.cell()
+        return self.diagram().cell()
 
     def library(self):
-        return self._parent.library()
+        return self.diagram().library()
 
     def database(self):
-        return self._parent.database()
+        return self.diagram().database()
 
     def layers(self):
         return self._layers
@@ -158,16 +151,19 @@ class Element():
         #elem.attrib['layer'] = str(self._layer)
         return elem
 
+    def remove(self):
+        pass
         
 class Line(Element):
-    def __init__(self, parent, layers, x1, y1, x2, y2):
-        Element.__init__(self, parent, layers)
+    def __init__(self, diagram, layers, x1, y1, x2, y2):
+        Element.__init__(self, diagram, layers)
         self._x = x1
         self._y = y1
         self._x2 = x2
         self._y2 = y2
         self._layer = self.layers().layerByName('annotation', 'drawing')
         self._name = 'line'
+        diagram.lineAdded(self)
 
     def x1(self):
         return self._x
@@ -181,14 +177,6 @@ class Line(Element):
     def y2(self):
         return self._y2
 
-    def addToDiagram(self, diagram):
-        "add itself to a diagram"
-        diagram.addLine(self)
-        
-    def removeFromDiagram(self, diagram):
-        "remove itself from a diagram"
-        diagram.removeLine(self)
-        
     def addToView(self, view):
         view.addLine(self)
 
@@ -200,14 +188,15 @@ class Line(Element):
         return elem
         
 class Rect(Element):
-    def __init__(self, parent, layers, x, y, w, h):
-        Element.__init__(self, parent, layers)
+    def __init__(self, diagram, layers, x, y, w, h):
+        Element.__init__(self, diagram, layers)
         self._x = x
         self._y = y
         self._w = w
         self._h = h
         self._name = 'rect'
         self._layer = self.layers().layerByName('annotation', 'drawing')
+        diagram.rectAdded(self)
 
     def w(self):
         return self._w
@@ -215,24 +204,17 @@ class Rect(Element):
     def h(self):
         return self._h
 
-    def addToDiagram(self, diagram):
-        "add itself to a diagram"
-        diagram.addRect(self)
-        
-    def removeFromDiagram(self, diagram):
-        "remove itself from a diagram"
-        diagram.removeRect(self)
-        
     def addToView(self, view):
         view.addRect(self)
 
 class CustomPath(Element):
     move, line, curve, close = range(4)
-    def __init__(self, parent, layers):
-        Element.__init__(self, parent, layers)
+    def __init__(self, diagram, layers):
+        Element.__init__(self, diagram, layers)
         self._name = 'custom_path'
         self._path = []
         self._layer = self.layers().layerByName('annotation', 'drawing')
+        diagram.customPathAdded(self)
 
     def addToView(self, view):
         view.addCustomPath(self)
@@ -260,14 +242,6 @@ class CustomPath(Element):
     def path(self):
         return self._path
 
-    def addToDiagram(self, diagram):
-        "add itself to a diagram"
-        diagram.addCustomPath(self)
-        
-    def removeFromDiagram(self, diagram):
-        "remove itself from a diagram"
-        diagram.removeCustomPath(self)
-        
     def addToOccurrence(self, occurrence):
         "add itself to an occurence"
         occurrence.view().addCustomPath(self)
@@ -278,14 +252,15 @@ class CustomPath(Element):
         
         
 class Ellipse(Element):
-    def __init__(self, parent, layers, x, y, radiusX, radiusY):
-        Element.__init__(self, parent, layers)
+    def __init__(self, diagram, layers, x, y, radiusX, radiusY):
+        Element.__init__(self, diagram, layers)
         self._x = x
         self._y = y
         self._radiusX = radiusX
         self._radiusY = radiusY
         self._name = 'ellipse'
         self._layer = self.layers().layerByName('annotation', 'drawing')
+        diagram.ellipseAdded(self)
 
     def setRadius(self, radiusX, radiusY):
         if self._editable:
@@ -299,21 +274,13 @@ class Ellipse(Element):
     def radiusY(self):
         return self._radiusY
 
-    def addToDiagram(self, diagram):
-        "add itself to a diagram"
-        diagram.addEllipse(self)
-        
-    def removeFromDiagram(self, diagram):
-        "remove itself from a diagram"
-        diagram.removeEllipse(self)
-        
     def addToView(self, view):
         view.addEllipse(self)
 
 class EllipseArc(Element):
-    def __init__(self, parent, layers, x, y, radiusX, radiusY,
+    def __init__(self, diagram, layers, x, y, radiusX, radiusY,
                  startAngle, spanAngle):
-        Element.__init__(self, parent, layers)
+        Element.__init__(self, diagram, layers)
         self._x = x
         self._y = y
         self._radiusX = radiusX
@@ -322,6 +289,7 @@ class EllipseArc(Element):
         self._spanAngle = spanAngle
         self._name = 'ellipse_arc '
         self._layer = self.layers().layerByName('annotation', 'drawing')
+        diagram.ellipseArcAdded(self)
 
     def setRadius(self, radiusX, radiusY):
         if self._editable:
@@ -347,14 +315,6 @@ class EllipseArc(Element):
     def spanAngle(self):
         return self._spanAngle
 
-    def addToDiagram(self, diagram):
-        "add itself to a diagram"
-        diagram.addEllipseArc(self)
-        
-    def removeFromDiagram(self, diagram):
-        "remove itself from a diagram"
-        diagram.removeEllipseArc(self)
-        
     def addToView(self, view):
         view.addEllipseArc(self)
 
@@ -364,14 +324,15 @@ class Label(Element):
     AlignRight = 2
     AlignBottom = 0
     AlignTop = 2
-    def __init__(self, parent, layers):
-        Element.__init__(self, parent, layers)
+    def __init__(self, diagram, layers):
+        Element.__init__(self, diagram, layers)
         self._textSize = 1
         self._text = ''
         self._hAlign = self.AlignLeft
         self._vAlign = self.AlignCenter
         self._name = 'label'
         self._layer = self.layers().layerByName('annotation', 'drawing')
+        diagram.labelAdded(self)
 
     def setText(self, text):
         if self._editable:
@@ -405,14 +366,6 @@ class Label(Element):
     def text(self):
         return self._text
 
-    def addToDiagram(self, diagram):
-        "add itself to a diagram"
-        diagram.addLabel(self)
-        
-    def removeFromDiagram(self, diagram):
-        "remove itself from a diagram"
-        diagram.removeLabel(self)
-        
     def addToView(self, view):
         view.addLabel(self)
 
@@ -430,12 +383,18 @@ class AttributeLabel(Label):
     AlignRight = 2
     AlignBottom = 0
     AlignTop = 2
-    def __init__(self, parent, layers, key, val):
-        Label.__init__(self, parent, layers)
+    def __init__(self, diagram, layers, key, val):
+        Element.__init__(self, diagram, layers)
+        self._textSize = 1
+        self._text = ''
+        self._hAlign = self.AlignLeft
+        self._vAlign = self.AlignCenter
+
         self._attribute = Attribute(key, val, Attribute.AInteger, self)
         self._name = 'attributeLabel'
         self._visibleKey = True
         self._layer = self.layers().layerByName('attribute', 'drawing')
+        diagram.attributeLabelAdded(self)
 
     def setText(self, text):
         if self._editable:
@@ -450,14 +409,6 @@ class AttributeLabel(Label):
     def visibleKey(self):
         return self._visibleKey
 
-    def addToDiagram(self, diagram):
-        "add itself to a diagram"
-        diagram.addAttributeLabel(self)
-        
-    def removeFromDiagram(self, diagram):
-        "remove itself from a diagram"
-        diagram.removeAttributeLabel(self)
-        
     def addToView(self, view):
         view.addAttributeLabel(self)
 
@@ -482,14 +433,15 @@ class AttributeLabel(Label):
         
         
 class NetSegment(Element):
-    def __init__(self, parent, layers, x1, y1, x2, y2):
-        Element.__init__(self, parent, layers)
+    def __init__(self, diagram, layers, x1, y1, x2, y2):
+        Element.__init__(self, diagram, layers)
         self._x = x1
         self._x2 = x2
         self._y = y1
         self._y2 = y2
         self._layer = self.layers().layerByName('net', 'drawing')
         self._name = 'net_segment'
+        diagram.netSegmentAdded(self)
 
     def x1(self):
         return self._x
@@ -515,14 +467,6 @@ class NetSegment(Element):
     def maxY(self):
         return max(self._y, self._y2)
         
-    def addToDiagram(self, diagram):
-        "add itself to a diagram"
-        diagram.addNetSegment(self)
-        
-    def removeFromDiagram(self, diagram):
-        "remove itself from a diagram"
-        diagram.removeNetSegment(self)
-        
     def addToView(self, view):
         view.addNetSegment(self)
     
@@ -544,34 +488,27 @@ class NetSegment(Element):
         return (c1 or c2)
 
 class SolderDot(Element):
-    def __init__(self, parent, layers, x, y):
-        Element.__init__(self, parent, layers)
+    def __init__(self, diagram, layers, x, y):
+        Element.__init__(self, diagram, layers)
         self._x = x
         self._y = y
         self._layer = self.layers().layerByName('net', 'drawing')
         self._name = 'solder_dot'
+        diagram.solderDotAdded(self)
 
-    def addToDiagram(self, diagram):
-        "add itself to a diagram"
-        diagram.addSolderDot(self)
-        
-    def removeFromDiagram(self, diagram):
-        "remove itself from a diagram"
-        diagram.removeSolderDot(self)
-        
     def addToView(self, view):
         view.addSolderDot(self)
         
     def radiusX(self):
-        return self.parent().uu()
+        return self.diagram().uu()
         
     def radiusY(self):
-        return self.parent().uu()
+        return self.diagram().uu()
         
         
 class Instance(Element):
-    def __init__(self, parent, layers):
-        Element.__init__(self, parent, layers)
+    def __init__(self, diagram, layers):
+        Element.__init__(self, diagram, layers)
         self._instanceLibPath = ''
         self._instanceCellName = ''
         self._instanceCellViewName = ''
@@ -582,6 +519,7 @@ class Instance(Element):
         self._instanceCellView = None
         self._requestedInstanceCellView = None
         self._layer = self.layers().layerByName('instance', 'drawing')
+        diagram.instanceAdded(self)
 
     def setInstanceCell(self, libPath, cellName, cellViewName): #string
         if self._editable:
@@ -641,20 +579,12 @@ class Instance(Element):
     def instanceCellViewName(self):
         return self._instanceCellViewName
         
-    def addToDiagram(self, diagram):
-        "add itself to a diagram"
-        diagram.addInstance(self)
-        
-    def removeFromDiagram(self, diagram):
-        "remove itself from a diagram"
-        diagram.removeInstance(self)
-        
     def addToView(self, view): #occurence
         view.addInstance(self)
 
 class Pin(Instance):
-    def __init__(self, parent, layers, x1, y1, x2, y2):
-        Instance.__init__(self, parent, layers)
+    def __init__(self, diagram, layers, x1, y1, x2, y2):
+        Element.__init__(self, diagram, layers)
         self._x = x1
         self._y = y1
         self._x2 = x2
@@ -662,6 +592,18 @@ class Pin(Instance):
         self._layer = self.layers().layerByName('pin', 'drawing')
         self._name = 'pin'
 
+        self._instanceLibPath = ''
+        self._instanceCellName = ''
+        self._instanceCellViewName = ''
+        self._name = 'instance'
+
+        self._instanceLibrary = None
+        self._instanceCell = None
+        self._instanceCellView = None
+        self._requestedInstanceCellView = None
+        diagram.pinAdded(self)
+        
+        
     def x1(self):
         return self._x
 
@@ -674,20 +616,12 @@ class Pin(Instance):
     def y2(self):
         return self._y2
 
-    def addToDiagram(self, diagram):
-        "add itself to a diagram"
-        diagram.addPin(self)
-        
-    def removeFromDiagram(self, diagram):
-        "remove itself from a diagram"
-        diagram.removePin(self)
-        
     def addToView(self, view):
         view.addPin(self)
 
 class SymbolPin(Instance):
-    def __init__(self, parent, layers, x1, y1, x2, y2):
-        Instance.__init__(self, parent, layers)
+    def __init__(self, diagram, layers, x1, y1, x2, y2):
+        Element.__init__(self, diagram, layers)
         self._x = x1
         self._y = y1
         self._x2 = x2
@@ -695,6 +629,17 @@ class SymbolPin(Instance):
         self._layer = self.layers().layerByName('pin', 'drawing')
         self._name = 'pin'
 
+        self._instanceLibPath = ''
+        self._instanceCellName = ''
+        self._instanceCellViewName = ''
+        self._name = 'instance'
+
+        self._instanceLibrary = None
+        self._instanceCell = None
+        self._instanceCellView = None
+        self._requestedInstanceCellView = None
+        diagram.symbolPinAdded(self)
+        
     def x1(self):
         return self._x
 
@@ -707,14 +652,6 @@ class SymbolPin(Instance):
     def y2(self):
         return self._y2
 
-    def addToDiagram(self, diagram):
-        "add itself to a diagram"
-        diagram.addSymbolPin(self)
-        
-    def removeFromDiagram(self, diagram):
-        "remove itself from a diagram"
-        diagram.removeSymbolPin(self)
-        
     def addToView(self, view):
         view.addPin(self)
 
@@ -723,22 +660,36 @@ class Occurrence():
         self._instance = instance
         self._parentOccurrence = parentOccurrence
         self._childOccurrences = {} #set()
-        self._design = self._parentOccurrence.design()
+        self._design = parentOccurrence.design()
         self._view = None
+        parentOccurrence.childOccurrenceAdded(self)
  
-    def installUpdateHook(self, view):
+    def viewAdded(self, view):
         self._view = view
-        self._instance.instanceCellView().installUpdateHook(self)
+        self.cellView().occurrenceAdded(self)
 
     def childOccurrences(self):
+        """
+        Get a dictionary of child occurrences (instance->occurrence)
+        The dictionary is computed lazily by this function
+        (so that it descends down the hierarchy only when the user wants to see it)
+        and is cached for future invocations.
+        """
         if len(self._childOccurrences) > 0:   #cache
             return self._childOccurrences
         schematic = self.cellView().cell().cellViewByName("schematic")
         
         if schematic:
             for i in schematic.instances():
-                self._childOccurrences[i] = Occurrence(i, self)
+                Occurrence(i, self) # it should add itself to parent occurrence
+                #self._childOccurrences[i] = Occurrence(i, self)
         return self._childOccurrences
+
+    def childOccurrenceAdded(self, occurrence):
+        self._childOccurrences[occurrence.instance()] = occurrence
+        
+    def childOccurrenceRemoved(self, occurrence):
+        del self._childOccurrences[occurrence.instance()]
 
     def parentOccurrence(self):
         return self._parentOccurrence
@@ -772,18 +723,25 @@ class Occurrence():
             self.view().removeOccurrence(occurrence)
             del self._childOccurrences[instance]
             
-    
-
+    def remove(self):
+        for co in self.childOccurrences().values():
+            co.remove()
+        if self.view():
+            self.view().occurrenceRemoved()
+            self.cellView().occurrenceRemoved(self)
+        self.parentOccurrence().childOccurrenceRemoved(self)
         
 class Design(Occurrence):
-    def __init__(self, cellView):
+    def __init__(self, cellView, database):
         self._cellView = cellView
+        self._database = database
         self._childOccurrences = {}
         self._view = None
+        database.designAdded(self)
             
-    def installUpdateHook(self, scene):
-        self._view = scene
-        self._cellView.installUpdateHook(self)
+    def viewAdded(self, view):
+        self._view = view
+        self.cellView().occurrenceAdded(self)
             
     def cellView(self):
         return self._cellView
@@ -794,10 +752,16 @@ class Design(Occurrence):
     def parentOccurrence(self):
         return None
     
-    def updateDesign(self):
-        if self._scene:
-            self._scene.updateScene()
-
+    def database(self):
+        return self._database
+        
+    def remove(self):
+        for co in self.childOccurrences().values():
+            co.remove()
+        if self.view():
+            self.view().designRemoved()
+        self.cellView().occurrenceRemoved(self)
+        self.database().designRemoved(self)
         
 class Connectivity():
     def __init__(self):

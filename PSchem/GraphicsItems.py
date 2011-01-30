@@ -145,7 +145,7 @@ class TextItem(BaseItem):
 
     def updateItem(self):
         #self._labelItem.prepareGeometryChange()
-        uu = float(self.model.parent().uu())
+        uu = float(self.model.diagram().uu())
         text = self.model.text()
         #text = ''
         self._labelItem.setText(text)
@@ -246,7 +246,7 @@ class CustomPathItem(BaseItem):
         painter.drawPath(self._path)
 
     def updateItem(self):
-        uu = float(self.model.parent().uu())
+        uu = float(self.model.diagram().uu())
         self._path = QtGui.QPainterPath()
         for e in self.model.path():
             if e[0] == CustomPath.move:
@@ -320,7 +320,7 @@ class LineItem(BaseItem):
     def updateItem(self):
         #self.prepareGeometryChange()
         l = self.model
-        uu = float(l.parent().uu())
+        uu = float(l.diagram().uu())
         self._lineShape = QtCore.QLineF(
             l.x1()/uu, l.y1()/uu, l.x2()/uu, l.y2()/uu)
         self.setZValue(l.layer().zValue())
@@ -387,7 +387,7 @@ class RectItem(BaseItem):
     def updateItem(self):
         #self.prepareGeometryChange()
         r = self.model
-        uu = float(r.parent().uu())
+        uu = float(r.diagram().uu())
         self._rectShape = QtCore.QRectF(
             r.x()/uu, r.y()/uu, r.w()/uu, r.h()/uu)
         self.setZValue(r.layer().zValue())
@@ -458,7 +458,7 @@ class EllipseItem(BaseItem):
     def updateBoundingRect(self):
         self.prepareGeometryChange()
         e = self.model
-        uu = float(e.parent().uu())
+        uu = float(e.diagram().uu())
         cx = e.radiusX()/uu
         cy = e.radiusY()/uu
         self._rect = QtCore.QRectF(e.x()/uu-cx/2.0, e.y()/uu-cy/2.0, cx, cy)
@@ -525,7 +525,7 @@ class EllipseArcItem(BaseItem):
     def updateBoundingRect(self): #needs tightening
         self.prepareGeometryChange()
         e = self.model
-        uu = float(e.parent().uu())
+        uu = float(e.diagram().uu())
         cx = e.radiusX()/uu
         cy = e.radiusY()/uu
         self._rect = QtCore.QRectF(
@@ -556,8 +556,13 @@ class OccurrenceItem(BaseItem):
         self._shapePath = QtGui.QPainterPath()
         #self.setZValue(self.model.instance().layer().zValue())
         self.setHandlesChildEvents(True)
-        self.model.installUpdateHook(self)
+        self.model.viewAdded(self)
         #self._cellView.installUpdateHook(self)
+
+    def occurrenceRemoved(self):
+        self.model = None
+        self._cellView = None
+        self.scene().removeItem(self)
         
     def paint(self, painter, option, widget):
         if not self.parentItem():

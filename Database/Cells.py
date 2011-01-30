@@ -27,12 +27,6 @@ class CellView():
         self._cell = cell
         cell.cellViewAdded(self)
             
-    def attributeLabels(self):
-        return filter(lambda e: isinstance(e, AttributeLabel), self._elems)
-
-    def pins(self):
-        return filter(lambda e: isinstance(e, Pin), self._elems)
-
     def name(self):
         return self._name
 
@@ -75,16 +69,19 @@ class Diagram(CellView):
         #self._name = 'diagram'
         self._occurrences = set()
        
-    def installUpdateHook(self, occurrence):
+    def occurrenceAdded(self, occurrence):
         self._occurrences.add(occurrence)
         view = occurrence.view()
         for e in self.elems():
             e.addToView(view)
 
-    def updateOccurrences(self):
-        for d in self._occurrences:
-            d.updateOccurrence()
-            #v.updateItem()
+    def occurrenceRemoved(self, occurrence):
+        self._occurrences.remove(occurrence)
+
+    #def updateOccurrences(self):
+    #    for d in self._occurrences:
+    #        d.updateOccurrence()
+    #        #v.updateItem()
 
     def setUU(self, uu):
         self._attribs['uu'] = uu
@@ -93,7 +90,15 @@ class Diagram(CellView):
         return self.lines() | self.rects() | self.labels() | \
             self.attributeLabels() | self.customPaths() | \
             self.ellipses() | self.ellipseArcs()
+            
+    def elementAdded(self, elem):
+        for occurrence in self._occurrences:
+            elem.addToOccurrence(occurrence)
 
+    def elementRemoved(self, elem):
+        for occurrence in self._occurrences:
+            elem.removeFromOccurence(occurrence)
+        
     def addElem(self, elem):
         "main entry point for adding new elements to diagram"
         #self._elems.add(elem)
@@ -107,78 +112,64 @@ class Diagram(CellView):
             elem.removeFromOccurence(occurrence)
         elem.removeFromDiagram(self)
 
-    def addLine(self, line):
-        "call only from addToDiagram"
+    def lineAdded(self, line):
         self._lines.add(line)
         
-    def removeLine(self, line):
-        "call only from removeFromDiagram"
+    def lineRemoved(self, line):
         self._lines.remove(line)
         
     def lines(self):
         return self._lines
 
-    def addRect(self, rect):
-        "call only from addToDiagram"
+    def rectAdded(self, rect):
         self._rects.add(rect)
         
-    def removeRect(self, rect):
-        "call only from removeFromDiagram"
+    def rectRemoved(self, rect):
         self._rects.remove(rect)
         
     def rects(self):
         return self._rects
 
-    def addCustomPath(self, customPath):
-        "call only from addToDiagram"
+    def customPathAdded(self, customPath):
         self._customPaths.add(customPath)
         
-    def removeCustomPath(self, customPath):
-        "call only from removeFromDiagram"
+    def customPathRemoved(self, customPath):
         self._customPaths.remove(customPath)
         
     def customPaths(self):
         return self._customPaths
 
-    def addEllipse(self, ellipse):
-        "call only from addToDiagram"
+    def ellipseAdded(self, ellipse):
         self._ellipses.add(ellipse)
         
-    def removeEllipse(self, ellipse):
-        "call only from removeFromDiagram"
+    def ellipseRemoved(self, ellipse):
         self._ellipses.remove(ellipse)
         
     def ellipses(self):
         return self._ellipses
 
-    def addEllipseArc(self, ellipseArc):
-        "call only from addToDiagram"
+    def ellipseArcAdded(self, ellipseArc):
         self._ellipseArcs.add(ellipseArc)
         
-    def removeEllipseArc(self, ellipseArc):
-        "call only from removeFromDiagram"
+    def ellipseArcRemoved(self, ellipseArc):
         self._ellipseArcs.remove(ellipseArc)
         
     def ellipseArcs(self):
         return self._ellipseArcs
 
-    def addLabel(self, label):
-        "call only from addToDiagram"
+    def labelAdded(self, label):
         self._labels.add(label)
         
-    def removeLabel(self, label):
-        "call only from removeFromDiagram"
+    def labelRemoved(self, label):
         self._labels.remove(label)
         
     def labels(self):
         return self._labels
 
-    def addAttributeLabel(self, attributeLabel):
-        "call only from addToDiagram"
+    def attributeLabelAdded(self, attributeLabel):
         self._attributeLabels.add(attributeLabel)
         
-    def removeAttributeLabel(self, attributeLabel):
-        "call only from removeFromDiagram"
+    def attributeLabelRemoved(self, attributeLabel):
         self._attributeLabels.remove(attributeLabel)
         
     def attributeLabels(self):
@@ -236,7 +227,7 @@ class Schematic(Diagram):
         self._solderDots = set()
         self._nets = set()
 
-    def installUpdateHook(self, occurrence):
+    def occurrenceAdded(self, occurrence):
         self._occurrences.add(occurrence)
         view = occurrence.view()
         for e in self.elems()-self.instances():
@@ -251,23 +242,19 @@ class Schematic(Diagram):
     def elems(self):
         return Diagram.elems(self) | self.pins() | self.instances() | self.netSegments() | self.solderDots()
 
-    def addPin(self, pin):
-        "call only from addToDiagram"
+    def pinAdded(self, pin):
         self._pins.add(pin)
        
-    def removePin(self, pin):
-        "call only from removeFromDiagram"
+    def pinRemoved(self, pin):
         self._pins.remove(pin)
         
     def pins(self):
         return self._pins
 
-    def addInstance(self, instance):
-        "call only from addToDiagram"
+    def instanceAdded(self, instance):
         self._instances.add(instance)
         
-    def removeInstance(self, instance):
-        "call only from removeFromDiagram"
+    def instanceRemoved(self, instance):
         self._instances.remove(instance)
         
     def instances(self):
@@ -284,23 +271,19 @@ class Schematic(Diagram):
     #def nets(self):
     #    return self._nets #filter(lambda e: isinstance(e, CNet), self.elems())
 
-    def addNetSegment(self, netSegment):
-        "call only from addToDiagram"
+    def netSegmentAdded(self, netSegment):
         self._netSegments.add(netSegment)
         
-    def removeNetSegment(self, netSegment):
-        "call only from removeFromDiagram"
+    def netSegmentRemoved(self, netSegment):
         self._netSegments.remove(netSegment)
         
     def netSegments(self):
         return self._netSegments
 
-    def addSolderDot(self, solderDot):
-        "call only from addToDiagram"
+    def solderDotAdded(self, solderDot):
         self._solderDots.add(solderDot)
         
-    def removeSolderDot(self, solderDot):
-        "call only from removeFromDiagram"
+    def solderDotRemoved(self, solderDot):
         self._solderDots.remove(solderDot)
         
     def solderDots(self):
@@ -329,11 +312,11 @@ class Schematic(Diagram):
                     pointList.sort(lambda p1, p2: cmp(p1[1], p2[1]))
                 prevPoint = pointList[0]
                 for p in pointList[1:]:
-                    newSegment = NetSegment(n.parent(), n.layers(), prevPoint[0], prevPoint[1], p[0], p[1])
-                    self.addElem(newSegment)
+                    newSegment = NetSegment(n.diagram(), n.layers(), prevPoint[0], prevPoint[1], p[0], p[1])
+                    #self.addElem(newSegment)
                     #print prevPoint[0], p[0], prevPoint[1], p[1]
                     prevPoint = p
-                self.removeElem(n)
+                n.remove() #self.removeElem(n)
 
     def checkSolderDots(self, segments = None):
         if not segments:
@@ -354,16 +337,18 @@ class Schematic(Diagram):
                     count2 += 1
             if count1 > 1:
                 if not solder1:
-                    solder = SolderDot(n.parent(), n.layers(), n.x1(), n.y1())
-                    self.addElem(solder)
+                    solder = SolderDot(n.diagram(), n.layers(), n.x1(), n.y1())
+                    #self.addElem(solder)
             elif solder1:
-                    self.removeElem(solder1)
+                    solder1.remove()
+                    #self.removeElem(solder1)
             if count2 > 1:
                 if not solder2:
-                    solder = SolderDot(n.parent(), n.layers(), n.x2(), n.y2())
-                    self.addElem(solder)
+                    solder = SolderDot(n.diagram(), n.layers(), n.x2(), n.y2())
+                    #self.addElem(solder)
             elif solder2:
-                    self.removeElem(solder2)
+                    solder2.remove()
+                    #self.removeElem(solder2)
                 
 class Symbol(Diagram):
     def __init__(self, name, cell):
@@ -371,7 +356,7 @@ class Symbol(Diagram):
         #self._name = 'symbol'
         self._symbolPins = set()
 
-    def installUpdateHook(self, occurrence):
+    def occurrenceAdded(self, occurrence):
         self._occurrences.add(occurrence)
         view = occurrence.view()
         for e in self.elems():
@@ -380,12 +365,10 @@ class Symbol(Diagram):
     def elems(self):
         return Diagram.elems(self) | self.symbolPins()
         
-    def addSymbolPin(self, symbolPin):
-        "call only from addToDiagram"
+    def symbolPinAdded(self, symbolPin):
         self._symbolPins.add(symbolPin)
        
-    def removeSymbolPin(self, symbolPin):
-        "call only from removeFromDiagram"
+    def symbolPinRemoved(self, symbolPin):
         self._symbolPins.remove(symbolPin)
         
     def symbolPins(self):
@@ -696,13 +679,21 @@ class Database():
         else:
             return None
 
-    def addDesign(self, design):
+    def designAdded(self, design):
         self._designs.add(design)
         self.updateHierarchyViews()
 
-    def removeDesign(self, design):
+    def designRemoved(self, design):
         self._designs.remove(design)
         self.updateHierarchyViews()
+
+    #def addDesign(self, design):
+    #    self._designs.add(design)
+    #    self.updateHierarchyViews()
+
+    #def removeDesign(self, design):
+    #    self._designs.remove(design)
+    #    self.updateHierarchyViews()
 
     def designs(self):
         return self._designs

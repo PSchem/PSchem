@@ -23,17 +23,20 @@ from Database.Primitives import *
 
 class GraphicsScene(QtGui.QGraphicsScene):
     def __init__(self, design):
-        QtGui.QGraphicsView.__init__(self)
+        QtGui.QGraphicsScene.__init__(self)
         self._design = design
         self.uu = float(self._design.cellView().uu())
 
-        self._design.installUpdateHook(self)
+        self._design.viewAdded(self)
 
     def updateScene(self):
         pass
         
     def design(self):
         return self._design
+        
+    def designRemoved(self):
+        self._design = None
         
     def cellView(self):
         return self.design().cellView()

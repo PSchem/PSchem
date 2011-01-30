@@ -803,9 +803,9 @@ class PWindow(QtGui.QMainWindow):
         
     def openCellView(self, cellView):
         if cellView:
-            design = Design(cellView)
+            design = Design(cellView, self.database)
             scene = GraphicsScene(design)
-            self.database.addDesign(design)
+            #self.database.addDesign(design)
             dView = DesignView(self, scene)
             subWin = SubWindow(self)
             subWin.setWidget(dView)

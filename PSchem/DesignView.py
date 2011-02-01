@@ -111,7 +111,8 @@ class DesignView(QtGui.QGraphicsView):
         self.initialized = False
         self.flipX = 1
         self.flipY = -1
-
+        
+        
         self.setFrameStyle(QtGui.QFrame.NoFrame)
         self.setMouseTracking(True)
 
@@ -132,9 +133,9 @@ class DesignView(QtGui.QGraphicsView):
 
         self.setScene(self._scene)
 
-        self.grid = 1
-        self.gridOffset= QtCore.QPointF(0, 0);
-
+        self._gridSize = 1.0
+        self._gridCache = []
+        
         self._cursor = None
         self.modeStack = ModeStack(self)
         self.undoViewStack = UndoViewStack(self)
@@ -156,6 +157,7 @@ class DesignView(QtGui.QGraphicsView):
         if self._debug:
             brush = QtGui.QBrush(brush)
             brush.setColor(QtGui.QColor(random()*63, random()*63, random()*63))
+            #brush.setStyle(QtCore.Qt.DiagCrossPattern)
         painter.fillRect(rect, brush)
         self.drawGrid(painter, rect)
 
@@ -166,94 +168,59 @@ class DesignView(QtGui.QGraphicsView):
         if self._cursor:
             self._cursor.draw(painter)
 
-    def updateSceneRect_(self, rect):
-        #viewport
-        vr = self.viewport().rect()
-        wr = self.rect()
-
-        minverted = self.matrix().inverted()[0]
-        sceneRect = minverted.mapRect(QtCore.QRectF(vr))
-
-        #scale = min(vrw / rect.width(), vrh / rect.height())
-        #sw = vrw / scale
-        #sh = vrh / scale
-
-        #sceneRect = QtCore.QRectF(
-        #    scx-sw/2, scy-sh/2, sw, sh)
-        #sceneRect = QtCore.QRectF(
-        #    (vrx+vrw/2-dx)/s, (vry+dy-vrh/2)/s,
-        #    vrw/s, vrh/s)
-        self.setSceneRect(sceneRect)
-
-    def drawGridInt(self, painter, x, y, xx, yy, g):
-        offsX = self.gridOffset.x()
-        offsY = self.gridOffset.y()
-        i = int(x/g/2)*g*2
-        j = int(y/g/2)*g*2
-        if True:
-            lines = []
-            while i < xx: #i1 + 4 * g:
-                x0  = round( i / g + offsX)*g
-                lines.append(QtCore.QLineF(x0, y, x0, yy))
-                i += 2.0*g
-            while j < yy: # + 4 * g:
-                y0 = round( j / g + offsY)*g
-                lines.append(QtCore.QLineF(x, y0, xx, y0))
-                j += 2.0 * g
-            painter.drawLines(lines)
-        else:
-            points = []
-            while i < xx: #i1 + 4 * g:
-                x0  = round( i / g + offsX)*g
-                j = int(y/g/2)*g*2
-                while j < yy: # + 4 * g:
-                    y0 = round( j / g + offsY)*g
-                    points.append(QtCore.QPointF(x0, y0))
-                    j += 2.0 * g
-                i += 2.0*g
-            painter.drawPoints(QtGui.QPolygonF(points))
+    def drawGridInt(self, painter, rect, gridSize):
+        left, right, top, bottom = rect.left(), rect.right(), rect.top(), rect.bottom()
+        gridSize2 = 2.0*gridSize
+        x = round(left/gridSize2)*gridSize2
+        y = round(top/gridSize2)*gridSize2
+        cacheLen = len(self._gridCache)
+        n = 0
+        while x < right:
+            if n < cacheLen:
+                self._gridCache[n].setLine(x, top, x, bottom)
+            else:
+                self._gridCache.append(QtCore.QLineF(x, top, x, bottom))
+            x += gridSize2
+            n += 1
+        while y < bottom:
+            if n < cacheLen:
+                self._gridCache[n].setLine(left, y, right, y)
+            else:
+                self._gridCache.append(QtCore.QLineF(left, y, right, y))
+            y += gridSize2
+            n += 1
+        painter.drawLines(self._gridCache[0:n])
 
     def drawGrid(self, painter, rect):
-        x, y, w, h = rect.left(), rect.top(), rect.width(), rect.height()
-        g = self.grid
+        painter.setRenderHint(QtGui.QPainter.Antialiasing, False)
         penMin = self.window.database.layers().layerByName('gridminor', 'drawing').view().pen()
         penMaj = self.window.database.layers().layerByName('gridmajor', 'drawing').view().pen()
         penAxes = self.window.database.layers().layerByName('axes', 'drawing').view().pen()
-        gw = g * abs(self.matrix().m11())
 
-        #penMin.setColor(QtGui.QColor(random()*255, random()*255, random()*255))
-        grid = True
-        if gw < 1:
-            grid = False
-        adj = 0.1
-        xx = x + w + adj
-        yy = y + h + adj
-        x = x - adj
-        y = y - adj
-        #painter.setPen(Qt.lightGray)
-        #painter.setPen(QtCore.Qt.gray)
-        painter.setRenderHint(QtGui.QPainter.Antialiasing, False)
+        scale = abs(self.matrix().m11())
+        adj = 2.0/scale #2 pixels margin
+        rect.adjust(-adj, -adj, adj, adj)
+        gridSize = self._gridSize
+        gridSizeView = gridSize * scale
 
-        if grid:
-            if gw > 5:
+        if gridSizeView > 1.0: #major grid
+            if gridSizeView > 5.0: #minor grid
                 painter.setPen(penMin)
-                self.drawGridInt(painter, x, y, xx, yy, g)
-            g *= 5
+                self.drawGridInt(painter, rect, gridSize)
+            gridSize *= 5.0
             painter.setPen(penMaj)
-            self.drawGridInt(painter, x, y, xx, yy, g)
-        #axis
-        #painter.setPen(QtCore.Qt.darkGray)
+            self.drawGridInt(painter, rect, gridSize)
+        #axes
         painter.setPen(penAxes)
         painter.drawLines(
-            QtCore.QLineF(0, y, 0, yy),
-            QtCore.QLineF(x, 0, xx, 0))
+            QtCore.QLineF(0, rect.top(), 0, rect.bottom()),
+            QtCore.QLineF(rect.left(), 0, rect.right(), 0))
 
 
     def snapToGrid(self, point):
-        x = round(
-            point.x() / self.grid + self.gridOffset.x()) * self.grid
-        y = round(
-            point.y() / self.grid + self.gridOffset.y()) * self.grid
+        gs = self._gridSize
+        x = round(point.x() / gs) * gs
+        y = round(point.y() / gs) * gs
         return QtCore.QPointF(x, y)
 
     def mouseMoveEvent(self, event):
@@ -454,10 +421,6 @@ class DesignView(QtGui.QGraphicsView):
         else:
             self.zoom(1/scaleFactor, point)
             
-    def resizeEvent_(self, event):
-        self.centerTo(self.currentCenterPoint)
-        QtGui.QGraphicsView.resizeEvent(self, event)
-
     def setupViewport(self, viewport):
         QtGui.QGraphicsView.setupViewport(self, viewport)
         self.fit()

@@ -788,17 +788,23 @@ class PWindow(QtGui.QMainWindow):
                 ['/sym/analog', '../geda/symbols/analog'],
                 ['/sym/diode', '../geda/symbols/diode'],
                 ['/sym/io', '../geda/symbols/io'],
+                ['/sym/IEC417', '../geda/symbols/IEC417'],
+                ['/sym/asic', '../geda/symbols/asic'],
                 ['/sym/font', '../geda/symbols/font'],
                 ['/sym/spice', '../geda/symbols/spice'],
                 ['/sym/power', '../geda/symbols/power'],
                 ['/sym/titleblock', '../geda/symbols/titleblock'],
                 ['/examples/lightning_detector', '../geda/examples/lightning_detector/sym'],
                 ['/examples/gTAG', '../geda/examples/gTAG'],
+                ['/flicker', '../flicker/ee/sym'],
+                ['/flicker/openIP', '../flicker/ee/openIP'],
+
             ],
             [
                 ['/spnet/latch', '../spNet/latch'],
                 ['/examples/lightning_detector', '../geda/examples/lightning_detector'],
                 ['/examples/gTAG', '../geda/examples/gTAG'],
+                ['/flicker', '../flicker/ee'],
             ])
         
     def openCellView(self, cellView):

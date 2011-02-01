@@ -442,7 +442,7 @@ class GedaImporter(Importer):
                 #print f, os.path.isfile(f) #, self.psymStrip.search(f)
                 #if os.path.isfile(f) and self.psymStrip.search(f):
                 if (not self.database.cellViewByName(library, self.cellName(f), 'symbol')):
-                    print 'Importing component symbol', f
+                    ##print 'Importing component symbol', f
                     self.library = self.database.libraryByPath(library)
                     if not self.library:
                         #self.library = self.database.newLibrary(library)
@@ -462,7 +462,8 @@ class GedaImporter(Importer):
                     #cv = r.parseSymbol(f)
                     #self.cell.addCellView(cv)
                 else:
-                    print 'Skipping component symbol', f
+                    pass
+                    ##print 'Skipping component symbol', f
 
     def importSourceLibrary(self, lib):
         library = lib[0]
@@ -481,7 +482,7 @@ class GedaImporter(Importer):
             for f in files:
                 #f = os.path.join(directory, f)
                 if (not self.database.cellViewByName(library, self.cellName(f), 'schematic')):
-                    print 'Importing schematic', f
+                    ##print 'Importing schematic', f
                     self.library = self.database.libraryByPath(library)
                     if not self.library:
                         #self.library = self.database.newLibrary(library)
@@ -500,6 +501,7 @@ class GedaImporter(Importer):
                         r.parseSchematic(f, cv)
                     #self.cell.addCellView(cv)
                 else:
-                    print 'Skipping component schematic', f
+                    pass
+                    ##print 'Skipping component schematic', f
 
 

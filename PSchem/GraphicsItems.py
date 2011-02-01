@@ -557,7 +557,7 @@ class InstanceItem(BaseItem):
         #self.setZValue(self.model.layer().zValue())
         self.setHandlesChildEvents(True)
         self.model.itemAdded(self)
-        self.cellView().addedInstanceItem(self)
+        self.cellView().instanceItemAdded(self)
 
     def cellView(self):
         return self._cellView

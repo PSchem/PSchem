@@ -17,13 +17,13 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with PSchem Database.  If not, see <http://www.gnu.org/licenses/>.
 
-print 'CellViews in'
+#print 'CellViews in'
 
 from Database.Primitives import *
 #from Database.Design import *
 from xml.etree import ElementTree as et
 
-print 'CellViews out'
+#print 'CellViews out'
 
 class CellView():
     def __init__(self, name, cell):
@@ -75,12 +75,12 @@ class Diagram(CellView):
         #self._name = 'diagram'
         self._designUnits = set()
 
-    def addedInstanceItem(self, view):
+    def instanceItemAdded(self, view):
         self._items.add(view)
         for elem in self.elems():
             elem.addToView(view)
             
-    def removedInstanceItem(self, view):
+    def instanceItemRemoved(self, view):
         self._items.remove(view)
         for elem in self.elems():
             elem.removeFromView(view)

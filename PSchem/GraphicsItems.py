@@ -59,6 +59,7 @@ class TextItemInt(QtGui.QGraphicsSimpleTextItem):
         #if (option.levelOfDetail * self._metrics.height() > 10):
         #if (option.levelOfDetail > 0.32):
         if self.draw:
+            #painter.setRenderHint(QtGui.QPainter.TextAntialiasing, False)
             QtGui.QGraphicsSimpleTextItem.paint(
                 self, painter, option, widget)
         #if self.parentItem().selected():
@@ -201,7 +202,10 @@ class TextItem(BaseItem):
     
     def paint(self, painter, option, widget):
         #draw = (option.levelOfDetail > 0.32)
-        draw = (option.levelOfDetailFromTransform(painter.transform()) > 0.32)
+        if QtCore.QT_VERSION >= 263680: #4.6.0
+            draw = (option.levelOfDetailFromTransform(painter.transform()) > 0.32)
+        else:
+            draw = (option.levelOfDetail > 0.32)
         self._labelItem.draw = draw
            
         #painter.drawLine(-2, 0, 2, 0)

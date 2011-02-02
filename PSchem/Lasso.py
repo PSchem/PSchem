@@ -38,7 +38,7 @@ class Lasso(QtGui.QGraphicsRectItem):
         x2 = lasso.right()
         y1 = lasso.top()
         y2 = lasso.bottom()
-        adj = self._widget.grid * 0.01
+        adj = self._widget.gridSize() * 0.01
         rectList = [
             QtCore.QRectF(x1-adj, y1-adj, x2 - x1 + 2*adj, 2*adj),
             QtCore.QRectF(x1-adj, y2-adj, x2 - x1 + 2*adj, 2*adj),
@@ -54,7 +54,7 @@ class Lasso(QtGui.QGraphicsRectItem):
         return self._fc
         
     def stretchTo(self, pos):
-        grid = self._widget.grid
+        grid = self._widget.gridSize()
         x1 = min(self._fc.x(), pos.x()) - grid / 2.0
         y1 = min(self._fc.y(), pos.y()) - grid / 2.0
         x2 = max(self._fc.x(), pos.x()) + grid / 2.0

@@ -52,6 +52,8 @@ class TextItemInt(QtGui.QGraphicsSimpleTextItem):
         QtGui.QGraphicsSimpleTextItem.__init__(self, parent)
         self._metrics = QtGui.QFontMetricsF(self.font())
         self.draw = True
+        #self.setCacheMode(QtGui.QGraphicsItem.ItemCoordinateCache) #, QtCore.QSize(128, 32) )
+        #self.setCacheMode(QtGui.QGraphicsItem.DeviceCoordinateCache)
 
     def paint(self, painter, option, widget):
         #if (option.levelOfDetail * self._metrics.height() > 10):
@@ -198,7 +200,8 @@ class TextItem(BaseItem):
         self._rect = matrix.mapRect(r)
     
     def paint(self, painter, option, widget):
-        draw = (option.levelOfDetail > 0.32)
+        #draw = (option.levelOfDetail > 0.32)
+        draw = (option.levelOfDetailFromTransform(painter.transform()) > 0.32)
         self._labelItem.draw = draw
            
         #painter.drawLine(-2, 0, 2, 0)
@@ -224,7 +227,9 @@ class CustomPathItem(BaseItem):
 
     def paint(self, painter, option, widget):
         #scale = painter.deviceMatrix().m11()
-        scale = abs(option.matrix.m11())+abs(option.matrix.m12())
+        transform = painter.transform()
+        scale = abs(transform.m11())+abs(transform.m12())
+        #scale = abs(option.matrix.m11())+abs(option.matrix.m12())
         #print scale
         layer = self.model.layer()
         pen = QtGui.QPen(layer.view().pen())
@@ -287,7 +292,9 @@ class LineItem(BaseItem):
 
     def paint(self, painter, option, widget):
         #scale = painter.deviceMatrix().m11()
-        scale = abs(option.matrix.m11())+abs(option.matrix.m12())
+        transform = painter.transform()
+        scale = abs(transform.m11())+abs(transform.m12())
+        #scale = abs(option.matrix.m11())+abs(option.matrix.m12())
         #print scale
         layer = self.model.layer()
         pen = QtGui.QPen(layer.view().pen())
@@ -358,7 +365,9 @@ class RectItem(BaseItem):
 
     def paint(self, painter, option, widget):
         #scale = painter.deviceMatrix().m11()
-        scale = abs(option.matrix.m11())+abs(option.matrix.m12())
+        transform = painter.transform()
+        scale = abs(transform.m11())+abs(transform.m12())
+        #scale = abs(option.matrix.m11())+abs(option.matrix.m12())
         #print scale
 
         layer = self.model.layer()
@@ -419,7 +428,9 @@ class EllipseItem(BaseItem):
 
     def paint(self, painter, option, widget):
         #scale = painter.deviceMatrix().m11()
-        scale = abs(option.matrix.m11())+abs(option.matrix.m12())
+        transform = painter.transform()
+        scale = abs(transform.m11())+abs(transform.m12())
+        #scale = abs(option.matrix.m11())+abs(option.matrix.m12())
         #print matrix.m11()
 
         layer = self.model.layer()
@@ -480,7 +491,9 @@ class EllipseArcItem(BaseItem):
 
     def paint(self, painter, option, widget):
         #scale = painter.deviceMatrix().m11()
-        scale = abs(option.matrix.m11())+abs(option.matrix.m12())
+        transform = painter.transform()
+        scale = abs(transform.m11())+abs(transform.m12())
+        #scale = abs(option.matrix.m11())+abs(option.matrix.m12())
         #print matrix.m11()
 
         layer = self.model.layer()

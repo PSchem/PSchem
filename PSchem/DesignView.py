@@ -23,7 +23,8 @@ from PyQt4.QtGui import *
 from PSchem.GraphicsItems import *
 from PSchem.Modes import *
 from random import random
-import math
+#import math
+#import time
 
 class UndoViewStack(list):
     def __init__(self, widget):
@@ -116,6 +117,7 @@ class DesignView(QtGui.QGraphicsView):
         self.setFrameStyle(QtGui.QFrame.NoFrame)
         self.setMouseTracking(True)
 
+        self.setOptimizationFlags(QtGui.QGraphicsView.DontAdjustForAntialiasing)
         #self.setOptimizationFlags(QtGui.QGraphicsView.DontClipPainter)
         #self.setCacheMode(QtGui.QGraphicsView.CacheBackground)
 
@@ -151,6 +153,13 @@ class DesignView(QtGui.QGraphicsView):
     def scene(self):
         return self._scene
 
+        
+    def gridSize(self):
+        return self._gridSize
+
+    def setGridSize(self, gridSize):
+        self._gridSize = gridSize
+        
     def drawBackground(self, painter, rect):
         brush = self.window.database.layers().layerByName('background', 'drawing').view().brush()
         brush.setMatrix(painter.worldMatrix().inverted()[0])
@@ -196,9 +205,11 @@ class DesignView(QtGui.QGraphicsView):
         penMin = self.window.database.layers().layerByName('gridminor', 'drawing').view().pen()
         penMaj = self.window.database.layers().layerByName('gridmajor', 'drawing').view().pen()
         penAxes = self.window.database.layers().layerByName('axes', 'drawing').view().pen()
-
+        #scaleWorldInv = 2.0/abs(painter.worldMatrix().m11())
+        #penMaj.setWidthF(scaleWorldInv)
+        #penMin.setWidthF(scaleWorldInv)
         scale = abs(self.matrix().m11())
-        adj = 2.0/scale #2 pixels margin
+        adj = 2.0 / scale #2 pixels margin
         rect.adjust(-adj, -adj, adj, adj)
         gridSize = self._gridSize
         gridSizeView = gridSize * scale
@@ -243,8 +254,13 @@ class DesignView(QtGui.QGraphicsView):
             
         
         if event.buttons() & QtCore.Qt.MidButton:
-            offset = self.mapToScene(self._lastMousePos) - point
-            self.move(offset.x(), offset.y(), False)
+            #offset = self.mapToScene(self._lastMousePos) - point
+            #self.move(offset.x(), offset.y(), False)
+            newPoint = self.currentCenterPoint - (point - self.mousePressedPos)
+            #tstart = time.clock()
+            self.moveTo(newPoint.x(), newPoint.y())
+            #self.repaint()
+            #print time.clock() - tstart
         self._lastMousePos = event.pos() #point
         self._eventLoopMutex.unlock()
 
@@ -277,28 +293,26 @@ class DesignView(QtGui.QGraphicsView):
         """
         if not newVisibleArea:
             newVisibleArea = self.mapToScene(self.viewport().rect()).boundingRect()
-        vb = newVisibleArea.y()
-        vt = vb + newVisibleArea.height()
-        vl = newVisibleArea.x()
-        vr = vl + newVisibleArea.width()
-        sceneRect = self.scene().sceneRect()
-        #print "viewport rect " + str(newVisibleArea)
-        #print "scene rect1 " + str(sceneRect)
-        sb = sceneRect.y()
-        st = sb + sceneRect.height()
-        sl = sceneRect.x()
-        sr = sl + sceneRect.width()
+        vb = newVisibleArea.bottom()
+        vt = newVisibleArea.top()
+        vl = newVisibleArea.left()
+        vr = newVisibleArea.right()
+        sceneRect = QtCore.QRectF(400, 500, 300, 200)
+        #sceneRect = self.scene().sceneRect()
+        sb = sceneRect.bottom()
+        st = sceneRect.top()
+        sl = sceneRect.left()
+        sr = sceneRect.right()
         
-        yb = min(vb, sb)
-        yt = max(vt, st)
+        yb = max(vb, sb)
+        yt = min(vt, st)
         xl = min(vl, sl)
         xr = max(vr, sr)
 
-        #print "xs ", vl, vr, sl, sr, xl, xr
-        #print "ys ", vb, vt, sb, st, yb, yt
-
-        sceneRect2 = QtCore.QRectF(xl, yb, xr-xl, yt-yb)
-        #print "scene rect2 " + str(sceneRect2)
+        sceneRect2 = QtCore.QRectF(xl, yt, xr-xl, yb-yt)
+        #print "viewp rect  ", newVisibleArea
+        #print "scene rect  ", sceneRect
+        #print "scene rect2 ", sceneRect2
         self.setSceneRect(sceneRect2)
     
     def checkScrollBars(self):
@@ -311,13 +325,25 @@ class DesignView(QtGui.QGraphicsView):
         with a calculated value.
         """
         visibleArea = self.mapToScene(self.viewport().rect()).boundingRect()
-        center = QtCore.QPointF(visibleArea.x() + visibleArea.width() / 2.0,
-                                visibleArea.y() + visibleArea.height() / 2.0)
+        center = QtCore.QPointF((visibleArea.left() + visibleArea.right()) / 2.0,
+                                (visibleArea.top() + visibleArea.bottom()) / 2.0)
         diff = center - self.currentCenterPoint
         #print abs(diff.x()) / visibleArea.width()*100, abs(diff.y()) / visibleArea.height()*100
         if abs(diff.x()) > 0.01 * visibleArea.width() or abs(diff.y()) > 0.01 * visibleArea.height():
             self.currentCenterPoint = center
     
+    def moveTo(self, x, y):
+        self.undoViewStack.pushView(self.matrix())
+        self._cursor = None
+        self.checkScrollBars()
+        vr = self.mapToScene(self.viewport().rect()).boundingRect()
+        cp = QtCore.QPointF(x, y)
+        self.currentCenterPoint = cp
+        newvr = QtCore.QRectF(cp.x() - vr.width()/2.0, cp.y() - vr.height()/2.0,
+            vr.width(), vr.height())
+        self.checkSceneRect(newvr)
+        self.centerOn(cp)
+        
     def move(self, dx, dy, relative = True):
         if dx != 0 or dy != 0:
             #print self.currentCenterPoint
@@ -340,6 +366,7 @@ class DesignView(QtGui.QGraphicsView):
             self.currentCenterPoint = self.currentCenterPoint + offset
             ##self.currentCenterPoint = center + offset
             self.checkSceneRect(visibleArea.translated(offset))
+            #self.checkSceneRect(visibleArea.translated(offset).adjusted(-0.01,-0.01,0.01,0.01))
             self.centerOn(self.currentCenterPoint)
             #self.setCenter(self.getCenter() + offset)
             #self.centerOn(center + offset)
@@ -356,7 +383,7 @@ class DesignView(QtGui.QGraphicsView):
             self._cursor = None
             self.checkScrollBars()
             vr = self.mapToScene(self.viewport().rect()).boundingRect()
-            cpView = QtCore.QPointF(vr.x() + vr.width() / 2.0, vr.y() + vr.height() / 2.0)
+            #cpView = vr.center() #QtCore.QPointF((vr.left() + vr.right()) / 2.0, (vr.top() + vr.bottom()) / 2.0)
             #print self.viewport().rect()
             #print self.sceneRect()
             cp = self.currentCenterPoint
@@ -366,7 +393,7 @@ class DesignView(QtGui.QGraphicsView):
                 cp = cp + offset
                 self.currentCenterPoint = cp
             #print (cp.x() - cpView.x())/vr.width()*100, (cp.y() - cpView.y())/vr.height()*100
-            newvr = QtCore.QRectF(cp.x() - vr.width()/2/scaleFactor, cp.y() - vr.height()/2/scaleFactor,
+            newvr = QtCore.QRectF(cp.x() - vr.width()/2.0/scaleFactor, cp.y() - vr.height()/2.0/scaleFactor,
                 vr.width()/scaleFactor, vr.height()/scaleFactor)
             self.checkSceneRect(newvr)
             self.scale(scaleFactor, scaleFactor)
@@ -414,7 +441,7 @@ class DesignView(QtGui.QGraphicsView):
         QtGui.QGraphicsView.showEvent(self, event)
 
     def wheelEvent(self, event):
-        scaleFactor = math.sqrt(2.0)
+        scaleFactor = 1.4142135623730951 #math.sqrt(2.0)
         point = self.mapToScene(event.pos())
         if (event.delta() > 0):
             self.zoom(scaleFactor, point)

@@ -59,7 +59,10 @@ class Element():
     def addToView(self, view):
         view.addElem()
 
-    def removeFromView(self):
+    def removeFromView(self, view):
+        view.removeElem(self)
+
+    def removeFromViews(self):
         for v in self._views:
             v.removeElem()
 
@@ -159,7 +162,13 @@ class Element():
         return elem
 
     def remove(self):
-        pass
+        for a in self.attributes():
+            a.remove()
+        for v in self.views():
+            v.removeItem()
+        for du in self.diagram().designUnits():
+            self.removeFromDesignUnit(du)
+        #self.diagram().elementRemoved(self)
         
 class Line(Element):
     def __init__(self, diagram, layers, x1, y1, x2, y2):
@@ -450,6 +459,11 @@ class NetSegment(Element):
         self._name = 'net_segment'
         diagram.netSegmentAdded(self)
 
+    def remove(self):
+        Element.remove(self)
+        #self._layer = None
+        self.diagram().netSegmentRemoved(self)
+
     def x1(self):
         return self._x
 
@@ -474,9 +488,60 @@ class NetSegment(Element):
     def maxY(self):
         return max(self._y, self._y2)
         
+    def dx(self):
+        return self._x2 - self._x
+        
+    def dy(self):
+        return self._y2 - self._y
+        
+    def isHorizontal(self):
+        return self._y == self._y2
+        
+    def isVertical(self):
+        return self._x == self._x2
+        
+    def isDiagonal45(self):
+        return self.dx() == self.dy()
+        
+    def isDiagonal135(self):
+        return self.dx() == self.dy()
+        
     def addToView(self, view):
         view.addNetSegment(self)
+        
+    def removeFromView(self, view):
+        "remove from view ", view
+        view.removeNetSegment(self)
+        
+    def addToDesignUnit(self, du):
+        du.netSegmentAdded(self)
+        
+    def removeFromDesignUnit(self, du):
+        "remove from view ", du
+        du.netSegmentRemoved(self)
+
+    def splitAt(self, point):
+        ns1 = NetSegment(self.diagram(), self.layers(), self.x1(), self.y1(), point[0], point[1])
+        ns2 = NetSegment(self.diagram(), self.layers(), point[0], point[1], self.x2(), self.y2())
+        #print "ns remove ", self
+        self.remove()
     
+    def mergeSegments(self, segments):
+        "Merges a list of overlying segments"
+        minX = self.minX()
+        minY = self.minY()
+        maxX = self.maxX()
+        maxY = self.maxY()
+        for s in segments:
+            minX = min(minX, s.minX())
+            minY = min(minY, s.minY())
+            maxX = max(maxX, s.maxX())
+            maxY = max(maxY, s.maxY())
+        #print self.__class__.__name__, minX, minY, maxX, maxY
+        ns = NetSegment(self.diagram(), self.layers(), minX, minY, maxX, maxY)
+        for s in segments:
+            s.remove()
+            
     def contains (self, x, y):
         c1 = (self._x == self._x2 and 
             self._y == self._y2 and
@@ -506,6 +571,12 @@ class SolderDot(Element):
     def addToView(self, view):
         view.addSolderDot(self)
         
+    def addToDesignUnit(self, du):
+        du.solderDotAdded(self)
+        
+    def removeFromDesignUnit(self, du):
+        du.solderDotRemoved(self)
+
     def radiusX(self):
         return self.diagram().uu()
         

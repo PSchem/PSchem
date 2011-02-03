@@ -33,12 +33,15 @@ class DesignUnit():
         self._childDesignUnits = {} #set()
         self._design = parentDesignUnit.design()
         self._scene = None
+        #self._index = Index()
+        self.cellView().designUnitAdded(self)
         parentDesignUnit.childDesignUnitAdded(self)
  
     def sceneAdded(self, scene):
         self._scene = scene
-        self.cellView().designUnitAdded(self)
-
+        for e in self.cellView().elems():
+            e.addToView(scene)
+        
     def childDesignUnits(self):
         """
         Get a dictionary of child design units (instance->designUnit)
@@ -75,7 +78,7 @@ class DesignUnit():
         return self._design
 
     def cellView(self):
-        return self.instance().instanceCellView()
+        return self.instance().cell().cellViewByName('schematic') #instanceCellView()
 
     def updateItem(self):
         if self.scene():
@@ -93,7 +96,7 @@ class DesignUnit():
         if designUnit:
             self.scene().removeInstance(designUnit)
             del self._childDesignUnits[instance]
-            
+    
     def remove(self):
         for co in self.childDesignUnits().values():
             co.remove()
@@ -108,11 +111,13 @@ class Design(DesignUnit):
         self._designs = designs
         self._childDesignUnits = {}
         self._scene = None
+        self.cellView().designUnitAdded(self)
         designs.designAdded(self)
             
     def sceneAdded(self, scene):
         self._scene = scene
-        self.cellView().designUnitAdded(self)
+        for e in self.cellView().elems():
+            e.addToView(scene)
             
     def sceneRemoved(self):
         self._scene = None

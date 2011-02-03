@@ -29,6 +29,14 @@ class BaseItem(QtGui.QGraphicsItem):
         self._selected = False
         self._preSelected = False
         
+    def removeItem(self):
+        if self.scene():
+            #print "   scene? ", self
+            self.scene().removeItem(self)
+        else:
+            print "no scene? ", self
+        
+
     def updateBoundingRect(self):
         return QtCore.QRectF()
         
@@ -354,6 +362,7 @@ class LineItem(BaseItem):
         a = self.model.layer().lineWidth()/2.0
         self._rect.adjust(-a,-a,a,a)
         
+
 class RectItem(BaseItem):
     def __init__(self, rect, parent=None):
         BaseItem.__init__(self, parent)

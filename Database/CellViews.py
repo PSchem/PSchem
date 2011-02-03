@@ -25,6 +25,112 @@ from xml.etree import ElementTree as et
 
 #print 'CellViews out'
 
+class Index():
+    def __init__(self):
+        #following indices store sets of objects
+        self._instancesAtCoord = {}
+        self._netsAtCoord = {}
+        self._netsAtXCoord = {}
+        self._netsAtYCoord = {}
+        self._solderDotsAtCoord = {}
+        #following indices store pairs of x, y coordinates
+        self._coordsOfInstance = {}
+        self._coordsOfNet = {}
+        self._coordsOfSolderDot = {}
+    
+    def netSegmentAdded(self, netSegment):
+        p1 = netSegment.x(), netSegment.y()
+        p2 = netSegment.x2(), netSegment.y2()
+        if p1 in self._netsAtCoord:
+            self._netsAtCoord[p1].add(netSegment)
+        else:
+            self._netsAtCoord[p1] = set([netSegment])
+        if p2 in self._netsAtCoord:
+            self._netsAtCoord[p2].add(netSegment)
+        else:
+            self._netsAtCoord[p2] = set([netSegment])
+        if netSegment.isVertical(): #p1[0] == p2[0]:
+            if p1[0] in self._netsAtXCoord:
+                self._netsAtXCoord[p1[0]].add(netSegment)
+            else:
+                self._netsAtXCoord[p1[0]] = set([netSegment])
+        if netSegment.isHorizontal(): #p1[1] == p2[1]:
+            if p1[1] in self._netsAtYCoord:
+                self._netsAtYCoord[p1[1]].add(netSegment)
+            else:
+                self._netsAtYCoord[p1[1]] = set([netSegment])
+        self._coordsOfNet[netSegment] = p1, p2
+        
+    def netSegmentRemoved(self, netSegment):
+        #print "nsi removed ", netSegment
+        if netSegment in self._coordsOfNet:
+            p1, p2 = self._coordsOfNet[netSegment]
+            del self._coordsOfNet[netSegment]
+            self._netsAtCoord[p1].remove(netSegment)
+            if len(self._netsAtCoord[p1]) == 0:
+                del self._netsAtCoord[p1]
+            self._netsAtCoord[p2].remove(netSegment)
+            if len(self._netsAtCoord[p2]) == 0:
+                del self._netsAtCoord[p2]
+            if netSegment.isVertical():
+                self._netsAtXCoord[p1[0]].remove(netSegment)
+                if len(self._netsAtXCoord[p1[0]]) == 0:
+                    del self._netsAtXCoord[p1[0]]
+            if netSegment.isHorizontal():
+                self._netsAtYCoord[p1[1]].remove(netSegment)
+                if len(self._netsAtYCoord[p1[1]]) == 0:
+                    del self._netsAtYCoord[p1[1]]
+    
+    def solderDotAdded(self, solderDot):
+        p = solderDot.x(), solderDot.y()
+        if p in self._solderDotsAtCoord:
+            self._solderDotsAtCoord[p].add(solderDot) # multiple solder dots at same location?
+        else:
+            self._solderDotsAtCoord[p] = set([solderDot])
+            
+    def solderDotRemoved(self, solderDot):
+        if solderDot in self._coordsOfSolderDot:
+            del self._coordsOfSolderDot[solderDot]
+    
+    def netSegmentsAt(self, x, y):
+        return self.netSegmentsEndPointsAt(x, y) | self.netSegmentsMidPointsAt(x, y)
+
+    def netSegmentsEndPointsAt(self, x, y):
+        s = set()
+        if (x, y) in self._netsAtCoord:
+            s |= self._netsAtCoord[(x, y)]
+        return s
+
+    def netSegmentsMidPointsAt(self, x, y):
+        s = set()
+        if x in self._netsAtXCoord:
+            s2 = self._netsAtXCoord[x]
+            for netSegment in s2:
+                p1, p2 = self._coordsOfNet[netSegment]
+                if (p1[1] < y < p2[1]) or (p1[1] > y > p2[1]):
+                    s.add(netSegment)
+        if y in self._netsAtYCoord:
+            s2 = self._netsAtYCoord[y]
+            for netSegment in s2:
+                p1, p2 = self._coordsOfNet[netSegment]
+                if (p1[0] < x < p2[0]) or (p1[0] > x > p2[0]):
+                    s.add(netSegment)
+        return s
+
+    def netSegments(self):
+        return self._coordsOfNet #a dict, net->coords
+        
+    def netSegmentsEndPoints(self):
+        return self._netsAtCoord.keys() #a list
+
+    def solderDotsAt(self, x, y):
+        s = set()
+        if (x, y) in self._solderDotsAtCoord:
+            s |= self._solderDotsAtCoord[(x, y)]
+        return s
+
+
+
 class CellView():
     def __init__(self, name, cell):
         self._name = name
@@ -79,11 +185,13 @@ class Diagram(CellView):
         self._items.add(view)
         for elem in self.elems():
             elem.addToView(view)
+        for designUnit in self._designUnits:
+            elem.addToDesignUnit(designUnit)
             
     def instanceItemRemoved(self, view):
         self._items.remove(view)
         for elem in self.elems():
-            elem.removeFromView(view)
+            elem.removeFromView()
             
     def designUnitAdded(self, designUnit):
         self._designUnits.add(designUnit)
@@ -93,6 +201,9 @@ class Diagram(CellView):
 
     def designUnitRemoved(self, designUnit):
         self._designUnits.remove(designUnit)
+        
+    def designUnits(self):
+        return self._designUnits
 
     #def updateDesignUnits(self):
     #    for d in self._designUnits:
@@ -111,25 +222,32 @@ class Diagram(CellView):
             self.ellipses() | self.ellipseArcs()
             
     def elementAdded(self, elem):
-        for designUnit in self._designUnits:
-            elem.addToDesignUnit(designUnit)
+        pass
+        #for designUnit in self._designUnits:
+        #    elem.addToDesignUnit(designUnit)
+
+    def elementChanged(self, elem):
+        pass
+        #for designUnit in self._designUnits:
+        #    elem.addToDesignUnit(designUnit)
 
     def elementRemoved(self, elem):
-        for designUnit in self._designUnits:
-            elem.removeFromDesignUnit(designUnit)
+        pass
+        #for designUnit in self._designUnits:
+        #    elem.removeFromDesignUnit(designUnit)
         
-    def addElem(self, elem):
-        "main entry point for adding new elements to diagram"
-        #self._elems.add(elem)
-        elem.addToDiagram(self)
-        for designUnit in self._designUnits:
-            elem.addToDesignUnit(designUnit)
+    #def addElem(self, elem):
+    #    "main entry point for adding new elements to diagram"
+    #    #self._elems.add(elem)
+    #    elem.addToDiagram(self)
+    #    for designUnit in self._designUnits:
+    #        elem.addToDesignUnit(designUnit)
 
-    def removeElem(self, elem):
-        "main entry point for removing elements from diagram"
-        for designUnit in self._designUnits:
-            elem.removeFromDesignUnit(designUnit)
-        elem.removeFromDiagram(self)
+    #def removeElem(self, elem):
+    #    "main entry point for removing elements from diagram"
+    #    for designUnit in self._designUnits:
+    #        elem.removeFromDesignUnit(designUnit)
+    #    elem.removeFromDiagram(self)
 
     def lineAdded(self, line):
         self._lines.add(line)
@@ -235,7 +353,8 @@ class Diagram(CellView):
         else:
             if level and (not elem.tail or not elem.tail.strip()):
                 elem.tail = i
-    
+
+                
 class Schematic(Diagram):
     def __init__(self, name, cell):
         Diagram.__init__(self, name, cell)
@@ -245,15 +364,19 @@ class Schematic(Diagram):
         self._netSegments = set()
         self._solderDots = set()
         self._nets = set()
-
+        self._index = Index()
+        
     def designUnitAdded(self, designUnit):
         self._designUnits.add(designUnit)
-        scene = designUnit.scene()
+        #scene = designUnit.scene()
         #for e in self.elems()-self.instances():
-        for e in self.elems():
-            e.addToView(scene)
+        #for e in self.elems():
+        #    e.addToView(scene)
         #for i in self.instances():
         #    i.addToView(designUnit)
+        #for ns in self.netSegments():
+        #    ns.addToDesignUnit(designUnit)
+        #designUnit.checkNets()
 
     #def components(self):
     #    components = map(lambda i: i.cell(), self.instances())
@@ -292,84 +415,96 @@ class Schematic(Diagram):
     #    return self._nets #filter(lambda e: isinstance(e, CNet), self.elems())
 
     def netSegmentAdded(self, netSegment):
+        self.index().netSegmentAdded(netSegment)
+        for designUnit in self._designUnits:
+            netSegment.addToDesignUnit(designUnit)
+            if designUnit.scene():
+                netSegment.addToView(designUnit.scene())
         self._netSegments.add(netSegment)
         
     def netSegmentRemoved(self, netSegment):
+        #print "ns removed ", netSegment
+        self.index().netSegmentRemoved(netSegment)
         self._netSegments.remove(netSegment)
         
     def netSegments(self):
         return self._netSegments
 
     def solderDotAdded(self, solderDot):
+        self.index().solderDotAdded(solderDot)
+        for designUnit in self._designUnits:
+            #solderDot.addToDesignUnit(designUnit)
+            if designUnit.scene():
+                solderDot.addToView(designUnit.scene())
         self._solderDots.add(solderDot)
         
     def solderDotRemoved(self, solderDot):
+        self.index().solderDotRemoved(solderDot)
         self._solderDots.remove(solderDot)
         
     def solderDots(self):
         return self._solderDots
 
-    def checkNetSegments(self, segments = None):
-        if not segments:
-            segments = self.netSegments()
-        origNetSegments = segments
-        for n in list(origNetSegments):
-            splitPoints = set()
-            for n2 in origNetSegments:
-                if n.containsInside(n2.x1(), n2.y1()):
-                    splitPoints.add((n2.x1(), n2.y1()))
-                    #print n.x1(), n.y1()
-                if n.containsInside(n2.x2(), n2.y2()):
-                    splitPoints.add((n2.x2(), n2.y2()))
-                    #print n.x2(), n.y2()
-            if splitPoints:
-                splitPoints.add((n.x1(), n.y1()))
-                splitPoints.add((n.x2(), n.y2()))
-                pointList = list(splitPoints)
-                if (n.x1() != n.x2()):
-                    pointList.sort(lambda p1, p2: cmp(p1[0], p2[0]))
-                else:
-                    pointList.sort(lambda p1, p2: cmp(p1[1], p2[1]))
-                prevPoint = pointList[0]
-                for p in pointList[1:]:
-                    newSegment = NetSegment(n.diagram(), n.layers(), prevPoint[0], prevPoint[1], p[0], p[1])
-                    #self.addElem(newSegment)
-                    #print prevPoint[0], p[0], prevPoint[1], p[1]
-                    prevPoint = p
-                n.remove() #self.removeElem(n)
+    def index(self):
+        return self._index
 
-    def checkSolderDots(self, segments = None):
-        if not segments:
-            segments = self.netSegments()
-        origNetSegments = segments
-        origSolderDots = self.solderDots()
-        for n in origNetSegments:
-            count1 = -1
-            count2 = -1
-            solder1 = filter(lambda sd: sd.x() == n.x1() and sd.y() == n.x2, origSolderDots)
-            solder2 = filter(lambda sd: sd.x() == n.x1() and sd.y() == n.x2, origSolderDots)
-            for n2 in origNetSegments:
-                if ((n.x1() == n2.x1() and n.y1() == n2.y1()) or
-                    (n.x1() == n2.x2() and n.y1() == n2.y2())):
-                    count1 += 1
-                if ((n.x2() == n2.x1() and n.y2() == n2.y1()) or
-                    (n.x2() == n2.x2() and n.y2() == n2.y2())):
-                    count2 += 1
-            if count1 > 1:
-                if not solder1:
-                    solder = SolderDot(n.diagram(), n.layers(), n.x1(), n.y1())
-                    #self.addElem(solder)
-            elif solder1:
-                    solder1.remove()
-                    #self.removeElem(solder1)
-            if count2 > 1:
-                if not solder2:
-                    solder = SolderDot(n.diagram(), n.layers(), n.x2(), n.y2())
-                    #self.addElem(solder)
-            elif solder2:
-                    solder2.remove()
-                    #self.removeElem(solder2)
-                
+    def splitNetSegments(self):
+        """
+        Go through all net segments in the design unit and make sure that
+        none of them crosses an end point (of a segment), an instance pin
+        or a port.
+        """
+        idx = self.index()
+        n = 0
+        for p in list(idx.netSegmentsEndPoints()):
+            segments = idx.netSegmentsMidPointsAt(p[0], p[1])
+            for s in list(segments):
+                if s in idx.netSegments():
+                    #print "split ", s, p
+                    s.splitAt(p)
+                    n += 1
+        #print self.__class__.__name__, "split", n, "segments"
+        
+    def mergeNetSegments(self):
+        """
+        Go through all net segments in the design unit and make sure that
+        there are no two or more segments being just a continuation of each other.
+        """
+        idx = self.index()
+        n = 0
+        for p in list(idx.netSegmentsEndPoints()):
+            segments = list(idx.netSegmentsEndPointsAt(p[0], p[1]))
+            if len(segments) > 1:
+                if all(s.isHorizontal() for s in segments) or \
+                    all(s.isVertical() for s in segments) or \
+                    all(s.isDiagonal45() for s in segments) or \
+                    all(s.isDiagonal135() for s in segments):
+                        n += len(segments)
+                        segments[0].mergeSegments(segments)
+        #print self.__class__.__name__, "merged", n, "segments"
+        
+    def checkSolderDots(self):
+        """
+        Goes through all endpoints and counts the number of segments connected there.
+        If it larger than 2 check if a solder dot exists
+        and if not, add it.
+        """
+        idx = self.index()
+        n = 0
+        for p in list(idx.netSegmentsEndPoints()):
+            segments = idx.netSegmentsEndPointsAt(p[0], p[1])
+            if len(segments) > 2:
+                if len(idx.solderDotsAt(p[0], p[1])) == 0:
+                    SolderDot(self, self.database().layers(), p[0], p[1])
+                    n += 1
+        #print self.__class__.__name__, "added", n, "solder dots"
+            
+    def checkNets(self):
+        self.splitNetSegments()
+        self.mergeNetSegments()
+        self.checkSolderDots()
+
+        
 class Symbol(Diagram):
     def __init__(self, name, cell):
         Diagram.__init__(self, name, cell)
@@ -378,9 +513,9 @@ class Symbol(Diagram):
 
     def designUnitAdded(self, designUnit):
         self._designUnits.add(designUnit)
-        scene = designUnit.scene()
-        for e in self.elems():
-            e.addToView(scene)
+        #scene = designUnit.scene()
+        #for e in self.elems():
+        #    e.addToView(scene)
 
     def elems(self):
         return Diagram.elems(self) | self.symbolPins()

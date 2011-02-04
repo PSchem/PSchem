@@ -78,7 +78,13 @@ class DesignUnit():
         return self._design
 
     def cellView(self):
-        return self.instance().cell().cellViewByName('schematic') #instanceCellView()
+        #return self.instance().instanceCellView()
+        schematic = self.instance().instanceCell().cellViewByName('schematic')
+        if schematic:
+            return schematic
+        else:
+            return self.instance().instanceCellView()
+        #return self.instance().cell().cellViewByName('schematic') #instanceCellView()
 
     def updateItem(self):
         if self.scene():
@@ -147,26 +153,43 @@ class Design(DesignUnit):
         self.cellView().designUnitRemoved(self)
         self.designs().designRemoved(self)
 
-class Designs(set):
-    def __init__(self):
-        #self._designs = set()
+class Designs():
+    def __init__(self, database):
+        self._database = database
+        self._designs = set()
         self._hierarchyViews = set()
        
+    def designs(self):
+        return self._designs
+        
+    def database(self):
+        return self._database
+        
+    def hierarchyViews(self):
+        return self._hierarchyViews
+
     def installUpdateHierarchyViewsHook(self, view):
-        self._hierarchyViews.add(view)
+        self.hierarchyViews().add(view)
 
     def updateHierarchyViews(self):
         "Notify views that the design hierarchy layout has changed"
-        for v in self._hierarchyViews:
+        for v in self.hierarchyViews():
             v.update()
 
     def designAdded(self, design):
-        #self._designs.add(design)
-        self.add(design)
-        self.updateHierarchyViews()
+        #self.add(design)
+        self.designs().add(design)
+        #self.updateHierarchyViews()
+        self.database().requestDeferredProcessing(self)
 
     def designRemoved(self, design):
-        #self._designs.remove(design)
-        self.remove(design)
+        #self.remove(design)
+        self.designs().remove(design)
+        #self.updateHierarchyViews()
+        self.database().requestDeferredProcessing(self)
+        
+    def runDeferredProcess(self):
+        """Runs deferred processes."""
         self.updateHierarchyViews()
+        
 

@@ -29,8 +29,11 @@ class HierarchyModel(QtCore.QAbstractItemModel):
         designs.installUpdateHierarchyViewsHook(self)
 
     def designs(self):
-        return self._designs
+        return self._designs.designs()
         
+    def prepareForUpdate(self):
+        self.emit(QtCore.SIGNAL("layoutAboutToBeChanged()"))
+
     def update(self):
         self.emit(QtCore.SIGNAL("layoutChanged()"))
         #self.reset()

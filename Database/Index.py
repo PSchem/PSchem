@@ -89,10 +89,10 @@ class Index():
         return self.netSegmentsEndPointsAt(x, y) | self.netSegmentsMidPointsAt(x, y)
 
     def netSegmentsEndPointsAt(self, x, y):
-        s = set()
         if (x, y) in self._netsAtCoord:
-            s |= self._netsAtCoord[(x, y)]
-        return s
+            return self._netsAtCoord[(x, y)]
+        else:
+            return set()
 
     def netSegmentsMidPointsAt(self, x, y):
         s = set()

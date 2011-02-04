@@ -50,7 +50,7 @@ class PWindow(QtGui.QMainWindow):
 
         self._currentView = None
 
-        self.database = Database()
+        self.database = Database(self)
 
         #print os.path.join(os.getcwd(), 'pschem.ini')
         self.settings = QtCore.QSettings('pschem', 'pschem')
@@ -833,4 +833,14 @@ class PWindow(QtGui.QMainWindow):
         print self.__class__.__name__, cellView
         self.openCellView(cellView)
 
+    #def runDeferred(self):
+    #    print self.thread()
+    #    self.database.runDeferredProcesses()
 
+    def deferredProcessingRequested(self):
+        #print self.thread()
+        timer = QtCore.QTimer.singleShot(0, self.database.runDeferredProcesses)
+        
+    def processEvents(self):
+        QtGui.qApp.processEvents()
+        

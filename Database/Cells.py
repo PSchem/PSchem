@@ -218,13 +218,20 @@ class Library():
         
 
 class Database():
-    def __init__(self):
+    def __init__(self, client):
+        self._client = client
         self._libraries = set()
         self._libraryNames = {}
         self._databaseViews = set()
         self._layers = None
-        self._designs = Designs()
-
+        self._designs = Designs(self)
+        
+        self._deferredProcessingObjects = set()
+        self._deferredProcessingScheduled = False
+        
+    def client(self):
+        return self._client
+        
     def installUpdateDatabaseViewsHook(self, view):
         self._databaseViews.add(view)
 
@@ -253,15 +260,18 @@ class Database():
         self._libraries.add(library)
         #library.setDatabase(self)
         self._libraryNames[library.name()] = library
-        self.updateDatabaseViews()
+        #self.updateDatabaseViews()
+        self.requestDeferredProcessing(self)
 
     def libraryRemoved(self, library):
         self._libraries.remove(library)
         del self._libraryNames[library.name()]
-        self.updateDatabaseViews()
+        #self.updateDatabaseViews()
+        self.requestDeferredProcessing(self)
         
     def libraryChanged(self, library):
-        self.updateDatabaseViews()
+        #self.updateDatabaseViews()
+        self.requestDeferredProcessing(self)
 
     def libraries(self):
         return self._libraries
@@ -325,7 +335,52 @@ class Database():
     def designs(self):
         return self._designs
 
-
+    def runDeferredProcess(self):
+        """Runs deferred processes of the Database class."""
+        self.updateDatabaseViews()
+        
+    def requestDeferredProcessing(self, object):
+        """
+        Request deferred processing of object's notifications.
+        Once per object. No priorities or order guarantees.
+        """
+        self._deferredProcessingObjects.add(object)
+        #print self.__class__.__name__, "req", object
+        if not self._deferredProcessingScheduled:
+            self.client().deferredProcessingRequested()
+            self._deferredProcessingScheduled = True
+            
+    def cancelDeferredProcessing(self, object):
+        """
+        Cancel deferred processing.
+        For example, if it has already been triggered manually.
+        """
+        #print self.__class__.__name__, "cancel", object
+        self._deferredProcessingObjects.remove(object)
+        
+    def runDeferredProcesses(self):
+        """
+        Force execution of all deferred processes.
+        To be called synchronously or from within the main loop
+        (an "idle" function).
+        """
+        dpos = list(self._deferredProcessingObjects)
+        self._deferredProcessingObjects = set()
+        self._deferredProcessingScheduled = False
+        for o in dpos:
+            print self.__class__.__name__, "run", o
+            o.runDeferredProcess()
+    
+    def processEvents(self):
+        """
+        Instead of calling runDeferredProcesses directly one can call
+        processEvents method which temporarily gives the CPU back to the
+        whatever main loop is used by the client. The main loop will then
+        execute runDeferredProcesses (if previously requested) _and_ run
+        any other toolkit related idle functions.
+        """
+        self.client().processEvents()
+            
 class Importer:
     def __init__(self, database):
         self._database = database

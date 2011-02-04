@@ -31,6 +31,7 @@ class Index():
         self._coordsOfSolderDot = {}
     
     def netSegmentAdded(self, netSegment):
+        #print self.__class__.__name__, "ns added", netSegment
         p1 = netSegment.x(), netSegment.y()
         p2 = netSegment.x2(), netSegment.y2()
         if p1 in self._netsAtCoord:
@@ -54,7 +55,7 @@ class Index():
         self._coordsOfNet[netSegment] = p1, p2
         
     def netSegmentRemoved(self, netSegment):
-        #print "nsi removed ", netSegment
+        #print self.__class__.__name__, "ns removed", netSegment
         if netSegment in self._coordsOfNet:
             p1, p2 = self._coordsOfNet[netSegment]
             del self._coordsOfNet[netSegment]
@@ -109,8 +110,8 @@ class Index():
                     s.add(netSegment)
         return s
 
-    def netSegments(self):
-        return self._coordsOfNet #a dict, net->coords
+    def coordsOfNetSegments(self):
+        return self._coordsOfNet #a dict, net->pair coords
         
     def netSegmentsEndPoints(self):
         return self._netsAtCoord.keys() #a list

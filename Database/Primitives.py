@@ -521,13 +521,22 @@ class NetSegment(Element):
         du.netSegmentRemoved(self)
 
     def splitAt(self, point):
-        ns1 = NetSegment(self.diagram(), self.layers(), self.x1(), self.y1(), point[0], point[1])
-        ns2 = NetSegment(self.diagram(), self.layers(), point[0], point[1], self.x2(), self.y2())
-        #print "ns remove ", self
+        diagram = self.diagram()
+        layers = self.layers()
+        x1 = self.x1()
+        y1 = self.y1()
+        x2 = self.x2()
+        y2 = self.y2()
+        #first remove, then add, or a recursive loop will be triggered
+        #when newly created net will call splitAt again at same point
         self.remove()
+        ns1 = NetSegment(diagram, layers, x1, y1, point[0], point[1])
+        ns2 = NetSegment(diagram, layers, point[0], point[1], x2, y2)
     
     def mergeSegments(self, segments):
         "Merges a list of overlying segments"
+        diagram = self.diagram()
+        layers = self.layers()
         minX = self.minX()
         minY = self.minY()
         maxX = self.maxX()
@@ -538,9 +547,9 @@ class NetSegment(Element):
             maxX = max(maxX, s.maxX())
             maxY = max(maxY, s.maxY())
         #print self.__class__.__name__, minX, minY, maxX, maxY
-        ns = NetSegment(self.diagram(), self.layers(), minX, minY, maxX, maxY)
         for s in segments:
             s.remove()
+        ns = NetSegment(diagram, layers, minX, minY, maxX, maxY)
             
     def contains (self, x, y):
         c1 = (self._x == self._x2 and 

@@ -325,7 +325,7 @@ class GedaReader(Reader):
         #self.cell.addCellView(self.view)
         self.view.setUU(self.uu)
         schematic = self.parseFile(fileName, mode)
-        schematic.checkNets()
+        #schematic.checkNets()
         return schematic
 
     def parseSymbol(self, fileName, cellView):

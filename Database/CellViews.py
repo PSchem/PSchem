@@ -310,15 +310,17 @@ class Schematic(Diagram):
     #    return self._nets #filter(lambda e: isinstance(e, CNet), self.elems())
 
     def netSegmentAdded(self, netSegment):
+        #print self.__class__.__name__, "ns added", netSegment
         self.index().netSegmentAdded(netSegment)
-        for designUnit in self._designUnits:
-            netSegment.addToDesignUnit(designUnit)
-            if designUnit.scene():
-                netSegment.addToView(designUnit.scene())
         self._netSegments.add(netSegment)
+        self.splitNetSegment(netSegment)
+        #for designUnit in self._designUnits:
+        #    netSegment.addToDesignUnit(designUnit)
+        #    if designUnit.scene():
+        #        netSegment.addToView(designUnit.scene())
         
     def netSegmentRemoved(self, netSegment):
-        #print "ns removed ", netSegment
+        #print self.__class__.__name__, "ns removed", netSegment
         self.index().netSegmentRemoved(netSegment)
         self._netSegments.remove(netSegment)
         
@@ -343,6 +345,31 @@ class Schematic(Diagram):
     def index(self):
         return self._index
 
+    def splitNetSegment(self, netSegment):
+        """
+        Check if (newly added) netSegment should be split or if it requires
+        other net segments to split.
+        """
+        idx = self.index()
+        (p1, p2) = idx.coordsOfNetSegments()[netSegment]
+        n = 0
+        #first split other segments
+        for p in (p1, p2):
+            segments = idx.netSegmentsMidPointsAt(p[0], p[1])
+            for s in list(segments):
+                if s in idx.coordsOfNetSegments():
+                    #print "split ", s, p, idx.coordsOfNetSegments()[s]
+                    s.splitAt(p)
+                    n += 1
+        #then, if necessary, split the netSegment
+        for p in list(idx.netSegmentsEndPoints()):
+            if netSegment in idx.netSegmentsMidPointsAt(p[0], p[1]):
+                #print "split ", netSegment, p
+                netSegment.splitAt(p)
+                n += 1
+                break
+        #print self.__class__.__name__, "split", n, "segments"
+
     def splitNetSegments(self):
         """
         Go through all net segments in the design unit and make sure that
@@ -354,7 +381,7 @@ class Schematic(Diagram):
         for p in list(idx.netSegmentsEndPoints()):
             segments = idx.netSegmentsMidPointsAt(p[0], p[1])
             for s in list(segments):
-                if s in idx.netSegments():
+                if s in idx.coordsOfNetSegments():
                     #print "split ", s, p
                     s.splitAt(p)
                     n += 1

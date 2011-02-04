@@ -78,13 +78,12 @@ class DesignUnit():
         return self._design
 
     def cellView(self):
-        #return self.instance().instanceCellView()
-        schematic = self.instance().instanceCell().cellViewByName('schematic')
-        if schematic:
-            return schematic
-        else:
-            return self.instance().instanceCellView()
-        #return self.instance().cell().cellViewByName('schematic') #instanceCellView()
+        return self.instance().instanceCell().implementation()
+        #schematic = self.instance().instanceCell().cellViewByName('schematic')
+        #if schematic:
+        #    return schematic
+        #else:
+        #    return self.instance().instanceCellView()
 
     def updateItem(self):
         if self.scene():

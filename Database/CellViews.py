@@ -261,6 +261,9 @@ class Schematic(Diagram):
         self._nets = set()
         self._index = Index()
         
+        #self._netSegmentsAdded = set()
+        #self._netSegmentsRemoved = set()
+        
     def designUnitAdded(self, designUnit):
         self._designUnits.add(designUnit)
         #scene = designUnit.scene()
@@ -313,7 +316,9 @@ class Schematic(Diagram):
         #print self.__class__.__name__, "ns added", netSegment
         self.index().netSegmentAdded(netSegment)
         self._netSegments.add(netSegment)
-        self.splitNetSegment(netSegment)
+        #self._netSegmentsAdded.add(netSegment)
+        self.database().requestDeferredProcessing(self)
+        #self.splitNetSegment(netSegment)
         #for designUnit in self._designUnits:
         #    netSegment.addToDesignUnit(designUnit)
         #    if designUnit.scene():
@@ -323,16 +328,18 @@ class Schematic(Diagram):
         #print self.__class__.__name__, "ns removed", netSegment
         self.index().netSegmentRemoved(netSegment)
         self._netSegments.remove(netSegment)
+        #self._netSegmentsRemoved.add(netSegment)
+        self.database().requestDeferredProcessing(self)
         
     def netSegments(self):
         return self._netSegments
 
     def solderDotAdded(self, solderDot):
         self.index().solderDotAdded(solderDot)
-        for designUnit in self._designUnits:
-            #solderDot.addToDesignUnit(designUnit)
-            if designUnit.scene():
-                solderDot.addToView(designUnit.scene())
+        #for designUnit in self._designUnits:
+        #    #solderDot.addToDesignUnit(designUnit)
+        #    if designUnit.scene():
+        #        solderDot.addToView(designUnit.scene())
         self._solderDots.add(solderDot)
         
     def solderDotRemoved(self, solderDot):
@@ -426,6 +433,8 @@ class Schematic(Diagram):
         self.mergeNetSegments()
         self.checkSolderDots()
 
+    def runDeferredProcess(self):
+        self.checkNets()
         
 class Symbol(Diagram):
     def __init__(self, name, cell):

@@ -166,8 +166,6 @@ class Element():
             a.remove()
         for v in self.views():
             v.removeItem()
-        for du in self.diagram().designUnits():
-            self.removeFromDesignUnit(du)
         #self.diagram().elementRemoved(self)
         
 class Line(Element):
@@ -258,15 +256,6 @@ class CustomPath(Element):
     def path(self):
         return self._path
 
-    def addToDesignUnit(self, designUnit):
-        "add itself to an design unit"
-        designUnit.view().addCustomPath(self)
-        
-    def removeFromOccurence(self, designUnit):
-        "remove itself from an design unit"
-        designUnit.view().removeCustomPath(self)
-        
-        
 class Ellipse(Element):
     def __init__(self, diagram, layers, x, y, radiusX, radiusY):
         Element.__init__(self, diagram, layers)
@@ -513,13 +502,6 @@ class NetSegment(Element):
         "remove from view ", view
         view.removeNetSegment(self)
         
-    def addToDesignUnit(self, du):
-        du.netSegmentAdded(self)
-        
-    def removeFromDesignUnit(self, du):
-        "remove from view ", du
-        du.netSegmentRemoved(self)
-
     def splitAt(self, point):
         diagram = self.diagram()
         layers = self.layers()
@@ -551,23 +533,6 @@ class NetSegment(Element):
             s.remove()
         ns = NetSegment(diagram, layers, minX, minY, maxX, maxY)
             
-    def contains (self, x, y):
-        c1 = (self._x == self._x2 and 
-            self._y == self._y2 and
-            self._x == x and
-            self._y == y)
-        c2 = (self._x == x and self._y == y)
-        c3 = (self._x2 == x and self._y2 == y)
-        return (c1 or c2 or c3)
-
-    def containsInside (self, x, y):
-        c1 = (self._x == self._x2 == x and 
-            self.minY() < y < self.maxY())
-        c2 = (self._y == self._y2 == y and
-            self.minX() < x < self.maxX())
-        #print self._x, self._y, self._x2, self._y2, x, y
-        return (c1 or c2)
-
 class SolderDot(Element):
     def __init__(self, diagram, layers, x, y):
         Element.__init__(self, diagram, layers)
@@ -580,12 +545,6 @@ class SolderDot(Element):
     def addToView(self, view):
         view.addSolderDot(self)
         
-    def addToDesignUnit(self, du):
-        du.solderDotAdded(self)
-        
-    def removeFromDesignUnit(self, du):
-        du.solderDotRemoved(self)
-
     def radiusX(self):
         return self.diagram().uu()
         

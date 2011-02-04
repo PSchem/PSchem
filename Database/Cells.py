@@ -33,18 +33,6 @@ class Cell():
         self._library = library
         library.cellAdded(self)
 
-    def addCellView(self, cellView):
-        self._cellViews.add(cellView)
-        cellView.setCell(self)
-        self._cellViewNames[cellView.name()] = cellView
-        self.database().updateDatabaseViews()
-
-    def removeCellView(self, cellView):
-        cellView.remove()
-        self._cellViews.remove(cellView)
-        del(self._cellViewNames[cellView.name()])
-        self.database().updateDatabaseViews()
-
     def cellViews(self):
         return self._cellViews
 
@@ -74,7 +62,10 @@ class Cell():
         return self._name
 
     def implementation(self):
-        return self.cellViewByName('schematic')  #currently assume it is 'schematic'
+        schematic = self.cellViewByName('schematic')  #currently assume it is 'schematic'
+        if schematic:
+            return schematic
+        return self.cellViewByName('symbol')
 
     def symbol(self):
         return self.cellViewByName('symbol')  #currently assume it is 'symbol'

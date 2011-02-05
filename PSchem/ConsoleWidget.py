@@ -92,7 +92,8 @@ class StdoutWrap():
         self.console.write(txt)
         if self.stream.fileno() >= 0: # for Windows (pythonw.exe) compatibility
             self.stream.write(txt)
-        #QtGui.qApp.processEvents() #interferes with deferred processing of Database notifications
+        if txt.find('\n', -1) != -1:
+            QtGui.qApp.processEvents() #interferes with deferred processing of Database notifications
 
     def writeSync(self, txt, markPos = False):
         self.console.setSynchronous(True, markPos)
@@ -100,7 +101,8 @@ class StdoutWrap():
         self.console.setSynchronous(False)
         if self.stream.fileno() >= 0:
             self.stream.write(txt)
-        #QtGui.qApp.processEvents() #interferes with deferred processing of Database notifications
+        if txt.find('\n', -1) != -1:
+            QtGui.qApp.processEvents() #interferes with deferred processing of Database notifications
 
     def isatty(self):
         return True
@@ -120,7 +122,7 @@ class StderrWrap():
         self.console.writeErr(txt)
         if self.stream.fileno() >= 0:
             self.stream.write(txt)
-        #QtGui.qApp.processEvents() #interferes with deferred processing of Database notifications
+        QtGui.qApp.processEvents() #interferes with deferred processing of Database notifications
 
     def isatty(self):
         return True

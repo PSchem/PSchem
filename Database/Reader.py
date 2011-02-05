@@ -368,10 +368,10 @@ class GedaImporter(Importer):
         self.sourceLibraryList = sourceList
         for l in self.componentLibraryList:
             self.importComponentLibrary(l)
-            self.database.processEvents()
+            #self.database.processEvents()
         for l in self.sourceLibraryList:
             self.importSourceLibrary(l)
-            self.database.processEvents()
+            #self.database.processEvents()
             
     def libPathAbsToRel(self, libPath):
         l = self.library.path()

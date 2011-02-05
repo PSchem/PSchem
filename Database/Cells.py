@@ -218,7 +218,6 @@ class Database():
         self._designs = Designs(self)
         
         self._deferredProcessingObjects = set()
-        self._deferredProcessingScheduled = False
         
     def client(self):
         return self._client
@@ -336,17 +335,15 @@ class Database():
         Once per object. No priorities or order guarantees.
         """
         self._deferredProcessingObjects.add(object)
-        #print self.__class__.__name__, "req", object
-        if not self._deferredProcessingScheduled:
-            self.client().deferredProcessingRequested()
-            self._deferredProcessingScheduled = True
+        ##print self.__class__.__name__, "request", object
+        self.client().deferredProcessingRequested()
+        self._deferredProcessingScheduled = True
             
     def cancelDeferredProcessing(self, object):
         """
-        Cancel deferred processing.
+        Cancel deferred processing of a given object.
         For example, if it has already been triggered manually.
         """
-        #print self.__class__.__name__, "cancel", object
         self._deferredProcessingObjects.remove(object)
         
     def runDeferredProcesses(self):
@@ -357,21 +354,10 @@ class Database():
         """
         dpos = list(self._deferredProcessingObjects)
         self._deferredProcessingObjects = set()
-        self._deferredProcessingScheduled = False
         for o in dpos:
-            print self.__class__.__name__, "run", o
+            ##print self.__class__.__name__, "run", o
             o.runDeferredProcess()
-    
-    def processEvents(self):
-        """
-        Instead of calling runDeferredProcesses directly one can call
-        processEvents method which temporarily gives the CPU back to the
-        whatever main loop is used by the client. The main loop will then
-        execute runDeferredProcesses (if previously requested) _and_ run
-        any other toolkit related idle functions.
-        """
-        self.client().processEvents()
-            
+                
 class Importer:
     def __init__(self, database):
         self._database = database

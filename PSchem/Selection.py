@@ -64,27 +64,27 @@ class Selection(set):
     def __init__(self, items=[]):
         set.__init__(self, items)
         for i in items:
-            i.setSelected(True)
+            i.selected = True
             i.update()
         if len(items) > 0:
             print self.__class__.__name__, self
 
     def add(self, item):
         set.add(self, item)
-        item.setSelected(True)
+        item.selected = True
         item.update()
         print self.__class__.__name__, self
         
     def remove(self, item):
         set.remove(self, item)
-        item.setSelected(False)
+        item.selected = False
         item.update()
         print self.__class__.__name__, self
         
     def __ior__(self, items):
         set.__ior__(self, items)
         for i in items:
-            i.setSelected(True)
+            i.selected = True
             i.update()
         print self.__class__.__name__, self
         return self
@@ -92,14 +92,14 @@ class Selection(set):
     def __isub__(self, items):
         set.__isub__(self, items)
         for i in items:
-            i.setSelected(False)
+            i.selected = False
             i.update()
         print self.__class__.__name__, self
         return self
 
     def __del__(self):
         for i in self:
-            i.setSelected(False)
+            i.selected = False
             i.update()
         #print self.__class__.__name__, self
 

@@ -24,9 +24,17 @@ from random import random
 
 class LayerView():
     def __init__(self, layer):
-        self.setLayer(layer)
+        self.updateLayer(layer)
 
-    def setLayer(self, layer):
+    @property
+    def layer(self):
+        return self._layer
+
+    @layer.setter
+    def layer(self, layer):
+        self.updateLayer(layer)
+        
+    def updateLayer(self, layer):
         self._layer = layer
         w = 16
         h = 16
@@ -40,7 +48,7 @@ class LayerView():
         #self._pen.setStyle(QtCore.Qt.DashLine)
         #self._pen.setStyle(QtCore.Qt.DashDotDotLine)
         #print self._pen.dashPattern()
-        style = layer.linePattern().style()
+        style = layer.linePattern.style
         if (style == LinePattern.NoLine):
             self._pen.setStyle(QtCore.Qt.NoPen)
         elif (style == LinePattern.Solid):
@@ -54,27 +62,27 @@ class LayerView():
         elif (style == LinePattern.DashDotDot):
             self._pen.setStyle(QtCore.Qt.DashDotDotLine)
         else:
-            self._pen.setDashPattern(layer.linePattern().pattern())
-        self._pen.setWidth(layer.linePattern().width())
-        if layer.linePattern().endStyle() == LinePattern.FlatEnd:
+            self._pen.setDashPattern(layer.linePattern.pattern)
+        self._pen.setWidth(layer.linePattern.width)
+        if layer.linePattern.endStyle == LinePattern.FlatEnd:
             self._pen.setCapStyle(QtCore.Qt.FlatCap)
             self._pen.setJoinStyle(QtCore.Qt.BevelJoin)
-        elif layer.linePattern().endStyle() == LinePattern.SquareEnd:
+        elif layer.linePattern.endStyle == LinePattern.SquareEnd:
             self._pen.setCapStyle(QtCore.Qt.SquareCap)
             self._pen.setJoinStyle(QtCore.Qt.MiterJoin)
         else:
             self._pen.setCapStyle(QtCore.Qt.RoundCap)
             self._pen.setJoinStyle(QtCore.Qt.RoundJoin)
         self._pen.setCosmetic(True)
-        self._pen.setWidth(layer.linePixelWidth())
+        self._pen.setWidth(layer.linePixelWidth)
 
-        r, g, b = layer.color().color()
+        r, g, b = layer.color.color
         self._color = QtGui.QColor(r, g, b)
         self._pen.setColor(self._color)
 
         self._brush = QtGui.QBrush()
         self._brush.setColor(self._color)
-        fstyle = layer.fillPattern().style()
+        fstyle = layer.fillPattern.style
         if (fstyle == FillPattern.NoFill):
             self._brush.setStyle(QtCore.Qt.NoBrush)
         elif (fstyle == FillPattern.Solid):
@@ -107,59 +115,76 @@ class LayerView():
             self._brush.setStyle(QtCore.Qt.DiagCrossPattern)
         else:
             self._brush.setStyle(QtCore.Qt.NoBrush)
-            #self._brush.setDashPattern(layer.linePattern().pattern())
+            #self._brush.setDashPattern(layer.linePattern.pattern)
         #self._pen.setBrush(self._brush)
-        #color.red(), color.green(), color.blue()))
+        #color.red, color.green, color.blue))
         painter.setPen(self._pen)
         painter.setBrush(self._brush)
         painter.drawRect(1, 1, w-3, h-3)
         painter.end()
         self._icon = QtGui.QIcon(pixmap)
-        self._layer.setView(self)
+        self.layer.view = self
 
-    def layer(self):
-        return self._layer
-
+    @property
     def color(self):
         return self._color
 
+    @property
+    def icon(self):
+        return self._icon
+
+    @property
     def pen(self):
-        if self._layer.visible():
+        if self.layer.visible:
             #self._pen.setColor(QtGui.QColor(random()*255, random()*255, random()*255))
             return self._pen
         else:
             pen = QtGui.QPen(QtCore.QtNoPen)
             return pen
 
+    @property
     def brush(self):
-        if self._layer.visible():
+        if self.layer.visible:
             return self._brush
         else:
             brush = QtGui.QBrush(QtCore.QtNoBrush)
             return brush
 
+    @property
     def fontBrush(self):
-        if self._layer.visible() and self._pen.style() != QtCore.Qt.NoPen:
-            brush = QtGui.QBrush(self.color())
+        if self.layer.visible and self.pen.style() != QtCore.Qt.NoPen:
+            brush = QtGui.QBrush(self.color)
             return brush
         else:
             brush = QtGui.QBrush(QtCore.QtNoBrush)
             return brush
-
-    def icon(self):
-        return self._icon
 
 class LayersView():
     def __init__(self, layers):
         self._layers = layers
         self._layerViews = set()
         self._views = set()
-        layers.installUpdateViewHook(self)
+        layers.view = self
+
+    @property
+    def layers(self):
+        return self._layers
+    
+    @property
+    def layerViews(self):
+        return self._layerViews
+    
+    @property
+    def views(self):
+        return self._views
+    
+    def installUpdateViewsHook(self, view):
+        self.views.add(view)
 
     def addLayer(self, layer):
         layerView = LayerView(layer)
-        self._layerViews.add(layerView)
-        for v in self._views:
+        self.layerViews.add(layerView)
+        for v in self.views:
             v.update()
 
     def removeLayer(self, layer):
@@ -167,8 +192,3 @@ class LayersView():
         for v in self._views:
             v.update()
 
-    def layerViews(self):
-        return self._layerViews
-
-    def installUpdateViewsHook(self, view):
-        self._views.add(view)

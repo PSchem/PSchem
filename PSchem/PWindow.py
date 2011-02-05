@@ -124,7 +124,7 @@ class PWindow(QtGui.QMainWindow):
         self.dockH = QtGui.QDockWidget(self.tr("Hierarchy"), self)
         self.dockH.setObjectName('hierarchyDock')
         self.docks.add(self.dockH)
-        self.hierarchyModel = HierarchyModel(self.database.designs())
+        self.hierarchyModel = HierarchyModel(self.database.designs)
         self.hierarchyWidget = HierarchyWidget(self)
         self.hierarchyWidget.setSourceModel(self.hierarchyModel)
         
@@ -134,156 +134,156 @@ class PWindow(QtGui.QMainWindow):
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.dockH)
 
     def loadLayers(self):
-        self.layers = Layers()
+        self.layers = Layers(self.database)
         self.layersView = LayersView(self.layers)
 
         l = Layer()
-        l.setName('background')
-        l.setType('drawing')
-        l.setLinePattern(LinePattern(LinePattern.Solid, 0, 0))
-        l.setFillPattern(FillPattern(FillPattern.Solid))
-        #l.setFillPattern(FillPattern(FillPattern.DiagCross))
-        l.setColor(Color(Color.Black))
-        l.setZValue(0)
+        l.name = 'background'
+        l.type = 'drawing'
+        l.linePattern = LinePattern(LinePattern.Solid, 0, 0)
+        l.fillPattern = FillPattern(FillPattern.Solid)
+        #l.fillPattern = FillPattern(FillPattern.DiagCross)
+        l.color = Color(Color.Black)
+        l.zValue = 0
         self.layers.addLayer(l)
 
         l = Layer()
-        l.setName('gridminor')
-        l.setType('drawing')
-        l.setLinePattern(LinePattern(LinePattern.Solid, 0, 0))
-        l.setFillPattern(FillPattern(FillPattern.Solid))
-        l.setColor(Color([40, 40, 40]))
-        l.setZValue(1)
+        l.name = 'gridminor'
+        l.type = 'drawing'
+        l.linePattern = LinePattern(LinePattern.Solid, 0, 0)
+        l.fillPattern = FillPattern(FillPattern.Solid)
+        l.color = Color([40, 40, 40])
+        l.zValue = 1
         self.layers.addLayer(l)
 
         l = Layer()
-        l.setName('gridmajor')
-        l.setType('drawing')
-        l.setLinePattern(LinePattern(LinePattern.Solid, 0, 0))
-        l.setFillPattern(FillPattern(FillPattern.Solid))
-        l.setColor(Color([50, 50, 50]))
-        l.setZValue(2)
+        l.name = 'gridmajor'
+        l.type = 'drawing'
+        l.linePattern = LinePattern(LinePattern.Solid, 0, 0)
+        l.fillPattern = FillPattern(FillPattern.Solid)
+        l.color = Color([50, 50, 50])
+        l.zValue = 2
         self.layers.addLayer(l)
 
         l = Layer()
-        l.setName('axes')
-        l.setType('drawing')
-        l.setLinePattern(LinePattern(LinePattern.Solid, 0, 0))
-        l.setFillPattern(FillPattern(FillPattern.Solid))
-        l.setColor(Color([60, 60, 60]))
-        l.setZValue(3)
+        l.name = 'axes'
+        l.type = 'drawing'
+        l.linePattern = LinePattern(LinePattern.Solid, 0, 0)
+        l.fillPattern = FillPattern(FillPattern.Solid)
+        l.color = Color([60, 60, 60])
+        l.zValue = 3
         self.layers.addLayer(l)
 
         l = Layer()
-        l.setName('net')
-        l.setType('drawing')
+        l.name = 'net'
+        l.type = 'drawing'
         p = LinePattern(LinePattern.Solid, 0.1, 1)
-        p.setEndStyle(LinePattern.RoundEnd)
-        l.setLinePattern(p)
-        l.setFillPattern(FillPattern(FillPattern.Solid))
-        l.setColor(Color(Color.Cyan))
-        l.setZValue(100)
+        p.setEndStyle = LinePattern.RoundEnd
+        l.linePattern = p
+        l.fillPattern = FillPattern(FillPattern.Solid)
+        l.color = Color(Color.Cyan)
+        l.zValue = 100
         self.layers.addLayer(l)
 
         l = Layer()
-        l.setName('pin')
-        l.setType('drawing')
+        l.name = 'pin'
+        l.type = 'drawing'
         p = LinePattern(LinePattern.Solid, 0.1, 1)
-        #p.setEndStyle(LinePattern.SquareEnd)
-        p.setEndStyle(LinePattern.FlatEnd)
-        l.setLinePattern(p)
-        l.setFillPattern(FillPattern(FillPattern.Solid))
-        l.setColor(Color(Color.Red))
-        l.setZValue(200)
+        #p.setEndStyle = LinePattern.SquareEnd
+        p.setEndStyle = LinePattern.FlatEnd
+        l.linePattern = p
+        l.fillPattern = FillPattern(FillPattern.Solid)
+        l.color = Color(Color.Red)
+        l.zValue = 200
         self.layers.addLayer(l)
 
         l = Layer()
-        l.setName('annotation') #no fill
-        l.setType('drawing')
+        l.name = 'annotation' #no fill
+        l.type = 'drawing'
         p = LinePattern(LinePattern.Solid, 0.1, 1)
-        p.setEndStyle(LinePattern.RoundEnd)
-        l.setLinePattern(p)
-        l.setColor(Color(Color.Green))
-        l.setZValue(50)
+        p.setEndStyle = LinePattern.RoundEnd
+        l.linePattern = p
+        l.color = Color(Color.Green)
+        l.zValue = 50
         self.layers.addLayer(l)
 
         l = Layer()
-        l.setName('annotation2')
-        l.setType('drawing')
+        l.name = 'annotation2'
+        l.type = 'drawing'
         p = LinePattern(LinePattern.Solid, 0.1, 1)
-        p.setEndStyle(LinePattern.RoundEnd)
-        l.setLinePattern(p)
-        #l.setFillPattern(FillPattern(FillPattern.Solid))
-        l.setFillPattern(FillPattern(FillPattern.Dense4))
-        l.setColor(Color(Color.Green))
-        l.setZValue(55)
+        p.setEndStyle = LinePattern.RoundEnd
+        l.linePattern = p
+        #l.fillPattern = FillPattern(FillPattern.Solid)
+        l.fillPattern = FillPattern(FillPattern.Dense4)
+        l.color = Color(Color.Green)
+        l.zValue = 55
         self.layers.addLayer(l)
 
         l = Layer()
-        l.setName('attribute')
-        l.setType('drawing')
+        l.name = 'attribute'
+        l.type = 'drawing'
         p = LinePattern(LinePattern.Solid, 0.1, 1)
-        p.setEndStyle(LinePattern.RoundEnd)
-        l.setLinePattern(p)
-        l.setFillPattern(FillPattern(FillPattern.Solid))
-        l.setColor(Color(Color.Yellow))
-        l.setZValue(400)
+        p.setEndStyle = LinePattern.RoundEnd
+        l.linePattern = p
+        l.fillPattern = FillPattern(FillPattern.Solid)
+        l.color = Color(Color.Yellow)
+        l.zValue = 400
         self.layers.addLayer(l)
 
         l = Layer()
-        l.setName('instance')
-        l.setType('drawing')
+        l.name = 'instance'
+        l.type = 'drawing'
         p = LinePattern(LinePattern.NoLine, 0, 0)
-        p.setEndStyle(LinePattern.RoundEnd)
-        l.setLinePattern(p)
-        l.setColor(Color(Color.White))
-        l.setZValue(1000)
+        p.setEndStyle = LinePattern.RoundEnd
+        l.linePattern = p
+        l.color = Color(Color.White)
+        l.zValue = 1000
         self.layers.addLayer(l)
 
         l = Layer()
-        l.setName('selection')
-        l.setType('drawing')
+        l.name = 'selection'
+        l.type = 'drawing'
         p = LinePattern(LinePattern.Solid, 0, 1)
-        p.setEndStyle(LinePattern.RoundEnd)
-        l.setLinePattern(p)
-        #l.setFillPattern(FillPattern(FillPattern.Solid))
-        l.setColor(Color(Color.Red))
-        l.setZValue(900000)
+        p.setEndStyle = LinePattern.RoundEnd
+        l.linePattern = p
+        #l.fillPattern = FillPattern(FillPattern.Solid)
+        l.color = Color(Color.Red)
+        l.zValue = 900000
         self.layers.addLayer(l)
 
         l = Layer()
-        l.setName('preselection')
-        l.setType('drawing')
+        l.name = 'preselection'
+        l.type = 'drawing'
         p = LinePattern(LinePattern.Dash, 0, 1)
-        p.setEndStyle(LinePattern.FlatEnd)
-        l.setLinePattern(p)
-        #l.setFillPattern(FillPattern(FillPattern.Solid))
-        l.setColor(Color(Color.Yellow))
-        l.setZValue(900010)
+        p.setEndStyle = LinePattern.FlatEnd
+        l.linePattern = p
+        #l.fillPattern = FillPattern(FillPattern.Solid)
+        l.color = Color(Color.Yellow)
+        l.zValue = 900010
         self.layers.addLayer(l)
 
         l = Layer()
-        l.setName('lasso')
-        l.setType('drawing')
+        l.name = 'lasso'
+        l.type = 'drawing'
         p = LinePattern(LinePattern.Dash, 0, 1)
-        p.setEndStyle(LinePattern.FlatEnd)
-        l.setLinePattern(p)
-        #l.setFillPattern(FillPattern(FillPattern.Solid))
-        l.setColor(Color(Color.White))
-        l.setZValue(900020)
+        p.setEndStyle = LinePattern.FlatEnd
+        l.linePattern = p
+        #l.fillPattern = FillPattern(FillPattern.Solid)
+        l.color = Color(Color.White)
+        l.zValue = 900020
         self.layers.addLayer(l)
 
         l = Layer()
-        l.setName('cursor')
-        l.setType('drawing')
+        l.name = 'cursor'
+        l.type = 'drawing'
         p = LinePattern(LinePattern.Solid, 0, 1)
-        l.setLinePattern(p)
-        #l.setFillPattern(FillPattern(FillPattern.Solid))
-        l.setColor(Color(Color.Yellow))
-        l.setZValue(1000000)
+        l.linePattern = p
+        #l.fillPattern = FillPattern(FillPattern.Solid)
+        l.color = Color(Color.Yellow)
+        l.zValue = 1000000
         self.layers.addLayer(l)
 
-        self.database.setLayers(self.layers)
+        self.database.layers = self.layers
 
     def createLayerView(self):
         self.loadLayers()
@@ -810,7 +810,7 @@ class PWindow(QtGui.QMainWindow):
         
     def openCellView(self, cellView):
         if cellView:
-            design = Design(cellView, self.database.designs())
+            design = Design(cellView, self.database.designs)
             scene = GraphicsScene(design)
             #self.database.addDesign(design)
             dView = DesignView(self, scene)
@@ -818,10 +818,10 @@ class PWindow(QtGui.QMainWindow):
             subWin.setWidget(dView)
             subWin.setAttribute(QtCore.Qt.WA_DeleteOnClose)
             subWin.setWindowFilePath(
-                cellView.cell().name())
+                cellView.cell.name)
             subWin.setWindowModified(True)
             self.mdiArea.addSubWindow(subWin)
-            #self.mdiArea.addTab(dView, cellView.cell().name())
+            #self.mdiArea.addTab(dView, cellView.cell.name)
             subWin.showMaximized()
             #subWin.setWindowState(subWin.windowState() | QtCore.Qt.WindowMaximized)
             #subWin.show()

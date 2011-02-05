@@ -55,7 +55,7 @@ class SelectMode():
 
     def exitMode(self):
         if self._preSelected:
-            self._preSelected.setPreSelected(False)
+            self._preSelected.preSelected = False
         self.removeLasso()
         self.uninstallActions()
 
@@ -196,11 +196,11 @@ class SelectMode():
         
         if item != self._preSelected:
             if self._preSelected:
-                self._preSelected.setPreSelected(False)
+                self._preSelected.preSelected = False
                 self._preSelected.update()
             if item:
                 self._preSelected = item
-                item.setPreSelected(True)
+                item.preSelected = True
                 item.update()
             
     def name(self):

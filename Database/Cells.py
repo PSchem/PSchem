@@ -33,11 +33,32 @@ class Cell():
         self._library = library
         library.cellAdded(self)
 
+    @property
     def cellViews(self):
         return self._cellViews
 
-    def cellViewNames(self):
-        return self._cellViewNames.keys()
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def library(self):
+        return self._library
+        
+    @property
+    def database(self):
+        return self.library.database
+
+    @property
+    def implementation(self):
+        schematic = self.cellViewByName('schematic')  #currently assume it is 'schematic'
+        if schematic:
+            return schematic
+        return self.cellViewByName('symbol')
+
+    @property
+    def symbol(self):
+        return self.cellViewByName('symbol')  #currently assume it is 'symbol'
 
     def cellViewByName(self, cellViewName):
         if self._cellViewNames.has_key(cellViewName):
@@ -47,37 +68,19 @@ class Cell():
 
     def cellViewAdded(self, cellView):
         self._cellViews.add(cellView)
-        self._cellViewNames[cellView.name()] = cellView
-        self.library().cellChanged(self)
+        self._cellViewNames[cellView.name] = cellView
+        self.library.cellChanged(self)
 
     def cellViewRemoved(self, cellView):
         self._cellViews.remove(cellView)
-        del self._cellViewNames[cellView.name()]
-        self.library().cellChanged(self)
+        del self._cellViewNames[cellView.name]
+        self.library.cellChanged(self)
         
     def cellViewChanged(self, cellView):
-        self.library().cellChanged(self)
-
-    def name(self):
-        return self._name
-
-    def implementation(self):
-        schematic = self.cellViewByName('schematic')  #currently assume it is 'schematic'
-        if schematic:
-            return schematic
-        return self.cellViewByName('symbol')
-
-    def symbol(self):
-        return self.cellViewByName('symbol')  #currently assume it is 'symbol'
-
-    def library(self):
-        return self._library
-        
-    def database(self):
-        return self.library().database()
+        self.library.cellChanged(self)
 
     def remove(self):
-        for c in list(self.cellViews()):
+        for c in list(self.cellViews):
             c.remove()
 
 class Library():
@@ -94,52 +97,69 @@ class Library():
         else:
             database.libraryAdded(self)
 
+    @property
     def cells(self):
         return self._cells
 
-    def cellNames(self):
-        return self._cellNames.keys()
-
-    def cellAdded(self, cell):
-        self._cells.add(cell)
-        self._cellNames[cell.name()] = cell
-        self.database().libraryChanged(self)
-
-    def cellRemoved(self, cell):
-        self._cells.remove(cell)
-        del self._cellNames[cell.name()]
-        self.database().libraryChanged(self)
-        
-    def cellChanged(self, cell):
-        self.database().libraryChanged(self)
-
-    def libraryAdded(self, library):
-        self._libraries.add(library)
-        self._libraryNames[library.name()] = library
-        self.database().libraryChanged(self)
-
-    def libraryRemoved(self, library):
-        self._libraries.remove(library)
-        del self._libraryNames[library.name()]
-        self.database().libraryChanged(self)
-        
-    def libraryChanged(self, library):
-        self.database().libraryChanged(self)
-
+    @property
     def libraries(self):
         return self._libraries
 
-    def libraryNames(self):
-        return self._libraryNames.keys()
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def path(self):
+        if self.parentLibrary:
+            return self.parentLibrary.path + '/' + self.name
+        else:
+            return '/' + self.name
+
+    @property
+    def database(self):
+        if not self._database:
+            self._database = self.parentLibrary.database
+        return self._database
+        
+    @property
+    def parentLibrary(self):
+        return self._parentLibrary
+        
+    def cellAdded(self, cell):
+        self.cells.add(cell)
+        self._cellNames[cell.name] = cell
+        self.database.libraryChanged(self)
+
+    def cellRemoved(self, cell):
+        self.cells.remove(cell)
+        del self._cellNames[cell.name]
+        self.database.libraryChanged(self)
+        
+    def cellChanged(self, cell):
+        self.database.libraryChanged(self)
+
+    def libraryAdded(self, library):
+        self.libraries.add(library)
+        self._libraryNames[library.name] = library
+        self.database.libraryChanged(self)
+
+    def libraryRemoved(self, library):
+        self.libraries.remove(library)
+        del self._libraryNames[library.name]
+        self.database.libraryChanged(self)
+        
+    def libraryChanged(self, library):
+        self.database.libraryChanged(self)
 
     def libraryByPath(self, libraryPath):
         (first, sep, rest) = libraryPath.partition('/')
         if first == '..':
-            return self.parentLibrary().libraryByPath(rest)
+            return self.parentLibrary.libraryByPath(rest)
         elif first == '.':
             return self.libraryByPath(rest)
         elif first == '':
-            return self.database().libraryByPath(rest)
+            return self.database.libraryByPath(rest)
         elif self._libraryNames.has_key(first):
             if rest == '':
                 return self._libraryNames[first]
@@ -178,34 +198,17 @@ class Library():
         else:
             return None
 
-    def name(self):
-        return self._name
-
-    def path(self):
-        if self.parentLibrary():
-            return self.parentLibrary().path() + '/' + self.name()
-        else:
-            return '/' + self.name()
-
-    def database(self):
-        if not self._database:
-            self._database = self.parentLibrary().database()
-        return self._database
-        
-    def parentLibrary(self):
-        return self._parentLibrary
-        
     def remove(self):
         # remove child libraries&cells
-        for c in list(self.cells()):
+        for c in list(self.cells):
             c.remove()
-        for l in list(self.libraries()):
+        for l in list(self.libraries):
             l.remove()
         # notify parent library or database
-        if self.parentLibrary():
-            self.parentLibrary().libraryRemoved(self)
+        if self.parentLibrary:
+            self.parentLibrary.libraryRemoved(self)
         else:
-            self.database().libraryRemoved(self)
+            self.database.libraryRemoved(self)
         
 
 class Database():
@@ -219,9 +222,27 @@ class Database():
         
         self._deferredProcessingObjects = set()
         
+    @property
     def client(self):
         return self._client
         
+    @property
+    def libraries(self):
+        return self._libraries
+
+    @property
+    def layers(self):
+        return self._layers
+        
+    @layers.setter
+    def layers(self, layers):
+        self._layers = layers
+        #self.updateViews()
+
+    @property
+    def designs(self):
+        return self._designs
+
     def installUpdateDatabaseViewsHook(self, view):
         self._databaseViews.add(view)
 
@@ -247,24 +268,21 @@ class Database():
             v.prepareForUpdate()
         
     def libraryAdded(self, library):
-        self._libraries.add(library)
+        self.libraries.add(library)
         #library.setDatabase(self)
-        self._libraryNames[library.name()] = library
+        self._libraryNames[library.name] = library
         #self.updateDatabaseViews()
         self.requestDeferredProcessing(self)
 
     def libraryRemoved(self, library):
-        self._libraries.remove(library)
-        del self._libraryNames[library.name()]
+        self.libraries.remove(library)
+        del self._libraryNames[library.name]
         #self.updateDatabaseViews()
         self.requestDeferredProcessing(self)
         
     def libraryChanged(self, library):
         #self.updateDatabaseViews()
         self.requestDeferredProcessing(self)
-
-    def libraries(self):
-        return self._libraries
 
     def libraryNames(self):
         return self._libraryNames.keys()
@@ -315,16 +333,6 @@ class Database():
         else:
             return None
 
-    def setLayers(self, layers):
-        self._layers = layers
-        #self.updateViews()
-
-    def layers(self):
-        return self._layers
-        
-    def designs(self):
-        return self._designs
-
     def runDeferredProcess(self):
         """Runs deferred processes of the Database class."""
         self.updateDatabaseViews()
@@ -336,7 +344,7 @@ class Database():
         """
         self._deferredProcessingObjects.add(object)
         ##print self.__class__.__name__, "request", object
-        self.client().deferredProcessingRequested()
+        self.client.deferredProcessingRequested()
         self._deferredProcessingScheduled = True
             
     def cancelDeferredProcessing(self, object):

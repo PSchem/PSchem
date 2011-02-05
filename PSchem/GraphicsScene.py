@@ -24,22 +24,28 @@ from Database.Primitives import *
 class GraphicsScene(QtGui.QGraphicsScene):
     def __init__(self, design):
         QtGui.QGraphicsScene.__init__(self)
-        self._design = design
-        self.uu = float(self._design.cellView().uu())
+        self.design = design
+        self.uu = float(design.cellView.uu)
 
-        self._design.sceneAdded(self)
+        self.design.sceneAdded(self)
 
+    #@property
+    #def design(self):
+    #    return self._design
+        
+    #@property
+    #def cellView(self):
+    #    return self.design.cellView
+        
+    #@property
+    #def uu(self):
+    #    return self._uu
+        
     def designChanged(self):
         pass #all changes triggered by items
         
-    def design(self):
-        return self._design
-        
     def designRemoved(self):
         self._design = None
-        
-    def cellView(self):
-        return self.design().cellView()
         
     def addElem(self, e):
         print 'Unknown element type', e
@@ -114,21 +120,21 @@ class GraphicsScene(QtGui.QGraphicsScene):
     def addInstance(self, i):
         #instance = i.instance()
         instanceItem = InstanceItem(i)
-        instanceItem.translate(i.x()/self.uu, i.y()/self.uu)
-        instanceItem.rotate(i.angle())
-        if i.vMirror():
+        instanceItem.translate(i.x/self.uu, i.y/self.uu)
+        instanceItem.rotate(i.angle)
+        if i.vMirror:
             instanceItem.scale(1, -1)
-        if i.hMirror():
+        if i.hMirror:
             instanceItem.scale(-1, 1)
         self.addItem(instanceItem)
         instanceItem.updateMatrix()
 
     def remove(self):
         pass
-        #for i in self.items():
+        #for i in self.items:
         #    i.remove()
-        #if self.design():
-        #    self.design().sceneRemoved()
+        #if self.design:
+        #    self.design.sceneRemoved()
         
         
     #def mouseMoveEvent(self, event):

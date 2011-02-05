@@ -43,17 +43,133 @@ class Element():
         self._editable = True
         diagram.elementAdded(self)
 
+    @property
+    def editable(self):
+        return self._editable
+
+    @property
+    def attributes(self):
+        return self._attributes
+
+    @property
+    def views(self):
+        return self._views
+
+    @property
+    def diagram(self):
+        return self._diagram
+
+    @property
+    def cell(self):
+        return self.diagram.cell
+
+    @property
+    def library(self):
+        return self.diagram.library
+
+    @property
+    def database(self):
+        return self.diagram.database
+
+    @property
+    def layers(self):
+        return self._layers
+
+    @property
+    def contents(self):
+        return self._attributes
+
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
+    def name(self, name):
+        if self.editable:
+            self._name = name
+            self.updateViews()
+
+    @property
+    def layer(self):
+        return self._layer
+
+    @layer.setter
+    def layer(self, layer):
+        if self.editable:
+            self._layer = layer
+            self.updateViews()
+
+    @property
+    def x(self):
+        return self._x
+
+    @x.setter
+    def x(self, x): #int
+        if self.editable:
+            self._x = x
+            self.updateViews()
+
+    @property
+    def y(self):
+        return self._y
+
+    @y.setter
+    def y(self, y): #int
+        if self.editable:
+            self._y = y
+            self.updateViews()
+
+    @property
+    def angle(self):
+        return self._angle
+
+    @angle.setter
+    def angle(self, angle): #0, 90, 180, 270
+        if self.editable:
+            self._angle = angle
+            self.updateViews()
+
+    @property
+    def vMirror(self):
+        return self._vmirror
+
+    @vMirror.setter
+    def vMirror(self, mirror): #bool
+        if self.editable:
+            self._vmirror = mirror
+            self.updateViews()
+
+    @property
+    def hMirror(self):
+        return self._hmirror
+
+    @hMirror.setter
+    def hMirror(self, mirror): #bool
+        if self.editable:
+            self._hmirror = mirror
+            self.updateViews()
+
+    @property
+    def visible(self):
+        return self._visible
+        
+    @visible.setter
+    def visible(self, visible): #bool
+        if self.editable:
+            self._visible = visible
+            self.updateViews()
+
     def addAttribute(self, attrib):
-        self._attributes.add(attrib)
+        self.attributes.add(attrib)
 
     def installUpdateHook(self, view):
-        self._views.add(view)
+        self.views.add(view)
 
     def itemAdded(self, item):
-        self._views.add(item)
+        self.views.add(item)
 
     def updateViews(self):
-        for v in self._views:
+        for v in self.views:
             v.updateItem()
 
     def addToView(self, view):
@@ -63,110 +179,26 @@ class Element():
         view.removeElem(self)
 
     def removeFromViews(self):
-        for v in self._views:
+        for v in self.views:
             v.removeElem()
 
-    def setName(self, name):
-        if self._editable:
-            self._name = name
-            self.updateViews()
-
-    def setLayer(self, layer):
-        if self._editable:
-            self._layer = layer
-            self.updateViews()
-
-    def setXY(self, x, y): #int, int
-        if self._editable:
-            self._x = x
-            self._y = y
-            self.updateViews()
-
-    def setAngle(self, angle): #0, 90, 180, 270
-        if self._editable:
-            self._angle = angle
-            self.updateViews()
-
-    def setVMirror(self, mirror): #bool
-        if self._editable:
-            self._vmirror = mirror
-            self.updateViews()
-
-    def setHMirror(self, mirror): #bool
-        if self._editable:
-            self._hmirror = mirror
-            self.updateViews()
-
-    def setVisible(self, visible): #bool
-        if self._editable:
-            self._visible = visible
-            self.updateViews()
-
-    def attributes(self):
-        return self._attributes
-
-    def views(self):
-        return self._views
-
-    def diagram(self):
-        return self._diagram
-
-    def cell(self):
-        return self.diagram().cell()
-
-    def library(self):
-        return self.diagram().library()
-
-    def database(self):
-        return self.diagram().database()
-
-    def layers(self):
-        return self._layers
-
-    def contents(self):
-        return self._attributes
-
-    def name(self):
-        return self._name
-
-    def layer(self):
-        return self._layer
-
-    def x(self):
-        return self._x
-
-    def y(self):
-        return self._y
-
-    def angle(self):
-        return self._angle
-
-    def hMirror(self):
-        return self._hmirror
-
-    def vMirror(self):
-        return self._vmirror
-
-    def visible(self):
-        return self._visible
-        
     def toXml(self):
-        elem = et.Element(self._name)
-        elem.attrib['x'] = str(self._x)
-        elem.attrib['y'] = str(self._y)
-        elem.attrib['angle'] = str(self._angle)
-        elem.attrib['hmirror'] = str(self._hmirror)
-        elem.attrib['vmirror'] = str(self._vmirror)
-        elem.attrib['visible'] = str(self._visible)
-        #elem.attrib['layer'] = str(self._layer)
+        elem = et.Element(self.name)
+        elem.attrib['x'] = str(self.x)
+        elem.attrib['y'] = str(self.y)
+        elem.attrib['angle'] = str(self.angle)
+        elem.attrib['hmirror'] = str(self.hmirror)
+        elem.attrib['vmirror'] = str(self.vmirror)
+        elem.attrib['visible'] = str(self.visible)
+        #elem.attrib['layer'] = str(self.layer)
         return elem
 
     def remove(self):
-        for a in self.attributes():
+        for a in self.attributes:
             a.remove()
-        for v in self.views():
+        for v in self.views:
             v.removeItem()
-        #self.diagram().elementRemoved(self)
+        #self.diagram.elementRemoved(self)
         
 class Line(Element):
     def __init__(self, diagram, layers, x1, y1, x2, y2):
@@ -175,19 +207,23 @@ class Line(Element):
         self._y = y1
         self._x2 = x2
         self._y2 = y2
-        self._layer = self.layers().layerByName('annotation', 'drawing')
+        self._layer = self.layers.layerByName('annotation', 'drawing')
         self._name = 'line'
         diagram.lineAdded(self)
 
+    @property
     def x1(self):
         return self._x
 
+    @property
     def y1(self):
         return self._y
 
+    @property
     def x2(self):
         return self._x2
 
+    @property
     def y2(self):
         return self._y2
 
@@ -196,9 +232,9 @@ class Line(Element):
 
     def toXml(self):
         elem = Element.toXml(self)
-        elem.attrib['x2'] = str(self._x2)
-        elem.attrib['y2'] = str(self._y2)
-        elem.attrib['layer'] = str(self._layer.name())
+        elem.attrib['x2'] = str(self.x2)
+        elem.attrib['y2'] = str(self.y2)
+        elem.attrib['layer'] = str(self.layer.name)
         return elem
         
 class Rect(Element):
@@ -209,12 +245,14 @@ class Rect(Element):
         self._w = w
         self._h = h
         self._name = 'rect'
-        self._layer = self.layers().layerByName('annotation', 'drawing')
+        self._layer = self.layers.layerByName('annotation', 'drawing')
         diagram.rectAdded(self)
 
+    @property
     def w(self):
         return self._w
 
+    @property
     def h(self):
         return self._h
 
@@ -227,34 +265,35 @@ class CustomPath(Element):
         Element.__init__(self, diagram, layers)
         self._name = 'custom_path'
         self._path = []
-        self._layer = self.layers().layerByName('annotation', 'drawing')
+        self._layer = self.layers.layerByName('annotation', 'drawing')
         diagram.customPathAdded(self)
+
+    @property
+    def path(self):
+        return self._path
 
     def addToView(self, view):
         view.addCustomPath(self)
 
     def moveTo(self, x, y):
-        if self._editable:
+        if self.editable:
             self._path.append([self.move, x, y])
             self.updateViews()
 
     def lineTo(self, x, y):
-        if self._editable:
+        if self.editable:
             self._path.append([self.line, x, y])
             self.updateViews()
 
     def curveTo(self, xcp1, ycp1, xcp2, ycp2, x, y):
-        if self._editable:
+        if self.editable:
             self._path.append([self.curve, xcp1, ycp1, xcp2, ycp2, x, y])
             self.updateViews()
 
     def closePath(self):
-        if self._editable:
+        if self.editable:
             self._path.append([self.close])
             self.updateViews()
-
-    def path(self):
-        return self._path
 
 class Ellipse(Element):
     def __init__(self, diagram, layers, x, y, radiusX, radiusY):
@@ -264,20 +303,28 @@ class Ellipse(Element):
         self._radiusX = radiusX
         self._radiusY = radiusY
         self._name = 'ellipse'
-        self._layer = self.layers().layerByName('annotation', 'drawing')
+        self._layer = self.layers.layerByName('annotation', 'drawing')
         diagram.ellipseAdded(self)
 
-    def setRadius(self, radiusX, radiusY):
-        if self._editable:
-            self._radiusX = radiusX
-            self._radiusY = radiusY
-            self.updateViews()
-
+    @property
     def radiusX(self):
         return self._radiusX
 
+    @radiusX.setter
+    def radiusX(self, radiusX):
+        if self.editable:
+            self._radiusX = radiusX
+            self.updateViews()
+
+    @property
     def radiusY(self):
         return self._radiusY
+
+    @radiusX.setter
+    def radiusY(self, radiusY):
+        if self.editable:
+            self._radiusY = radiusY
+            self.updateViews()
 
     def addToView(self, view):
         view.addEllipse(self)
@@ -293,32 +340,48 @@ class EllipseArc(Element):
         self._startAngle = startAngle
         self._spanAngle = spanAngle
         self._name = 'ellipse_arc '
-        self._layer = self.layers().layerByName('annotation', 'drawing')
+        self._layer = self.layers.layerByName('annotation', 'drawing')
         diagram.ellipseArcAdded(self)
 
-    def setRadius(self, radiusX, radiusY):
-        if self._editable:
-            self._radiusX = radiusX
-            self._radiusY = radiusY
-            self.updateViews()
-
-    def setAngles(self, startAngle, spanAngle):
-        if self._editable:
-            self._startAngle = startAngle
-            self._spanAngle = spanAngle
-            self.updateViews()
-
+    @property
     def radiusX(self):
         return self._radiusX
 
+    @radiusX.setter
+    def radiusX(self, radiusX):
+        if self.editable:
+            self._radiusX = radiusX
+            self.updateViews()
+
+    @property
     def radiusY(self):
         return self._radiusY
 
+    @radiusY.setter
+    def radiusY(self, radiusY):
+        if self.editable:
+            self._radiusY = radiusY
+            self.updateViews()
+
+    @property
     def startAngle(self):
         return self._startAngle
 
+    @startAngle.setter
+    def startAngle(self, startAngle):
+        if self.editable:
+            self._startAngle = startAngle
+            self.updateViews()
+
+    @property
     def spanAngle(self):
         return self._spanAngle
+    
+    @spanAngle.setter
+    def spanAngle(self, spanAngle):
+        if self.editable:
+            self._spanAngle = spanAngle
+            self.updateViews()
 
     def addToView(self, view):
         view.addEllipseArc(self)
@@ -336,50 +399,58 @@ class Label(Element):
         self._hAlign = self.AlignLeft
         self._vAlign = self.AlignCenter
         self._name = 'label'
-        self._layer = self.layers().layerByName('annotation', 'drawing')
+        self._layer = self.layers.layerByName('annotation', 'drawing')
         diagram.labelAdded(self)
 
-    def setText(self, text):
-        if self._editable:
+    @property
+    def text(self):
+        return self._text
+
+    @text.setter
+    def text(self, text):
+        if self.editable:
             self._text = text
             self.updateViews()
 
-    def setHAlign(self, align):
-        if self._editable:
-            self._hAlign = align
-            self.updateViews()
-
-    def setVAlign(self, align):
-        if self._editable:
-            self._vAlign = align
-            self.updateViews()
-
-    def setTextSize(self, textSize): #int in uu
-        if self._editable:
-            self._textSize = textSize
-            self.updateViews()
-
+    @property
     def textSize(self):
         return self._textSize
 
+    @textSize.setter
+    def textSize(self, textSize): #int in uu
+        if self.editable:
+            self._textSize = textSize
+            self.updateViews()
+
+    @property
     def hAlign(self):
         return self._hAlign
 
+    @hAlign.setter
+    def hAlign(self, align):
+        if self.editable:
+            self._hAlign = align
+            self.updateViews()
+
+    @property
     def vAlign(self):
         return self._vAlign
 
-    def text(self):
-        return self._text
+    @vAlign.setter
+    def vAlign(self, align):
+        if self.editable:
+            self._vAlign = align
+            self.updateViews()
 
     def addToView(self, view):
         view.addLabel(self)
 
     def toXml(self):
         elem = Element.toXml(self)
-        elem.text = str(self._text)
-        elem.attrib['halign'] = str(self._hAlign)
-        elem.attrib['valign'] = str(self._vAlign)
-        elem.attrib['size'] = str(self._textSize)
+        elem.text = str(self.text)
+        elem.attrib['halign'] = str(self.hAlign)
+        elem.attrib['valign'] = str(self.vAlign)
+        elem.attrib['size'] = str(self.textSize)
         return elem
         
 class AttributeLabel(Label):
@@ -398,41 +469,51 @@ class AttributeLabel(Label):
         self._attribute = Attribute(key, val, Attribute.AInteger, self)
         self._name = 'attributeLabel'
         self._visibleKey = True
-        self._layer = self.layers().layerByName('attribute', 'drawing')
+        self._layer = self.layers.layerByName('attribute', 'drawing')
         diagram.attributeLabelAdded(self)
 
-    def setText(self, text):
-        if self._editable:
-            self._attribute.setVal(text)
+    @property
+    def attribute(self):
+        return self._attribute
+
+    @property
+    def key(self):
+        return self.attribute.name
+
+    @property
+    def value(self):
+        return self.attribute.val
+
+    @property
+    def text(self):
+        return self.key + ': ' + self.value
+
+    @text.setter
+    def text(self, text):
+        if self.editable:
+            self.attribute.val = text
             self.updateViews()
 
-    def setVisibleKey(self, visible):
-        if self._editable:
-            self._visibleKey = visible
-            self.updateViews()
-
+    @property
     def visibleKey(self):
         return self._visibleKey
+
+    @visibleKey.setter
+    def visibleKey(self, visible):
+        if self.editable:
+            self._visibleKey = visible
+            self.updateViews()
 
     def addToView(self, view):
         view.addAttributeLabel(self)
 
-    def key(self):
-        return self._attribute.name()
-
-    def value(self):
-        return self._attribute.val()
-
-    def text(self):
-        return self.key() + ': ' + self.value()
-
     def toXml(self):
         elem = Label.toXml(self)
-        elem.attrib['visibleKey'] = str(self._visibleKey)
+        elem.attrib['visibleKey'] = str(self.visibleKey)
         attr = et.Element('attribute')
-        attr.attrib['name'] = self._attribute.name()
-        attr.attrib['type'] = self._attribute.type()
-        attr.text = self._attribute.val()
+        attr.attrib['name'] = self.attribute.name
+        attr.attrib['type'] = self.attribute.type
+        attr.text = self.attribute.val
         elem.append(attr)
         return elem
         
@@ -444,56 +525,65 @@ class NetSegment(Element):
         self._x2 = x2
         self._y = y1
         self._y2 = y2
-        self._layer = self.layers().layerByName('net', 'drawing')
+        self._layer = self.layers.layerByName('net', 'drawing')
         self._name = 'net_segment'
         diagram.netSegmentAdded(self)
 
-    def remove(self):
-        Element.remove(self)
-        #self._layer = None
-        self.diagram().netSegmentRemoved(self)
-
+    @property
     def x1(self):
         return self._x
 
+    @property
     def y1(self):
         return self._y
 
+    @property
     def x2(self):
         return self._x2
 
+    @property
     def y2(self):
         return self._y2
 
+    @property
     def minX(self):
-        return min(self._x, self._x2)
+        return min(self.x1, self.x2)
         
+    @property
     def maxX(self):
-        return max(self._x, self._x2)
+        return max(self.x1, self.x2)
         
+    @property
     def minY(self):
-        return min(self._y, self._y2)
+        return min(self.y1, self.y2)
         
+    @property
     def maxY(self):
-        return max(self._y, self._y2)
+        return max(self.y1, self.y2)
         
+    @property
     def dx(self):
-        return self._x2 - self._x
+        return self.x2 - self.x1
         
+    @property
     def dy(self):
-        return self._y2 - self._y
+        return self.y2 - self.y1
         
+    @property
     def isHorizontal(self):
-        return self._y == self._y2
+        return self.y1 == self.y2
         
+    @property
     def isVertical(self):
-        return self._x == self._x2
+        return self.x1 == self.x2
         
+    @property
     def isDiagonal45(self):
-        return self.dx() == self.dy()
+        return self.dx == self.dy
         
+    @property
     def isDiagonal135(self):
-        return self.dx() == self.dy()
+        return self.dx == self.dy
         
     def addToView(self, view):
         view.addNetSegment(self)
@@ -503,12 +593,12 @@ class NetSegment(Element):
         view.removeNetSegment(self)
         
     def splitAt(self, point):
-        diagram = self.diagram()
-        layers = self.layers()
-        x1 = self.x1()
-        y1 = self.y1()
-        x2 = self.x2()
-        y2 = self.y2()
+        diagram = self.diagram
+        layers = self.layers
+        x1 = self.x1
+        y1 = self.y1
+        x2 = self.x2
+        y2 = self.y2
         #first remove, then add, or a recursive loop will be triggered
         #when newly created net will call splitAt again at same point
         self.remove()
@@ -517,40 +607,46 @@ class NetSegment(Element):
     
     def mergeSegments(self, segments):
         "Merges a list of overlying segments"
-        diagram = self.diagram()
-        layers = self.layers()
-        minX = self.minX()
-        minY = self.minY()
-        maxX = self.maxX()
-        maxY = self.maxY()
+        diagram = self.diagram
+        layers = self.layers
+        minX = self.minX
+        minY = self.minY
+        maxX = self.maxX
+        maxY = self.maxY
         for s in segments:
-            minX = min(minX, s.minX())
-            minY = min(minY, s.minY())
-            maxX = max(maxX, s.maxX())
-            maxY = max(maxY, s.maxY())
+            minX = min(minX, s.minX)
+            minY = min(minY, s.minY)
+            maxX = max(maxX, s.maxX)
+            maxY = max(maxY, s.maxY)
         #print self.__class__.__name__, minX, minY, maxX, maxY
         for s in segments:
             s.remove()
         ns = NetSegment(diagram, layers, minX, minY, maxX, maxY)
-            
+
+    def remove(self):
+        Element.remove(self)
+        #self._layer = None
+        self.diagram.netSegmentRemoved(self)
+ 
 class SolderDot(Element):
     def __init__(self, diagram, layers, x, y):
         Element.__init__(self, diagram, layers)
         self._x = x
         self._y = y
-        self._layer = self.layers().layerByName('net', 'drawing')
+        self._layer = self.layers.layerByName('net', 'drawing')
         self._name = 'solder_dot'
         diagram.solderDotAdded(self)
 
+    @property
+    def radiusX(self):
+        return self.diagram.uu
+        
+    @property
+    def radiusY(self):
+        return self.diagram.uu
+        
     def addToView(self, view):
         view.addSolderDot(self)
-        
-    def radiusX(self):
-        return self.diagram().uu()
-        
-    def radiusY(self):
-        return self.diagram().uu()
-        
         
 class Instance(Element):
     def __init__(self, diagram, layers):
@@ -564,67 +660,84 @@ class Instance(Element):
         self._instanceCell = None
         self._instanceCellView = None
         self._requestedInstanceCellView = None
-        self._layer = self.layers().layerByName('instance', 'drawing')
+        self._layer = self.layers.layerByName('instance', 'drawing')
         diagram.instanceAdded(self)
 
-    def setInstanceCell(self, libPath, cellName, cellViewName): #string
-        if self._editable:
-            self._instanceLibPath = libPath
-            self._instanceCellName = cellName
-            self._instanceCellViewName = cellViewName
-            self.updateViews()
-
-    def requestedInstanceCellView(self):
-        if self.instanceLibraryPath() == '':
-            self._requestedInstanceCellView = self.library().cellViewByName(self.instanceCellName(), self.instanceCellViewName())
-        else:
-            self._requestedInstanceCellView = self.database().cellViewByName(self.instanceAbsolutePath(), self.instanceCellName(), self.instanceCellViewName())
-        return self._requestedInstanceCellView
-        
-    def instanceLibrary(self):
-        if self._instanceLibrary:    #cache
-            return self._instanceLibrary
-        cv = self.requestedInstanceCellView()
-        if cv:
-            self._instanceLibrary = cv.library()
-        else:
-            self._instanceLibrary = self.database().libraryByPath('/sym/analog')
-        return self._instanceLibrary
-
+    @property
     def instanceCell(self):
         if self._instanceCell:    #cache
             return self._instanceCell
-        cv = self.requestedInstanceCellView()
+        cv = self.requestedInstanceCellView
         if cv:
-            self._instanceCell = cv.cell()
+            self._instanceCell = cv.cell
         else:
-            self._instanceCell = self.database().cellByName('/sym/analog', 'voltage-1')
+            self._instanceCell = self.database.cellByName('/sym/analog', 'voltage-1')
         return self._instanceCell
 
-
+    @property
     def instanceCellView(self):
         if self._instanceCellView:   #cache
             return self._instanceCellView
-        cv = self.requestedInstanceCellView()
+        cv = self.requestedInstanceCellView
         if cv:
             self._instanceCellView = cv
         else:
-            self._instanceCellView = self.database().cellViewByName('/sym/analog', 'voltage-1', 'symbol')
+            self._instanceCellView = self.database.cellViewByName('/sym/analog', 'voltage-1', 'symbol')
         return self._instanceCellView
 
+    @property
     def instanceLibraryPath(self):
         return self._instanceLibPath
         
+    @instanceLibraryPath.setter
+    def instanceLibraryPath(self, path):
+        if self.editable:
+            self._instanceLibPath = path
+            self.updateViews()
+        
+    @property
     def instanceAbsolutePath(self):
-        path = Library.concatenateLibraryPaths(self.library().path(), self.instanceLibraryPath())
+        path = Library.concatenateLibraryPaths(self.library.path, self.instanceLibraryPath)
         return path
 
+    @property
     def instanceCellName(self):
         return self._instanceCellName
         
+    @instanceCellName.setter
+    def instanceCellName(self, name):
+        if self.editable:
+            self._instanceCellName = name
+        
+    @property
     def instanceCellViewName(self):
         return self._instanceCellViewName
         
+    @instanceCellViewName.setter
+    def instanceCellViewName(self, name):
+        if self.editable:
+            self._instanceViewCellName = name
+            self.updateViews()
+        
+    @property
+    def requestedInstanceCellView(self):
+        if self.instanceLibraryPath == '':
+            self._requestedInstanceCellView = self.library.cellViewByName(self.instanceCellName, self.instanceCellViewName)
+        else:
+            self._requestedInstanceCellView = self.database.cellViewByName(self.instanceAbsolutePath, self.instanceCellName, self.instanceCellViewName)
+        return self._requestedInstanceCellView
+        
+    @property
+    def instanceLibrary(self):
+        if self._instanceLibrary:    #cache
+            return self._instanceLibrary
+        cv = self.requestedInstanceCellView
+        if cv:
+            self._instanceLibrary = cv.library
+        else:
+            self._instanceLibrary = self.database.libraryByPath('/sym/analog')
+        return self._instanceLibrary
+
     def addToView(self, view):
         view.addInstance(self)
 
@@ -635,7 +748,7 @@ class Pin(Instance):
         self._y = y1
         self._x2 = x2
         self._y2 = y2
-        self._layer = self.layers().layerByName('pin', 'drawing')
+        self._layer = self.layers.layerByName('pin', 'drawing')
         self._name = 'pin'
 
         self._instanceLibPath = ''
@@ -649,16 +762,19 @@ class Pin(Instance):
         self._requestedInstanceCellView = None
         diagram.pinAdded(self)
         
-        
+    @property
     def x1(self):
         return self._x
 
+    @property
     def y1(self):
         return self._y
 
+    @property
     def x2(self):
         return self._x2
 
+    @property
     def y2(self):
         return self._y2
 
@@ -672,7 +788,7 @@ class SymbolPin(Instance):
         self._y = y1
         self._x2 = x2
         self._y2 = y2
-        self._layer = self.layers().layerByName('pin', 'drawing')
+        self._layer = self.layers.layerByName('pin', 'drawing')
         self._name = 'pin'
 
         self._instanceLibPath = ''
@@ -686,15 +802,19 @@ class SymbolPin(Instance):
         self._requestedInstanceCellView = None
         diagram.symbolPinAdded(self)
         
+    @property
     def x1(self):
         return self._x
 
+    @property
     def y1(self):
         return self._y
 
+    @property
     def x2(self):
         return self._x2
 
+    @property
     def y2(self):
         return self._y2
 

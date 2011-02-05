@@ -33,20 +33,25 @@ class CellView():
         self._cell = cell
         cell.cellViewAdded(self)
             
+    @property
     def name(self):
         return self._name
 
+    @property
     def cell(self):
         return self._cell
 
+    @property
     def attributes(self):
         return self._attribs
 
+    @property
     def library(self):
-        return self.cell().library()
+        return self.cell.library
         
+    @property
     def database(self):
-        return self.cell().database()
+        return self.cell.database
         
     def save(self):
         pass
@@ -57,7 +62,7 @@ class CellView():
     def remove(self):
         for a in list(self.attributes()):
             a.remove()
-        self.cell().cellViewRemoved(self)
+        self.cell.cellViewRemoved(self)
 
 class Diagram(CellView):
     def __init__(self, name, cell):
@@ -76,46 +81,82 @@ class Diagram(CellView):
         #self._name = 'diagram'
         self._designUnits = set()
 
-    def instanceItemAdded(self, view):
-        self._items.add(view)
-        for elem in self.elems():
-            elem.addToView(view)
-        for designUnit in self._designUnits:
-            elem.addToDesignUnit(designUnit)
-            
-    def instanceItemRemoved(self, view):
-        self._items.remove(view)
-        for elem in self.elems():
-            elem.removeFromView()
-            
-    def designUnitAdded(self, designUnit):
-        self._designUnits.add(designUnit)
-        scene = designUnit.scene()
-        for e in self.elems():
-            e.addToView(scene)
-
-    def designUnitRemoved(self, designUnit):
-        self._designUnits.remove(designUnit)
-        
+    @property
     def designUnits(self):
         return self._designUnits
 
+    @property
+    def items(self):
+        return self._items
+        
+    @property
+    def elems(self):
+        return self.lines | self.rects | self.labels | \
+            self.attributeLabels | self.customPaths | \
+            self.ellipses | self.ellipseArcs
+            
+    @property
+    def lines(self):
+        return self._lines
+
+    @property
+    def rects(self):
+        return self._rects
+
+    @property
+    def customPaths(self):
+        return self._customPaths
+
+    @property
+    def ellipses(self):
+        return self._ellipses
+
+    @property
+    def ellipseArcs(self):
+        return self._ellipseArcs
+
+    @property
+    def labels(self):
+        return self._labels
+
+    @property
+    def attributeLabels(self):
+        return self._attributeLabels
+
+    @property
+    def uu(self):
+        return self._attribs['uu']
+
+    @uu.setter
+    def uu(self, uu):
+        self._attribs['uu'] = uu
+
+    def instanceItemAdded(self, view):
+        self.items.add(view)
+        for elem in self.elems:
+            elem.addToView(view)
+        #for designUnit in self._designUnits:
+        #    elem.addToDesignUnit(designUnit)
+            
+    def instanceItemRemoved(self, view):
+        self.items.remove(view)
+        for elem in self.elems:
+            elem.removeFromView()
+            
+    def designUnitAdded(self, designUnit):
+        self.designUnits.add(designUnit)
+        scene = designUnit.scene()
+        for e in self.elems:
+            e.addToView(scene)
+
+    def designUnitRemoved(self, designUnit):
+        self.designUnits.remove(designUnit)
+        
     #def updateDesignUnits(self):
     #    for d in self._designUnits:
     #        d.updateDesignUnit()
     #        #v.updateItem()
 
-    def setUU(self, uu):
-        self._attribs['uu'] = uu
-
-    def items(self):
-        return self._items
-        
-    def elems(self):
-        return self.lines() | self.rects() | self.labels() | \
-            self.attributeLabels() | self.customPaths() | \
-            self.ellipses() | self.ellipseArcs()
-            
     def elementAdded(self, elem):
         pass
         #for designUnit in self._designUnits:
@@ -145,86 +186,62 @@ class Diagram(CellView):
     #    elem.removeFromDiagram(self)
 
     def lineAdded(self, line):
-        self._lines.add(line)
+        self.lines.add(line)
         
     def lineRemoved(self, line):
-        self._lines.remove(line)
+        self.lines.remove(line)
         
-    def lines(self):
-        return self._lines
-
     def rectAdded(self, rect):
-        self._rects.add(rect)
+        self.rects.add(rect)
         
     def rectRemoved(self, rect):
-        self._rects.remove(rect)
+        self.rects.remove(rect)
         
-    def rects(self):
-        return self._rects
-
     def customPathAdded(self, customPath):
-        self._customPaths.add(customPath)
+        self.customPaths.add(customPath)
         
     def customPathRemoved(self, customPath):
-        self._customPaths.remove(customPath)
+        self.customPaths.remove(customPath)
         
-    def customPaths(self):
-        return self._customPaths
-
     def ellipseAdded(self, ellipse):
-        self._ellipses.add(ellipse)
+        self.ellipses.add(ellipse)
         
     def ellipseRemoved(self, ellipse):
-        self._ellipses.remove(ellipse)
+        self.ellipses.remove(ellipse)
         
-    def ellipses(self):
-        return self._ellipses
-
     def ellipseArcAdded(self, ellipseArc):
-        self._ellipseArcs.add(ellipseArc)
+        self.ellipseArcs.add(ellipseArc)
         
     def ellipseArcRemoved(self, ellipseArc):
-        self._ellipseArcs.remove(ellipseArc)
+        self.ellipseArcs.remove(ellipseArc)
         
-    def ellipseArcs(self):
-        return self._ellipseArcs
-
     def labelAdded(self, label):
-        self._labels.add(label)
+        self.labels.add(label)
         
     def labelRemoved(self, label):
-        self._labels.remove(label)
+        self.labels.remove(label)
         
-    def labels(self):
-        return self._labels
-
     def attributeLabelAdded(self, attributeLabel):
-        self._attributeLabels.add(attributeLabel)
+        self.attributeLabels.add(attributeLabel)
         
     def attributeLabelRemoved(self, attributeLabel):
-        self._attributeLabels.remove(attributeLabel)
+        self.attributeLabels.remove(attributeLabel)
         
-    def attributeLabels(self):
-        return self._attributeLabels
-
-    def uu(self):
-        return self._attribs['uu']
-
     def remove(self):
-        for e in list(self.elems()):
+        for e in list(self.elems):
             e.remove()
             #self.removeElem(e)
-        for du in list(self.designUnits()):
+        for du in list(self.designUnits):
             du.remove()
             #self.removeDesignUnit(o)
         CellView.remove(self)
 
     def save(self):
-        root = et.Element(self._name)
+        root = et.Element(self.name)
         tree = et.ElementTree(root)
-        for a in sorted(self.attribs()):
-            root.attrib[str(a)] = str(self.attribs()[a])
-        for e in sorted(self.elems(), key=Element.name):
+        for a in sorted(self.attributes):
+            root.attrib[str(a)] = str(self.attributes[a])
+        for e in sorted(self.elems, key=Element.name):
             xElem = e.toXml()
             root.append(xElem)
         self._indentET(tree.getroot())
@@ -265,10 +282,10 @@ class Schematic(Diagram):
         #self._netSegmentsRemoved = set()
         
     def designUnitAdded(self, designUnit):
-        self._designUnits.add(designUnit)
-        #scene = designUnit.scene()
-        #for e in self.elems()-self.instances():
-        #for e in self.elems():
+        self.designUnits.add(designUnit)
+        #scene = designUnit.scene
+        #for e in self.elems-self.instances:
+        #for e in self.elems:
         #    e.addToView(scene)
         #for i in self.instances():
         #    i.addToView(designUnit)
@@ -280,44 +297,63 @@ class Schematic(Diagram):
     #    components = map(lambda i: i.cell(), self.instances())
     #    return components.sort()
 
+    @property
     def elems(self):
-        return Diagram.elems(self) | self.pins() | self.instances() | self.netSegments() | self.solderDots()
+        return self.lines | self.rects | self.labels | \
+            self.attributeLabels | self.customPaths | \
+            self.ellipses | self.ellipseArcs | \
+            self.pins | self.instances | self.netSegments | self.solderDots
 
-    def pinAdded(self, pin):
-        self._pins.add(pin)
-       
-    def pinRemoved(self, pin):
-        self._pins.remove(pin)
-        
+    @property
     def pins(self):
         return self._pins
 
-    def instanceAdded(self, instance):
-        self._instances.add(instance)
-        
-    def instanceRemoved(self, instance):
-        self._instances.remove(instance)
-        
+    @property
     def instances(self):
         return self._instances
 
+    @property
+    def netSegments(self):
+        return self._netSegments
+
+    @property
+    def solderDots(self):
+        return self._solderDots
+
+    @property
+    def index(self):
+        return self._index
+
+    def pinAdded(self, pin):
+        self.pins.add(pin)
+       
+    def pinRemoved(self, pin):
+        self.pins.remove(pin)
+        
+    def instanceAdded(self, instance):
+        self.instances.add(instance)
+        
+    def instanceRemoved(self, instance):
+        self.instances.remove(instance)
+        
     #def addNet(self, net):
     #    "call only from addToDiagram"
-    #    self._nets.add(net)
+    #    self.nets.add(net)
         
     #def removeNet(self, net):
     #    "call only from removeFromDiagram"
-    #    self._nets.remove(net)
+    #    self.nets.remove(net)
         
+    #@property
     #def nets(self):
-    #    return self._nets #filter(lambda e: isinstance(e, CNet), self.elems())
+    #    return self._nets #filter(lambda e: isinstance(e, CNet), self.elems)
 
     def netSegmentAdded(self, netSegment):
         #print self.__class__.__name__, "ns added", netSegment
-        self.index().netSegmentAdded(netSegment)
-        self._netSegments.add(netSegment)
+        self.index.netSegmentAdded(netSegment)
+        self.netSegments.add(netSegment)
         #self._netSegmentsAdded.add(netSegment)
-        self.database().requestDeferredProcessing(self)
+        self.database.requestDeferredProcessing(self)
         #self.splitNetSegment(netSegment)
         #for designUnit in self._designUnits:
         #    netSegment.addToDesignUnit(designUnit)
@@ -326,50 +362,41 @@ class Schematic(Diagram):
         
     def netSegmentRemoved(self, netSegment):
         #print self.__class__.__name__, "ns removed", netSegment
-        self.index().netSegmentRemoved(netSegment)
-        self._netSegments.remove(netSegment)
+        self.index.netSegmentRemoved(netSegment)
+        self.netSegments.remove(netSegment)
         #self._netSegmentsRemoved.add(netSegment)
-        self.database().requestDeferredProcessing(self)
+        self.database.requestDeferredProcessing(self)
         
-    def netSegments(self):
-        return self._netSegments
-
     def solderDotAdded(self, solderDot):
-        self.index().solderDotAdded(solderDot)
+        self.index.solderDotAdded(solderDot)
         #for designUnit in self._designUnits:
         #    #solderDot.addToDesignUnit(designUnit)
         #    if designUnit.scene():
         #        solderDot.addToView(designUnit.scene())
-        self._solderDots.add(solderDot)
+        self.solderDots.add(solderDot)
         
     def solderDotRemoved(self, solderDot):
-        self.index().solderDotRemoved(solderDot)
-        self._solderDots.remove(solderDot)
+        self.index.solderDotRemoved(solderDot)
+        self.solderDots.remove(solderDot)
         
-    def solderDots(self):
-        return self._solderDots
-
-    def index(self):
-        return self._index
-
     def splitNetSegment(self, netSegment):
         """
         Check if (newly added) netSegment should be split or if it requires
         other net segments to split.
         """
-        idx = self.index()
-        (p1, p2) = idx.coordsOfNetSegments()[netSegment]
+        idx = self.index
+        (p1, p2) = idx.coordsOfNetSegments[netSegment]
         n = 0
         #first split other segments
         for p in (p1, p2):
             segments = idx.netSegmentsMidPointsAt(p[0], p[1])
             for s in list(segments):
-                if s in idx.coordsOfNetSegments():
+                if s in idx.coordsOfNetSegments:
                     #print "split ", s, p, idx.coordsOfNetSegments()[s]
                     s.splitAt(p)
                     n += 1
         #then, if necessary, split the netSegment
-        for p in list(idx.netSegmentsEndPoints()):
+        for p in list(idx.netSegmentsEndPoints):
             if netSegment in idx.netSegmentsMidPointsAt(p[0], p[1]):
                 #print "split ", netSegment, p
                 netSegment.splitAt(p)
@@ -383,12 +410,12 @@ class Schematic(Diagram):
         none of them crosses an end point (of a segment), an instance pin
         or a port.
         """
-        idx = self.index()
+        idx = self.index
         n = 0
-        for p in list(idx.netSegmentsEndPoints()):
+        for p in list(idx.netSegmentsEndPoints):
             segments = idx.netSegmentsMidPointsAt(p[0], p[1])
             for s in list(segments):
-                if s in idx.coordsOfNetSegments():
+                if s in idx.coordsOfNetSegments:
                     #print "split ", s, p
                     s.splitAt(p)
                     n += 1
@@ -399,15 +426,15 @@ class Schematic(Diagram):
         Go through all net segments in the design unit and make sure that
         there are no two or more segments being just a continuation of each other.
         """
-        idx = self.index()
+        idx = self.index
         n = 0
-        for p in list(idx.netSegmentsEndPoints()):
+        for p in list(idx.netSegmentsEndPoints):
             segments = list(idx.netSegmentsEndPointsAt(p[0], p[1]))
             if len(segments) > 1:
-                if all(s.isHorizontal() for s in segments) or \
-                    all(s.isVertical() for s in segments) or \
-                    all(s.isDiagonal45() for s in segments) or \
-                    all(s.isDiagonal135() for s in segments):
+                if all(s.isHorizontal for s in segments) or \
+                    all(s.isVertical for s in segments) or \
+                    all(s.isDiagonal45 for s in segments) or \
+                    all(s.isDiagonal135 for s in segments):
                         n += len(segments)
                         segments[0].mergeSegments(segments)
         #print self.__class__.__name__, "merged", n, "segments"
@@ -418,13 +445,13 @@ class Schematic(Diagram):
         If it larger than 2 check if a solder dot exists
         and if not, add it.
         """
-        idx = self.index()
+        idx = self.index
         n = 0
-        for p in list(idx.netSegmentsEndPoints()):
+        for p in list(idx.netSegmentsEndPoints):
             segments = idx.netSegmentsEndPointsAt(p[0], p[1])
             if len(segments) > 2:
                 if len(idx.solderDotsAt(p[0], p[1])) == 0:
-                    SolderDot(self, self.database().layers(), p[0], p[1])
+                    SolderDot(self, self.database.layers, p[0], p[1])
                     n += 1
         #print self.__class__.__name__, "added", n, "solder dots"
             
@@ -443,23 +470,28 @@ class Symbol(Diagram):
         self._symbolPins = set()
 
     def designUnitAdded(self, designUnit):
-        self._designUnits.add(designUnit)
-        #scene = designUnit.scene()
-        #for e in self.elems():
+        self.designUnits.add(designUnit)
+        #scene = designUnit.scene
+        #for e in self.elems:
         #    e.addToView(scene)
 
+    @property
     def elems(self):
-        return Diagram.elems(self) | self.symbolPins()
+        return self.lines | self.rects | self.labels | \
+            self.attributeLabels | self.customPaths | \
+            self.ellipses | self.ellipseArcs | \
+            self.symbolPins
         
-    def symbolPinAdded(self, symbolPin):
-        self._symbolPins.add(symbolPin)
-       
-    def symbolPinRemoved(self, symbolPin):
-        self._symbolPins.remove(symbolPin)
-        
+    @property
     def symbolPins(self):
         return self._symbolPins
 
+    def symbolPinAdded(self, symbolPin):
+        self.symbolPins.add(symbolPin)
+       
+    def symbolPinRemoved(self, symbolPin):
+        self.symbolPins.remove(symbolPin)
+        
 class Netlist(CellView):
     def __init__(self, name, cell):
         CellView.__init__(self, name, cell)

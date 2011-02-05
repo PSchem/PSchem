@@ -30,43 +30,51 @@ class Attribute():
         self._val = val
         self._type = type
         self._editable = True
-
         self._parent = parent
-        
-    def setName(self, name):
+
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
+    def name(self, name):
         if self._editable:
             self._name = name
             self._parent.updateViews()
 
-    def setVal(self, val):
+    @property
+    def val(self):
+        return self._val
+
+    @val.setter
+    def val(self, val):
         if self._editable:
             self._val = val
             self._parent.updateViews()
 
-    def setType(self, type):
+    @property
+    def type(self):
+        return self._type
+
+    @type.setter
+    def type(self, type):
         if self._editable:
             self._type = type
             self._parent.updateViews()
 
-    def setEditable(self, editable):
-        self._editable = editable
-        self._parent.updateViews()
-
-    def parent(self):
-        return self._parent
-
-    def name(self):
-        return self._name
-
-    def val(self):
-        return self._val
-
-    def type(self):
-        return self._type
-
+    @property
     def editable(self):
         return self._editable
         
+    @editable.setter
+    def editable(self, editable):
+        self._editable = editable
+        self._parent.updateViews()
+        
+    @property
+    def parent(self):
+        return self._parent
+
     def toXml(self):
         elem = et.Element(self._name)
         elem.attrib['type'] = str(self._type)

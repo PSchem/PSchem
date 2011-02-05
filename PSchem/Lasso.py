@@ -26,9 +26,9 @@ class Lasso(QtGui.QGraphicsRectItem):
         self._widget = widget
         self._fc = None
         self._lasso = None
-        layerView = self._widget.window.database.layers().layerByName('lasso', 'drawing').view()
-        self.setPen(layerView.pen())
-        self.setBrush(layerView.brush())
+        layerView = self._widget.window.database.layers.layerByName('lasso', 'drawing').view
+        self.setPen(layerView.pen)
+        self.setBrush(layerView.brush)
         if pos:
             self.setPos(pos)
 
@@ -79,9 +79,9 @@ class Lasso(QtGui.QGraphicsRectItem):
 
     def draw(self, painter, rect):
         if self._lasso:
-            layerView = self._widget.window.database.layers().layerByName('lasso', 'drawing').view()
-            painter.setPen(layerView.pen())
-            #painter.setBrush(layerView.brush())
+            layerView = self._widget.window.database.layers.layerByName('lasso', 'drawing').view
+            painter.setPen(layerView.pen)
+            #painter.setBrush(layerView.brush)
             painter.drawRect(self._lasso)
 
     #def rect(self):

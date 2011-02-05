@@ -45,40 +45,40 @@ class LayerModel(QtCore.QAbstractItemModel):
         data = index.internalPointer()
         if isinstance(data, LayerView) and role == QtCore.Qt.DecorationRole:
             if col == 0:
-                return QtCore.QVariant(data.icon())
+                return QtCore.QVariant(data.icon)
                 #return QtCore.QVariant(QtGui.QColor(random()*255,
                 #                                    random()*255,
                 #                                    random()*255,
                 #                                    ))
                 #return QtCore.QVariant(QtGui.QColor(QtCore.Qt.red))
         elif isinstance(data, LayerView) and role == QtCore.Qt.CheckStateRole:
-            layer = data.layer()
+            layer = data.layer
             if col == 1:
-                if layer.visible():
+                if layer.visible:
                     return QtCore.QVariant(QtCore.Qt.Checked)
                 else:
                     return QtCore.QVariant(QtCore.Qt.Unchecked)
             elif col == 2:
-                if layer.selectable():
+                if layer.selectable:
                     return QtCore.QVariant(QtCore.Qt.Checked)
                 else:
                     return QtCore.QVariant(QtCore.Qt.Unchecked)
         elif isinstance(data, LayerView) and role == QtCore.Qt.DisplayRole:
-            layer = data.layer()
+            layer = data.layer
             if col == 3:
-                return QtCore.QVariant(layer.name())
+                return QtCore.QVariant(layer.name)
             elif col == 4:
-                return QtCore.QVariant(layer.ltype())
+                return QtCore.QVariant(layer.type)
         return QtCore.QVariant()
 
     def index(self, row, column, parent):
 
         if not parent.isValid():
-            children = list(self.layersView.layerViews())
+            children = list(self.layersView.layerViews)
         else:
             return QtCore.QModelIndex()
 
-        children.sort(lambda a, b: cmp(a.layer().zValue(), b.layer().zValue()))
+        children.sort(lambda a, b: cmp(a.layer.zValue, b.layer.zValue))
         return self.createIndex(row, column, children[row])
 
     def parent(self, index):
@@ -91,7 +91,7 @@ class LayerModel(QtCore.QAbstractItemModel):
 
     def rowCount(self, parent):
         if not parent.isValid():
-            return len(self.layersView.layerViews())
+            return len(self.layersView.layerViews)
         return 0
 
     def columnCount(self, parent):

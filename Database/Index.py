@@ -30,10 +30,18 @@ class Index():
         self._coordsOfNet = {}
         self._coordsOfSolderDot = {}
     
+    @property
+    def coordsOfNetSegments(self):
+        return self._coordsOfNet #a dict, net->pair coords
+        
+    @property
+    def netSegmentsEndPoints(self):
+        return self._netsAtCoord.keys() #a list
+
     def netSegmentAdded(self, netSegment):
         #print self.__class__.__name__, "ns added", netSegment
-        p1 = netSegment.x(), netSegment.y()
-        p2 = netSegment.x2(), netSegment.y2()
+        p1 = netSegment.x1, netSegment.y1
+        p2 = netSegment.x2, netSegment.y2
         if p1 in self._netsAtCoord:
             self._netsAtCoord[p1].add(netSegment)
         else:
@@ -42,12 +50,12 @@ class Index():
             self._netsAtCoord[p2].add(netSegment)
         else:
             self._netsAtCoord[p2] = set([netSegment])
-        if netSegment.isVertical(): #p1[0] == p2[0]:
+        if netSegment.isVertical: #p1[0] == p2[0]:
             if p1[0] in self._netsAtXCoord:
                 self._netsAtXCoord[p1[0]].add(netSegment)
             else:
                 self._netsAtXCoord[p1[0]] = set([netSegment])
-        if netSegment.isHorizontal(): #p1[1] == p2[1]:
+        if netSegment.isHorizontal: #p1[1] == p2[1]:
             if p1[1] in self._netsAtYCoord:
                 self._netsAtYCoord[p1[1]].add(netSegment)
             else:
@@ -65,17 +73,17 @@ class Index():
             self._netsAtCoord[p2].remove(netSegment)
             if len(self._netsAtCoord[p2]) == 0:
                 del self._netsAtCoord[p2]
-            if netSegment.isVertical():
+            if netSegment.isVertical:
                 self._netsAtXCoord[p1[0]].remove(netSegment)
                 if len(self._netsAtXCoord[p1[0]]) == 0:
                     del self._netsAtXCoord[p1[0]]
-            if netSegment.isHorizontal():
+            if netSegment.isHorizontal:
                 self._netsAtYCoord[p1[1]].remove(netSegment)
                 if len(self._netsAtYCoord[p1[1]]) == 0:
                     del self._netsAtYCoord[p1[1]]
     
     def solderDotAdded(self, solderDot):
-        p = solderDot.x(), solderDot.y()
+        p = solderDot.x, solderDot.y
         if p in self._solderDotsAtCoord:
             self._solderDotsAtCoord[p].add(solderDot) # multiple solder dots at same location?
         else:
@@ -109,12 +117,6 @@ class Index():
                 if (p1[0] < x < p2[0]) or (p1[0] > x > p2[0]):
                     s.add(netSegment)
         return s
-
-    def coordsOfNetSegments(self):
-        return self._coordsOfNet #a dict, net->pair coords
-        
-    def netSegmentsEndPoints(self):
-        return self._netsAtCoord.keys() #a list
 
     def solderDotsAt(self, x, y):
         s = set()

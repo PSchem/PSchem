@@ -99,36 +99,36 @@ class GedaReader(Reader):
 
     def parseLine(self):
         m=self.match
-        l = Line(self.view, self._database.layers(), int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)))
+        l = Line(self.view, self._database.layers, int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)))
         self.last = l
 
     def parseArc(self):
         m=self.match
         radius = 2 * int(m.group(3))
-        e = EllipseArc(self.view, self._database.layers(), int(m.group(1)), int(m.group(2)), radius, radius, int(m.group(4)), int(m.group(5)))
+        e = EllipseArc(self.view, self._database.layers, int(m.group(1)), int(m.group(2)), radius, radius, int(m.group(4)), int(m.group(5)))
         self.last = e
 
     def parsePin(self):
         m=self.match
         if self.inSymbol:
-            p = SymbolPin(self.view, self._database.layers(), int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)))
+            p = SymbolPin(self.view, self._database.layers, int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)))
         elif self.inSchematic:
-            p = Pin(self.view, self._database.layers(), int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)))
+            p = Pin(self.view, self._database.layers, int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)))
         self.last = p
 
     def parseNet(self):
         m=self.match
-        n = NetSegment(self.view, self._database.layers(), int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)))
+        n = NetSegment(self.view, self._database.layers, int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)))
         self.last = n
 
     def parseBox(self):
         m=self.match
-        r = Rect(self.view, self._database.layers(), int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)))
+        r = Rect(self.view, self._database.layers, int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)))
         self.last = r
 
     def parseCustomPath(self):
         m=self.match
-        p = CustomPath(self.view, self._database.layers())
+        p = CustomPath(self.view, self._database.layers)
         #, int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)))
         for n in range(int(m.group(13))):
             line = self.readLine()
@@ -148,13 +148,13 @@ class GedaReader(Reader):
                           int(self.match.group(6)))
             elif (self.regExpSearch(self.ppath_close, line)):
                 p.closePath()
-        p.setLayer(self._database.layers().layerByName('annotation2', 'drawing'))
+        p.layer = self._database.layers.layerByName('annotation2', 'drawing')
         self.last = p
 
     def parseCircle(self):
         m=self.match
         radius = 2 * int(m.group(3))
-        c = Ellipse(self.view, self._database.layers(), int(m.group(1)), int(m.group(2)), radius, radius)
+        c = Ellipse(self.view, self._database.layers, int(m.group(1)), int(m.group(2)), radius, radius)
         self.last = c
 
     def parseComponent(self):
@@ -168,17 +168,24 @@ class GedaReader(Reader):
         #print m.group(6)
         #c = self.importer.getCellByName(m.group(6))
         #c = lib.cellByName(m.group(6))
-        i = Instance(self.view, self._database.layers())
+        i = Instance(self.view, self._database.layers)
         
-        i.setXY(int(m.group(1)), int(m.group(2)))
-        i.setAngle(int(m.group(4)))
-        i.setHMirror(int(m.group(5)) == 1)
+        i.x = int(m.group(1))
+        i.y = int(m.group(2))
+        i.angle = int(m.group(4))
+        i.hMirror = int(m.group(5)) == 1
+        
 
         if not lib: # or lib == self.importer.library:
-            i.setInstanceCell('', cellName, 'symbol')
+            i.instanceLibraryPath = ''
+            i.instanceCellName = cellName
+            i.instanceCellViewName = 'symbol'
             #i = Instance(self.view, int(m.group(1)), int(m.group(2)), int(m.group(4)), int(m.group(5)), '', cellName, 'symbol')
         else:
-            i.setInstanceCell(self.importer.libPathAbsToRel(lib.path()), cellName, 'symbol')
+            i.instanceLibraryPath = self.importer.libPathAbsToRel(lib.path)
+            i.instanceCellName = cellName
+            i.instanceCellViewName = 'symbol'
+            #i.setInstanceCell(self.importer.libPathAbsToRel(lib.path), cellName, 'symbol')
             #i = Instance(self.view, int(m.group(1)), int(m.group(2)), int(m.group(4)), int(m.group(5)), lib.name(), cellName, 'symbol')
         self.last = i
         #self.view.addComponent(c)
@@ -189,34 +196,36 @@ class GedaReader(Reader):
         val = m.group(2)
         if (self.inAttribute):
             # to be fixed
-            a = AttributeLabel(self.view, self._database.layers(), key, val)
+            a = AttributeLabel(self.view, self._database.layers, key, val)
             #self.view.addElem(a)
             #a = AttributeLabel(self.last.instanceCellView(), self._database.layers(), key, val)
             #self.last.addAttribute(a)
         else:
-            a = AttributeLabel(self.view, self._database.layers(), key, val)
+            a = AttributeLabel(self.view, self._database.layers, key, val)
             #self.view.addElem(a)
-        a.setXY(int(mAttr.group(1)), int(mAttr.group(2)))
-        #a.setLayer(None)  #int(mAttr.group(3))
-        a.setTextSize(int(mAttr.group(4))*13.888)
-        a.setVisible(int(mAttr.group(5)) == 1)
-        a.setVisibleKey(int(mAttr.group(6)) != 1)
-        #a.setVisibleValue(int(mAttr.group(6)) < 2)
-        a.setAngle(int(mAttr.group(7)))
+        a.x = int(mAttr.group(1))
+        a.y = int(mAttr.group(2))
+        #a.setXY(int(mAttr.group(1)), int(mAttr.group(2)))
+        #a.layer = None  #int(mAttr.group(3))
+        a.textSize = int(mAttr.group(4))*13.888
+        a.visible = int(mAttr.group(5)) == 1
+        a.visibleKey = int(mAttr.group(6)) != 1
+        #a.visibleValue = int(mAttr.group(6)) < 2
+        a.angle = int(mAttr.group(7))
         align = int(mAttr.group(8))/3
         if align == 0:
-            a.setHAlign(AttributeLabel.AlignLeft)
+            a.hAlign = AttributeLabel.AlignLeft
         elif align == 1:
-            a.setHAlign(AttributeLabel.AlignCenter)
+            a.hAlign = AttributeLabel.AlignCenter
         else:
-            a.setHAlign(AttributeLabel.AlignRight)
+            a.hAlign = AttributeLabel.AlignRight
         align = int(mAttr.group(8))%3
         if align == 0:
-            a.setVAlign(AttributeLabel.AlignBottom)
+            a.vAlign = AttributeLabel.AlignBottom
         elif align == 1:
-            a.setVAlign(AttributeLabel.AlignCenter)
+            a.vAlign = AttributeLabel.AlignCenter
         else:
-            a.setVAlign(AttributeLabel.AlignTop)
+            a.vAlign = AttributeLabel.AlignTop
 
     def parseText(self):
         m=self.match
@@ -227,28 +236,29 @@ class GedaReader(Reader):
         if (self.regExpSearch(self.pattr, text)):
             self.parseAttribute(m)
         else:
-            l = Label(self.view, self._database.layers())
+            l = Label(self.view, self._database.layers)
             #l = Label(self.view, int(m.group(1)), int(m.group(2)), int(int(m.group(4))*13.888))
-            l.setText(text)
-            l.setXY(int(m.group(1)), int(m.group(2)))
-            #l.setLayer(None)  #int(m.group(3))
-            l.setTextSize(int(int(m.group(4))*13.888))
-            l.setVisible(int(m.group(5)) == 1)
-            l.setAngle(int(m.group(7)))
+            l.text = text
+            l.x = int(m.group(1))
+            l.y = int(m.group(2))
+            #l.layer = None  #int(m.group(3))
+            l.textSize = int(int(m.group(4))*13.888)
+            l.visible = int(m.group(5)) == 1
+            l.angle = int(m.group(7))
             align = int(m.group(8))/3
             if align == 0:
-                l.setHAlign(Label.AlignLeft)
+                l.hAlign = Label.AlignLeft
             elif align == 1:
-                l.setHAlign(Label.AlignCenter)
+                l.hAlign = Label.AlignCenter
             else:
-                l.setHAlign(Label.AlignRight)
+                l.hAlign = Label.AlignRight
             align = int(m.group(8))%3
             if align == 0:
-                l.setVAlign(Label.AlignBottom)
+                l.vAlign = Label.AlignBottom
             elif align == 1:
-                l.setVAlign(Label.AlignCenter)
+                l.vAlign = Label.AlignCenter
             else:
-                l.setVAlign(Label.AlignTop)
+                l.vAlign = Label.AlignTop
             self.last = l
 
     def regExpSearch(self, regExp, text):
@@ -323,7 +333,7 @@ class GedaReader(Reader):
         #self.view = self.database.makeSchematic(fileName)
         ##self.view = Schematic('schematic')
         #self.cell.addCellView(self.view)
-        self.view.setUU(self.uu)
+        self.view.uu = self.uu
         schematic = self.parseFile(fileName, mode)
         #schematic.checkNets()
         return schematic
@@ -348,7 +358,7 @@ class GedaReader(Reader):
         #self.view = self.database.makeSymbol(fileName)
         ##self.view = Symbol('symbol')
         #self.cell.addCellView(self.view)
-        self.view.setUU(self.uu)
+        self.view.uu = self.uu
         return self.parseFile(fileName, mode)
 
 
@@ -374,7 +384,7 @@ class GedaImporter(Importer):
             #self.database.processEvents()
             
     def libPathAbsToRel(self, libPath):
-        l = self.library.path()
+        l = self.library.path
         #print libPath, l
         (abs, sep, lib) = l.rpartition('/')
         if libPath.find(l) == 0:
@@ -387,34 +397,34 @@ class GedaImporter(Importer):
     def findCellSymbolLibrary(self, cellName, library=None, checkAbove=True):
         if not library:
             library = self.library
-        #print self.__class__.__name__, library.path()
+        #print self.__class__.__name__, library.path
         #first current library
         if library.cellViewByName(cellName, 'symbol'):
             return library
         #then recursively any sub-libraries (without going above)
-        for l in library.libraries():
+        for l in library.libraries:
             lib = self.findCellSymbolLibrary(cellName, l, False)
             if lib:
                 return lib
         #if that fails try recursively one level above
         if checkAbove:
-            if library.parentLibrary():
-                return self.findCellSymbolLibrary(cellName, library.parentLibrary())
+            if library.parentLibrary:
+                return self.findCellSymbolLibrary(cellName, library.parentLibrary)
             else:
-                for l in library.database().libraries():
+                for l in library.database.libraries:
                     lib = self.findCellSymbolLibrary(cellName, l, False)
                     if lib:
                         return lib
         return None
 
     def findCellSymbolLibrary_(self, cellName):
-        cell = self.database.cellViewByName(self.library.name(), cellName, 'symbol')
+        cell = self.database.cellViewByName(self.library.name, cellName, 'symbol')
         if cell:
             return self.library
         else:
-            for l in self.database.libraries():
+            for l in self.database.libraries:
                 if not l == self.library:
-                    cell = self.database.cellViewByName(l.name(), cellName, 'symbol')
+                    cell = self.database.cellViewByName(l.name, cellName, 'symbol')
                     #print l.name, cell
                     if cell:
                         return l

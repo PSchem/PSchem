@@ -55,7 +55,7 @@ class DatabaseModel(QtCore.QAbstractItemModel):
         if isinstance(data, Database):
             return QtCore.QVariant('database')
         if col == 0:
-            return QtCore.QVariant(data.name())
+            return QtCore.QVariant(data.name)
         elif isinstance(data, Library):
             return QtCore.QVariant('library')
         elif isinstance(data, Cell):
@@ -76,11 +76,11 @@ class DatabaseModel(QtCore.QAbstractItemModel):
             data = parent.internalPointer()
 
         if not parent.isValid() or isinstance(data, Database):
-            children = list(self.database.libraries())
+            children = list(self.database.libraries)
         elif isinstance(data, Library):
-            children = list(data.libraries()) + list(data.cells())
+            children = list(data.libraries) + list(data.cells)
         elif isinstance(data, Cell):
-            children = list(data.cellViews())
+            children = list(data.cellViews)
         else:
             return QtCore.QModelIndex()
 
@@ -98,32 +98,32 @@ class DatabaseModel(QtCore.QAbstractItemModel):
         if isinstance(data, Database):
             return QtCore.QModelIndex()
         elif isinstance(data, Library):
-            parentLibrary = data.parentLibrary()
+            parentLibrary = data.parentLibrary
             if parentLibrary:
-                pParentLibrary = parentLibrary.parentLibrary()
+                pParentLibrary = parentLibrary.parentLibrary
                 if pParentLibrary:
-                    d = list(pParentLibrary.libraries()) + list(pParentLibrary.cells())
+                    d = list(pParentLibrary.libraries) + list(pParentLibrary.cells)
                 else:
-                    d = list(self.database.libraries())
+                    d = list(self.database.libraries)
                 n = d.index(parentLibrary)
                 return self.createIndex(n, 0, parentLibrary)
             return QtCore.QModelIndex()
         elif isinstance(data, Cell):
-            parentLibrary = data.library().parentLibrary()
+            parentLibrary = data.library.parentLibrary
             if parentLibrary:
-                d = list(parentLibrary.libraries()) + list(parentLibrary.cells())
+                d = list(parentLibrary.libraries) + list(parentLibrary.cells)
             else:
-                d = list(self.database.libraries())
+                d = list(self.database.libraries)
             #d = list(data.library().cells())
             #d = list(self.database.libraries())
             #d.sort(lambda a, b: cmp(a.name(), b.name()))
-            n = d.index(data.library())
-            return self.createIndex(n, 0, data.library())
+            n = d.index(data.library)
+            return self.createIndex(n, 0, data.library)
         elif isinstance(data, CellView):
-            d = list(data.library().cells())
+            d = list(data.library.cells)
             #d.sort(lambda a, b: cmp(a.name(), b.name()))
-            n = d.index(data.cell())
-            return self.createIndex(n, 0, data.cell())
+            n = d.index(data.cell)
+            return self.createIndex(n, 0, data.cell)
         else:
             return QtCore.QModelIndex()
 
@@ -132,11 +132,11 @@ class DatabaseModel(QtCore.QAbstractItemModel):
             return True
         data = parent.internalPointer()
         if isinstance(data, Database):
-            return len(data.libraries()) > 0
+            return len(data.libraries) > 0
         elif isinstance(data, Library):
-            return len(data.libraries()) + len(data.cells()) > 0
+            return len(data.libraries) + len(data.cells) > 0
         elif isinstance(data, Cell):
-            return len(data.cellViews()) > 0
+            return len(data.cellViews) > 0
         else:
             return False
 
@@ -146,15 +146,15 @@ class DatabaseModel(QtCore.QAbstractItemModel):
 
         #print parent.data()
         if not parent.isValid():
-            return len(self.database.libraries())
+            return len(self.database.libraries)
 
         data = parent.internalPointer()
         if isinstance(data, Database):
-            return len(data.libraries())
+            return len(data.libraries)
         elif isinstance(data, Library):
-            return len(data.libraries()) + len(data.cells())
+            return len(data.libraries) + len(data.cells)
         elif isinstance(data, Cell):
-            return len(data.cellViews())
+            return len(data.cellViews)
         else:
             return 0
 
@@ -265,12 +265,12 @@ class DatabaseWidget(QtGui.QWidget):
 
         if isinstance(data, CellView):
             #if self.window:
-                cell = data.cell()
-                lib = cell.library()
+                cell = data.cell
+                lib = cell.library
                 self.window.controller.execute(
                     Command(
-                        'window.openCellViewByName(\'' +lib.path()+
-                        '\', \''+cell.name()+'\', \''+data.name()+'\')'))
+                        'window.openCellViewByName(\'' +lib.path+
+                        '\', \''+cell.name+'\', \''+data.name+'\')'))
 
 
     def updateRegExp(self):

@@ -31,17 +31,13 @@ class DesignUnit():
         self._instance = instance
         self._parentDesignUnit = parentDesignUnit
         self._childDesignUnits = {} #set()
-        self._design = parentDesignUnit.design()
+        self._design = parentDesignUnit.design
         self._scene = None
         #self._index = Index()
-        self.cellView().designUnitAdded(self)
+        self.cellView.designUnitAdded(self)
         parentDesignUnit.childDesignUnitAdded(self)
  
-    def sceneAdded(self, scene):
-        self._scene = scene
-        for e in self.cellView().elems():
-            e.addToView(scene)
-        
+    @property
     def childDesignUnits(self):
         """
         Get a dictionary of child design units (instance->designUnit)
@@ -51,64 +47,74 @@ class DesignUnit():
         """
         if len(self._childDesignUnits) > 0:   #cache
             return self._childDesignUnits
-        schematic = self.cellView().cell().cellViewByName("schematic")
+        schematic = self.cellView.cell.cellViewByName("schematic")
         
         if schematic:
-            for i in schematic.instances():
+            for i in schematic.instances:
                 DesignUnit(i, self) # it should add itself to parent design unit
                 #self._childDesignUnits[i] = DesignUnit(i, self)
         return self._childDesignUnits
 
-    def childDesignUnitAdded(self, designUnit):
-        self._childDesignUnits[designUnit.instance()] = designUnit
-        
-    def childDesignUnitRemoved(self, designUnit):
-        del self._childDesignUnits[designUnit.instance()]
-
+    @property
     def parentDesignUnit(self):
         return self._parentDesignUnit
 
+    @property
     def scene(self):
         return self._scene
     
+    @property
     def instance(self):
         return self._instance
 
+    @property
     def design(self):
         return self._design
 
+    @property
     def cellView(self):
-        return self.instance().instanceCell().implementation()
-        #schematic = self.instance().instanceCell().cellViewByName('schematic')
+        return self.instance.instanceCell.implementation
+        #schematic = self.instance.instanceCell.cellViewByName('schematic')
         #if schematic:
         #    return schematic
         #else:
-        #    return self.instance().instanceCellView()
+        #    return self.instance.instanceCellView
+
+    def sceneAdded(self, scene):
+        self._scene = scene
+        for e in self.cellView.elems:
+            e.addToView(scene)
+        
+    def childDesignUnitAdded(self, designUnit):
+        self._childDesignUnits[designUnit.instance] = designUnit
+        
+    def childDesignUnitRemoved(self, designUnit):
+        del self._childDesignUnits[designUnit.instance]
 
     def updateItem(self):
-        if self.scene():
-            self.scene().updateItem()
+        if self.scene:
+            self.scene.updateItem()
 
     def addInstance(self, instance):
         #designUnit = self._childDesignUnits.get(instance)
         #if not designUnit:
         designUnit = DesignUnit(instance, self)
-        self._childDesignUnits[instance] = designUnit
-        self.scene().addInstance(designUnit)
+        self.childDesignUnits[instance] = designUnit
+        self.scene.addInstance(designUnit)
     
     def removeInstance(self, instance):
         designUnit = self._childDesignUnits.get(instance)
         if designUnit:
-            self.scene().removeInstance(designUnit)
-            del self._childDesignUnits[instance]
+            self.scene.removeInstance(designUnit)
+            del self.childDesignUnits[instance]
     
     def remove(self):
-        for co in self.childDesignUnits().values():
+        for co in self.childDesignUnits.values():
             co.remove()
-        if self.scene():
-            self.scene().instanceRemoved()
-            self.cellView().DesignUnitRemoved(self)
-        self.parentDesignUnit().childDesignUnitRemoved(self)
+        if self.scene:
+            self.scene.instanceRemoved()
+            self.cellView.DesignUnitRemoved(self)
+        self.parentDesignUnit.childDesignUnitRemoved(self)
         
 class Design(DesignUnit):
     def __init__(self, cellView, designs):
@@ -116,41 +122,45 @@ class Design(DesignUnit):
         self._designs = designs
         self._childDesignUnits = {}
         self._scene = None
-        self.cellView().designUnitAdded(self)
+        self.cellView.designUnitAdded(self)
         designs.designAdded(self)
             
+    @property
+    def cellView(self):
+        return self._cellView
+
+    @property
+    def design(self):
+        return self
+
+    @property
+    def parentDesignUnit(self):
+        return None
+    
+    @property
+    def designs(self):
+        return self._designs
+        
     def sceneAdded(self, scene):
         self._scene = scene
-        for e in self.cellView().elems():
+        for e in self.cellView.elems:
             e.addToView(scene)
             
     def sceneRemoved(self):
         self._scene = None
-        self.cellView().designUnitRemoved(self)
-
-    def cellView(self):
-        return self._cellView
+        self.cellView.designUnitRemoved(self)
 
     def cellViewRemoved(self):
-        if self.scene():
-            self.scene().designRemoved()
+        if self.scene:
+            self.scene.designRemoved()
             
-    def design(self):
-        return self
-
-    def parentDesignUnit(self):
-        return None
-    
-    def designs(self):
-        return self._designs
-        
     def remove(self):
-        for co in self.childDesignUnits().values():
+        for co in self.childDesignUnits.values():
             co.remove()
-        if self.scene():
-            self.scene().designRemoved()
-        self.cellView().designUnitRemoved(self)
-        self.designs().designRemoved(self)
+        if self.scene:
+            self.scene.designRemoved()
+        self.cellView.designUnitRemoved(self)
+        self.designs.designRemoved(self)
 
 class Designs():
     def __init__(self, database):
@@ -158,34 +168,37 @@ class Designs():
         self._designs = set()
         self._hierarchyViews = set()
        
+    @property
     def designs(self):
         return self._designs
         
+    @property
     def database(self):
         return self._database
         
+    @property
     def hierarchyViews(self):
         return self._hierarchyViews
 
     def installUpdateHierarchyViewsHook(self, view):
-        self.hierarchyViews().add(view)
+        self.hierarchyViews.add(view)
 
     def updateHierarchyViews(self):
         "Notify views that the design hierarchy layout has changed"
-        for v in self.hierarchyViews():
+        for v in self.hierarchyViews:
             v.update()
 
     def designAdded(self, design):
         #self.add(design)
-        self.designs().add(design)
+        self.designs.add(design)
         #self.updateHierarchyViews()
-        self.database().requestDeferredProcessing(self)
+        self.database.requestDeferredProcessing(self)
 
     def designRemoved(self, design):
         #self.remove(design)
-        self.designs().remove(design)
+        self.designs.remove(design)
         #self.updateHierarchyViews()
-        self.database().requestDeferredProcessing(self)
+        self.database.requestDeferredProcessing(self)
         
     def runDeferredProcess(self):
         """Runs deferred processes."""

@@ -90,9 +90,9 @@ class Cursor():
         return self._cursor.y()
 
     def draw(self, painter):
-        layerView = self._widget.window.database.layers().layerByName('cursor', 'drawing').view()
-        painter.setPen(layerView.pen())
-        painter.setBrush(layerView.brush())
+        layerView = self._widget.window.database.layers.layerByName('cursor', 'drawing').view
+        painter.setPen(layerView.pen)
+        painter.setBrush(layerView.brush)
         c = self._cursor
         rect = QtCore.QRectF(0, 0, 4, 4)
         rect = self._widget.matrix().inverted()[0].mapRect(rect)
@@ -161,7 +161,7 @@ class DesignView(QtGui.QGraphicsView):
         self._gridSize = gridSize
         
     def drawBackground(self, painter, rect):
-        brush = self.window.database.layers().layerByName('background', 'drawing').view().brush()
+        brush = self.window.database.layers.layerByName('background', 'drawing').view.brush
         brush.setMatrix(painter.worldMatrix().inverted()[0])
         if self._debug:
             brush = QtGui.QBrush(brush)
@@ -202,9 +202,9 @@ class DesignView(QtGui.QGraphicsView):
 
     def drawGrid(self, painter, rect):
         painter.setRenderHint(QtGui.QPainter.Antialiasing, False)
-        penMin = self.window.database.layers().layerByName('gridminor', 'drawing').view().pen()
-        penMaj = self.window.database.layers().layerByName('gridmajor', 'drawing').view().pen()
-        penAxes = self.window.database.layers().layerByName('axes', 'drawing').view().pen()
+        penMin = self.window.database.layers.layerByName('gridminor', 'drawing').view.pen
+        penMaj = self.window.database.layers.layerByName('gridmajor', 'drawing').view.pen
+        penAxes = self.window.database.layers.layerByName('axes', 'drawing').view.pen
         #scaleWorldInv = 2.0/abs(painter.worldMatrix().m11())
         #penMaj.setWidthF(scaleWorldInv)
         #penMin.setWidthF(scaleWorldInv)

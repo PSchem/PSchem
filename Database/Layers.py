@@ -41,15 +41,19 @@ class Color():
     def __init__(self, color):
         self._color = color
 
+    @property
     def color(self):
         return self._color
 
+    @property
     def red(self):
         return self._color[0]
 
+    @property
     def green(self):
         return self._color[1]
 
+    @property
     def blue(self):
         return self._color[2]
 
@@ -66,29 +70,37 @@ class LinePattern():
         self._pixelWidth = pixelWidth
         self._endStyle = self.FlatEnd
 
-    def setPixelWidth(self, width):
-        self._pixelWidth = width
-
-    def setWidth(self, width):
-        self._width = width
-
-    def setEndStyle(self, endStyle):
-        self._endStyle = endStyle
-
+    @property
     def style(self):
         return self._style
 
-    def endStyle(self):
-        return self._endStyle
+    @property
+    def pattern(self):
+        return self._pattern
 
+    @property
     def width(self):
         return self._width
 
+    @width.setter
+    def width(self, width):
+        self._width = width
+
+    @property
     def pixelWidth(self):
         return self._pixelWidth
 
-    def pattern(self):
-        return self._pattern
+    @pixelWidth.setter
+    def pixelWidth(self, width):
+        self._pixelWidth = width
+
+    @property
+    def endStyle(self):
+        return self._endStyle
+
+    @endStyle.setter
+    def endStyle(self, endStyle):
+        self._endStyle = endStyle
 
 class FillPattern():
     NoFill, Solid, CustomPattern, \
@@ -102,9 +114,11 @@ class FillPattern():
         else:
             self._pattern = []
 
+    @property
     def style(self):
         return self._style
 
+    @property
     def pattern(self):
         return self._pattern
 
@@ -119,80 +133,118 @@ class Layer():
         self._fillPattern = FillPattern(FillPattern.NoFill)
         self._view = None
 
-    def setName(self, name):
-        self._name = name
-
-    def setType(self, t):
-        self._type = t
-
-    def setLinePattern(self, linePattern):
-        self._linePattern = linePattern
-
-    def setLineWidth(self, width):
-        self._linePattern.setWidth(width)
-
-    def setLinePixelWidth(self, width):
-        self._linePattern.setPixelWidth(width)
-
-    def setFillPattern(self, fillPattern):
-        self._fillPattern = fillPattern
-
-    def setColor(self, color):
-        self._color = color
-
-    def setZValue(self, zValue):
-        self._zValue = zValue
-
-    def setView(self, view):
-        self._view = view
-
+    @property
     def name(self):
         return self._name
 
-    def ltype(self):
+    @name.setter
+    def name(self, name):
+        self._name = name
+
+    @property
+    def type(self):
         return self._type
 
-    def fullName(self):
-        return self._name + ' ' + self._type
+    @type.setter
+    def type(self, t):
+        self._type = t
 
+    @property
+    def fullName(self):
+        return self.name + ' ' + self.type
+
+    @property
     def linePattern(self):
         return self._linePattern
 
+    @linePattern.setter
+    def linePattern(self, linePattern):
+        self._linePattern = linePattern
+
+    @property
     def lineWidth(self):
-        return self._linePattern.width()
+        return self.linePattern.width
 
+    @lineWidth.setter
+    def lineWidth(self, width):
+        self.linePattern.width = width
+
+    @property
     def linePixelWidth(self):
-        return self._linePattern.pixelWidth()
+        return self.linePattern.pixelWidth
 
+    @linePixelWidth.setter
+    def linePixelWidth(self, width):
+        self.linePattern.pixelWidth = width
+
+    @property
     def fillPattern(self):
         return self._fillPattern
 
+    @fillPattern.setter
+    def fillPattern(self, fillPattern):
+        self._fillPattern = fillPattern
+
+    @property
     def color(self):
         return self._color
 
+    @color.setter
+    def color(self, color):
+        self._color = color
+
+    @property
     def zValue(self):
         return self._zValue
 
+    @zValue.setter
+    def zValue(self, zValue):
+        self._zValue = zValue
+
+    @property
     def view(self):
         return self._view
 
+    @view.setter
+    def view(self, view):
+        self._view = view
+
+    @property
     def visible(self):
         return True
 
+    @property
     def selectable(self):
         return False
 
 class Layers():
-    def __init__(self):
+    def __init__(self, database):
+        self._database = database
         self._layers = set()
         self._layerNames = {}
         self._view = None
 
+    @property
+    def database(self):
+        return self._database
+
+    @property
+    def layers(self):
+        return self._layers
+
+    @property
+    def view(self):
+        return self._view
+
+    @view.setter
+    def view(self, view):
+        self._view = view
+
     def addLayer(self, layer):
-        self._layers.add(layer)
-        self._layerNames[layer.fullName()] = layer
-        if self._view:
-            self._view.addLayer(layer)
+        self.layers.add(layer)
+        self._layerNames[layer.fullName] = layer
+        if self.view:
+            self.view.addLayer(layer)
 
     def layerByName(self, layerName, typeName):
         fullName = layerName + ' ' + typeName
@@ -201,12 +253,7 @@ class Layers():
         else:
             return None
 
-    def layers(self):
-        return self._layers
-
     def layerNames(self):
         return keys(self._layerNames)
 
-    def installUpdateViewHook(self, view):
-        self._view = view
 

@@ -168,6 +168,8 @@ class Designs():
         self._designs = set()
         self._hierarchyViews = set()
        
+    def __del__(self):
+        print self.__class__.__name__, "bye"
     @property
     def designs(self):
         return self._designs

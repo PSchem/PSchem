@@ -462,7 +462,7 @@ class GedaImporter(Importer):
                         #self.database.addLibrary(self.library)
                     self.cell = self.library.cellByName(self.cellName(f))
                     if not self.cell:
-                        self.cell = Cell(self.cellName(f), self.library)
+                        self.cell = Cell.createCell(self.cellName(f), self.library)
                         #self.library.addCell(self.cell)
                     cv = self.cell.cellViewByName('symbol')
                     if not cv:
@@ -502,7 +502,7 @@ class GedaImporter(Importer):
                         #self.database.addLibrary(self.library)
                     self.cell = self.library.cellByName(self.cellName(f))
                     if not self.cell:
-                        self.cell = Cell(self.cellName(f), self.library)
+                        self.cell = Cell.createCell(self.cellName(f), self.library)
                         #self.library.addCell(self.cell)
                     cv = self.cell.cellViewByName('schematic')
                     if not cv:

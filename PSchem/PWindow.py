@@ -51,7 +51,7 @@ class PWindow(QtGui.QMainWindow):
         self._currentView = None
 
         self._databaseTimer = None
-        self.database = Database(self)
+        self.database = Database.createDatabase(self)
 
         #print os.path.join(os.getcwd(), 'pschem.ini')
         self.settings = QtCore.QSettings('pschem', 'pschem')

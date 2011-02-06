@@ -26,16 +26,28 @@ from xml.etree import ElementTree as et
 #print 'Cells out'
 
 class Cell():
-    def __init__(self, name, library):
-        self._cellViews = set()
-        self._cellViewNames = {}
-        self._name = name
-        self._library = library
-        library.cellAdded(self)
+
+    @classmethod
+    def createCell(cls, name, library):
+        """Construct a Library object, or return an existing one."""
+        if name in library.cellNames:
+            self = library.cellNames[name]
+        else:
+            self = cls()
+            self._cellViews = set()
+            self._cellViewNames = {}
+            self._name = name
+            self._library = library
+            library.cellAdded(self)
+        return self
 
     @property
     def cellViews(self):
         return self._cellViews
+
+    @property
+    def cellViewNames(self):
+        return self._cellViewNames
 
     @property
     def name(self):
@@ -61,19 +73,19 @@ class Cell():
         return self.cellViewByName('symbol')  #currently assume it is 'symbol'
 
     def cellViewByName(self, cellViewName):
-        if self._cellViewNames.has_key(cellViewName):
-            return self._cellViewNames[cellViewName]
+        if self.cellViewNames.has_key(cellViewName):
+            return self.cellViewNames[cellViewName]
         else:
             return None
 
     def cellViewAdded(self, cellView):
-        self._cellViews.add(cellView)
-        self._cellViewNames[cellView.name] = cellView
+        self.cellViews.add(cellView)
+        self.cellViewNames[cellView.name] = cellView
         self.library.cellChanged(self)
 
     def cellViewRemoved(self, cellView):
-        self._cellViews.remove(cellView)
-        del self._cellViewNames[cellView.name]
+        self.cellViews.remove(cellView)
+        del self.cellViewNames[cellView.name]
         self.library.cellChanged(self)
         
     def cellViewChanged(self, cellView):
@@ -84,26 +96,43 @@ class Cell():
             c.remove()
 
 class Library():
-    def __init__(self, name, database, parentLibrary = None):
-        self._cells = set()
-        self._cellNames = {}
-        self._libraries = set()
-        self._libraryNames = {}
-        self._parentLibrary = parentLibrary
-        self._name = name
-        self._database = database
+
+    @classmethod
+    def createLibrary(cls, name, database, parentLibrary = None):
+        """Construct a Library object, or return an existing one."""
         if parentLibrary:
-            parentLibrary.libraryAdded(self)
+            parent = parentLibrary
         else:
-            database.libraryAdded(self)
+            parent = database
+        if name in parent.libraryNames:
+            self = parent.libraryNames[name]
+        else:
+            self = cls()
+            self._cells = set()
+            self._cellNames = {}
+            self._libraries = set()
+            self._libraryNames = {}
+            self._parentLibrary = parentLibrary
+            self._name = name
+            self._database = database
+            parent.libraryAdded(self)
+        return self
 
     @property
     def cells(self):
         return self._cells
 
     @property
+    def cellNames(self):
+        return self._cellNames
+
+    @property
     def libraries(self):
         return self._libraries
+
+    @property
+    def libraryNames(self):
+        return self._libraryNames
 
     @property
     def name(self):
@@ -128,12 +157,12 @@ class Library():
         
     def cellAdded(self, cell):
         self.cells.add(cell)
-        self._cellNames[cell.name] = cell
+        self.cellNames[cell.name] = cell
         self.database.libraryChanged(self)
 
     def cellRemoved(self, cell):
         self.cells.remove(cell)
-        del self._cellNames[cell.name]
+        del self.cellNames[cell.name]
         self.database.libraryChanged(self)
         
     def cellChanged(self, cell):
@@ -141,12 +170,12 @@ class Library():
 
     def libraryAdded(self, library):
         self.libraries.add(library)
-        self._libraryNames[library.name] = library
+        self.libraryNames[library.name] = library
         self.database.libraryChanged(self)
 
     def libraryRemoved(self, library):
         self.libraries.remove(library)
-        del self._libraryNames[library.name]
+        del self.libraryNames[library.name]
         self.database.libraryChanged(self)
         
     def libraryChanged(self, library):
@@ -160,11 +189,11 @@ class Library():
             return self.libraryByPath(rest)
         elif first == '':
             return self.database.libraryByPath(rest)
-        elif self._libraryNames.has_key(first):
+        elif self.libraryNames.has_key(first):
             if rest == '':
-                return self._libraryNames[first]
+                return self.libraryNames[first]
             else:
-                return self._libraryNames[first].libraryByPath(rest)
+                return self.libraryNames[first].libraryByPath(rest)
         else:
             return None
 
@@ -186,8 +215,8 @@ class Library():
             return libPath1 + '/' + libPath2
 
     def cellByName(self, cellName):
-        if self._cellNames.has_key(cellName):
-            return self._cellNames[cellName]
+        if self.cellNames.has_key(cellName):
+            return self.cellNames[cellName]
         else:
             return None
 
@@ -212,16 +241,26 @@ class Library():
         
 
 class Database():
-    def __init__(self, client):
-        self._client = client
-        self._libraries = set()
-        self._libraryNames = {}
-        self._databaseViews = set()
-        self._layers = None
-        self._designs = Designs(self)
-        
-        self._deferredProcessingObjects = set()
-        
+    theDatabase = None
+
+    @classmethod
+    def createDatabase(cls, client):
+        """Construct a Database object, or return an existing one."""
+        if Database.theDatabase:
+            self = Database.theDatabase
+            #self._client = client
+        else:
+            self = cls()
+            Database.theDatabase = self
+            self._client = client
+            self._libraries = set()
+            self._libraryNames = {}
+            self._databaseViews = set()
+            self._layers = None
+            self._designs = Designs(self)
+            self._deferredProcessingObjects = set()
+        return self
+    
     @property
     def client(self):
         return self._client
@@ -229,6 +268,10 @@ class Database():
     @property
     def libraries(self):
         return self._libraries
+
+    @property
+    def libraryNames(self):
+        return self._libraryNames
 
     @property
     def layers(self):
@@ -242,6 +285,10 @@ class Database():
     @property
     def designs(self):
         return self._designs
+
+    @property
+    def databaseViews(self):
+        return self.databaseViews
 
     def installUpdateDatabaseViewsHook(self, view):
         self._databaseViews.add(view)
@@ -270,7 +317,7 @@ class Database():
     def libraryAdded(self, library):
         self.libraries.add(library)
         #library.setDatabase(self)
-        self._libraryNames[library.name] = library
+        self.libraryNames[library.name] = library
         #self.updateDatabaseViews()
         self.requestDeferredProcessing(self)
 
@@ -284,9 +331,6 @@ class Database():
         #self.updateDatabaseViews()
         self.requestDeferredProcessing(self)
 
-    def libraryNames(self):
-        return self._libraryNames.keys()
-
     def makeLibraryFromPath(self, libraryPath, rootLib=None):
         (first, sep, rest) = libraryPath.partition('/')
         if libraryPath == '' or first == '..':
@@ -296,11 +340,11 @@ class Database():
         if rootLib:
             lib = rootLib.libraryByPath(first)
             if not lib:
-                lib = Library(first, self, rootLib)
+                lib = Library.createLibrary(first, self, rootLib)
         else:
             lib = self.libraryByPath(first)
             if not lib:
-                lib = Library(first, self)
+                lib = Library.createLibrary(first, self)
         if rest == '':
             return lib
         return self.makeLibraryFromPath(rest, lib)
@@ -311,11 +355,11 @@ class Database():
         (first, sep, rest) = libraryPath.partition('/')
         if first == '' or first == '.':
             return self.libraryByPath(rest)
-        elif self._libraryNames.has_key(first):
+        elif self.libraryNames.has_key(first):
             if rest == '':
-                return self._libraryNames[first]
+                return self.libraryNames[first]
             else:
-                return self._libraryNames[first].libraryByPath(rest)
+                return self.libraryNames[first].libraryByPath(rest)
         else:
             return None
 

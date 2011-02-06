@@ -873,6 +873,6 @@ class PWindow(QtGui.QMainWindow):
             self._databaseTimer.start(100)
             #.singleShot(5000, self.database.runDeferredProcesses)
         
-    def processEvents(self):
+    def leaveCPU(self):
         QtGui.qApp.processEvents()
         

@@ -335,7 +335,14 @@ class Database():
 
     def runDeferredProcess(self):
         """Runs deferred processes of the Database class."""
+        self.cancelDeferredProcessing(self)
         self.updateDatabaseViews()
+        
+    def wasDeferredProcessingRequested(self, object=None):
+        if object:
+            return object in self._deferredProcessingObjects
+        else:
+            return len(self._deferredProcessingObjects) > 0
         
     def requestDeferredProcessing(self, object):
         """
@@ -345,7 +352,7 @@ class Database():
         self._deferredProcessingObjects.add(object)
         ##print self.__class__.__name__, "request", object
         self.client.deferredProcessingRequested()
-        self._deferredProcessingScheduled = True
+        self.leaveCPU()
             
     def cancelDeferredProcessing(self, object):
         """
@@ -361,10 +368,13 @@ class Database():
         (an "idle" function).
         """
         dpos = list(self._deferredProcessingObjects)
-        self._deferredProcessingObjects = set()
+        #self._deferredProcessingObjects = set()
         for o in dpos:
             ##print self.__class__.__name__, "run", o
             o.runDeferredProcess()
+            
+    def leaveCPU(self):
+        self.client.leaveCPU()
                 
 class Importer:
     def __init__(self, database):

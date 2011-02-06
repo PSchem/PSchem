@@ -314,10 +314,14 @@ class Schematic(Diagram):
 
     @property
     def netSegments(self):
+        while self.database.wasDeferredProcessingRequested(self): #make sure the netsegments were checked
+            self.runDeferredProcess()
         return self._netSegments
 
     @property
     def solderDots(self):
+        while self.database.wasDeferredProcessingRequested(self): #make sure the netsegments were checked
+            self.runDeferredProcess()
         return self._solderDots
 
     @property
@@ -351,7 +355,7 @@ class Schematic(Diagram):
     def netSegmentAdded(self, netSegment):
         #print self.__class__.__name__, "ns added", netSegment
         self.index.netSegmentAdded(netSegment)
-        self.netSegments.add(netSegment)
+        self._netSegments.add(netSegment) #don't trigger deferred processing
         #self._netSegmentsAdded.add(netSegment)
         self.database.requestDeferredProcessing(self)
         #self.splitNetSegment(netSegment)
@@ -363,7 +367,7 @@ class Schematic(Diagram):
     def netSegmentRemoved(self, netSegment):
         #print self.__class__.__name__, "ns removed", netSegment
         self.index.netSegmentRemoved(netSegment)
-        self.netSegments.remove(netSegment)
+        self._netSegments.remove(netSegment) #don't trigger deferred processing
         #self._netSegmentsRemoved.add(netSegment)
         self.database.requestDeferredProcessing(self)
         
@@ -373,11 +377,11 @@ class Schematic(Diagram):
         #    #solderDot.addToDesignUnit(designUnit)
         #    if designUnit.scene():
         #        solderDot.addToView(designUnit.scene())
-        self.solderDots.add(solderDot)
+        self._solderDots.add(solderDot) #don't trigger deferred processing
         
     def solderDotRemoved(self, solderDot):
         self.index.solderDotRemoved(solderDot)
-        self.solderDots.remove(solderDot)
+        self._solderDots.remove(solderDot) #don't trigger deferred processing
         
     def splitNetSegment(self, netSegment):
         """
@@ -461,6 +465,7 @@ class Schematic(Diagram):
         self.checkSolderDots()
 
     def runDeferredProcess(self):
+        self.database.cancelDeferredProcessing(self)
         self.checkNets()
         
 class Symbol(Diagram):

@@ -94,6 +94,8 @@ class Cell():
     def remove(self):
         for c in list(self.cellViews):
             c.remove()
+        self.library.cellRemoved(self)
+        self.library = None
 
 class Library():
 
@@ -238,6 +240,8 @@ class Library():
             self.parentLibrary.libraryRemoved(self)
         else:
             self.database.libraryRemoved(self)
+        self.parentLibrary = None
+        self.database = None
         
 
 class Database():

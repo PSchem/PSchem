@@ -199,6 +199,9 @@ class Element():
         for v in self.views:
             v.removeItem()
         #self.diagram.elementRemoved(self)
+        self.layers = None
+        self.layer = None
+        self.diagram = None
         
 class Line(Element):
     def __init__(self, diagram, layers, x1, y1, x2, y2):

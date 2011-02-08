@@ -63,6 +63,7 @@ class CellView():
         for a in list(self.attributes()):
             a.remove()
         self.cell.cellViewRemoved(self)
+        self.cell = None
 
 class Diagram(CellView):
     def __init__(self, name, cell):

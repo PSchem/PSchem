@@ -382,8 +382,10 @@ class Database():
             return None
 
     def runDeferredProcess(self):
-        """Runs deferred processes of the Database class."""
-        self.cancelDeferredProcessing(self)
+        """
+        Runs deferred processes of the Database class.
+        Do not call it directly, Use Database.runDeferredProcesses(object)
+        """
         self.updateDatabaseViews()
         
     def wasDeferredProcessingRequested(self, object=None):
@@ -409,17 +411,23 @@ class Database():
         """
         self._deferredProcessingObjects.remove(object)
         
-    def runDeferredProcesses(self):
+    def runDeferredProcesses(self, object = None):
         """
         Force execution of all deferred processes.
         To be called synchronously or from within the main loop
         (an "idle" function).
         """
-        dpos = list(self._deferredProcessingObjects)
-        #self._deferredProcessingObjects = set()
-        for o in dpos:
-            ##print self.__class__.__name__, "run", o
-            o.runDeferredProcess()
+        if object:
+            while self.wasDeferredProcessingRequested(object):
+                self.cancelDeferredProcessing(object)
+                o.runDeferredProcess()
+        else:
+            while self.wasDeferredProcessingRequested(object):
+                dpos = list(self._deferredProcessingObjects)
+                self._deferredProcessingObjects = set()
+                for o in dpos:
+                    ##print self.__class__.__name__, "run", o
+                    o.runDeferredProcess()
             
     def leaveCPU(self):
         self.client.leaveCPU()

@@ -315,14 +315,12 @@ class Schematic(Diagram):
 
     @property
     def netSegments(self):
-        while self.database.wasDeferredProcessingRequested(self): #make sure the netsegments were checked
-            self.runDeferredProcess()
+        self.database.runDeferredProcesses(self)
         return self._netSegments
 
     @property
     def solderDots(self):
-        while self.database.wasDeferredProcessingRequested(self): #make sure the netsegments were checked
-            self.runDeferredProcess()
+        self.database.runDeferredProcesses(self)
         return self._solderDots
 
     @property
@@ -466,7 +464,10 @@ class Schematic(Diagram):
         self.checkSolderDots()
 
     def runDeferredProcess(self):
-        self.database.cancelDeferredProcessing(self)
+        """
+        Runs deferred processes of the Schematic class.
+        Do not call it directly, Use Database.runDeferredProcesses(object)
+        """
         self.checkNets()
         
 class Symbol(Diagram):

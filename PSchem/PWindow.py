@@ -870,7 +870,7 @@ class PWindow(QtGui.QMainWindow):
             self._databaseTimer = QtCore.QTimer()
             self._databaseTimer.setSingleShot(True)
             self.connect(self._databaseTimer, QtCore.SIGNAL("timeout()"), self.database.runDeferredProcesses)
-            self._databaseTimer.start(100)
+            self._databaseTimer.start(500)
             #.singleShot(5000, self.database.runDeferredProcesses)
         
     def leaveCPU(self):

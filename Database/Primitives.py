@@ -627,9 +627,9 @@ class NetSegment(Element):
         ns = NetSegment(diagram, layers, minX, minY, maxX, maxY)
 
     def remove(self):
-        Element.remove(self)
         #self._layer = None
         self.diagram.netSegmentRemoved(self)
+        Element.remove(self)
  
 class SolderDot(Element):
     def __init__(self, diagram, layers, x, y):

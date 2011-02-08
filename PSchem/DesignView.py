@@ -144,6 +144,7 @@ class DesignView(QtGui.QGraphicsView):
 
         self._lastMousePos = None
         self.mousePressedPos = None
+        self.mousePressedPosExact = None
         self.mousePressedButton = QtCore.Qt.NoButton
         
         #self.mouseLasso = None
@@ -256,7 +257,7 @@ class DesignView(QtGui.QGraphicsView):
         if event.buttons() & QtCore.Qt.MidButton:
             #offset = self.mapToScene(self._lastMousePos) - point
             #self.move(offset.x(), offset.y(), False)
-            newPoint = self.currentCenterPoint - (point - self.mousePressedPos)
+            newPoint = self.currentCenterPoint - (point - self.mousePressedPosExact)
             #tstart = time.clock()
             self.moveTo(newPoint.x(), newPoint.y())
             #self.repaint()
@@ -265,7 +266,7 @@ class DesignView(QtGui.QGraphicsView):
         self._eventLoopMutex.unlock()
 
     def mousePressEvent(self, event):
-        self._mousePressedPosView = event.pos()
+        self.mousePressedPosExact = self.mapToScene(event.pos())
         self._lastMousePos = event.pos() #point
         self.mousePressedPos = self.snapToGrid(self.mapToScene(event.pos()))
         self.mousePressedButton = event.button()

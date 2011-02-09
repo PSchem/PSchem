@@ -38,6 +38,7 @@ class Cell():
             self._cellViewNames = {}
             self._name = name
             self._library = library
+            self._sortedCellViews = None
             library.cellAdded(self)
         return self
 
@@ -72,6 +73,12 @@ class Cell():
     def symbol(self):
         return self.cellViewByName('symbol')  #currently assume it is 'symbol'
 
+    @property
+    def sortedCellViews(self):
+        if not self._sortedCellViews:
+            self._sortedCellViews = sorted(self.cellViews, lambda a, b: cmp(a.name.lower(), b.name.lower()))
+        return self._sortedCellViews
+
     def cellViewByName(self, cellViewName):
         if self.cellViewNames.has_key(cellViewName):
             return self.cellViewNames[cellViewName]
@@ -81,11 +88,13 @@ class Cell():
     def cellViewAdded(self, cellView):
         self.cellViews.add(cellView)
         self.cellViewNames[cellView.name] = cellView
+        self._sortedCellViews = None
         self.library.cellChanged(self)
 
     def cellViewRemoved(self, cellView):
         self.cellViews.remove(cellView)
         del self.cellViewNames[cellView.name]
+        self._sortedCellViews = None
         self.library.cellChanged(self)
         
     def cellViewChanged(self, cellView):
@@ -117,6 +126,8 @@ class Library():
             self._parentLibrary = parentLibrary
             self._name = name
             self._database = database
+            self._sortedLibraries = None
+            self._sortedCells = None
             parent.libraryAdded(self)
         return self
 
@@ -157,14 +168,36 @@ class Library():
     def parentLibrary(self):
         return self._parentLibrary
         
+    @property
+    def sortedLibraries(self):
+        """Cached list of libraries sorted by name."""
+        if not self._sortedLibraries:
+            #self._sortedChildNames = (self.libraryNames.keys() + self.cellNames.keys()).sort(key=str.lower) #lambda a, b: cmp(a.name.lower(), b.name.lower()))
+            #self._sortedChildNames = sorted(self.libraryNames.keys() + self.cellNames.keys()) #.sort(key=str.lower) #lambda a, b: cmp(a.name.lower(), b.name.lower()))
+            self._sortedLibraries = sorted(self.libraries, lambda a, b: cmp(a.name.lower(), b.name.lower()))
+            #self._sortedLibraries = self.libraries
+        return self._sortedLibraries
+
+    @property
+    def sortedCells(self):
+        """Cached list of cells sorted by name."""
+        if not self._sortedCells:
+            #self._sortedChildNames = (self.libraryNames.keys() + self.cellNames.keys()).sort(key=str.lower) #lambda a, b: cmp(a.name.lower(), b.name.lower()))
+            #self._sortedChildNames = sorted(self.libraryNames.keys() + self.cellNames.keys()) #.sort(key=str.lower) #lambda a, b: cmp(a.name.lower(), b.name.lower()))
+            self._sortedCells = sorted(self.cells, lambda a, b: cmp(a.name.lower(), b.name.lower()))
+            #self._sortedCells = self.cells
+        return self._sortedCells
+
     def cellAdded(self, cell):
         self.cells.add(cell)
         self.cellNames[cell.name] = cell
+        self._sortedCells = None
         self.database.libraryChanged(self)
 
     def cellRemoved(self, cell):
         self.cells.remove(cell)
         del self.cellNames[cell.name]
+        self._sortedCells = None
         self.database.libraryChanged(self)
         
     def cellChanged(self, cell):
@@ -173,11 +206,13 @@ class Library():
     def libraryAdded(self, library):
         self.libraries.add(library)
         self.libraryNames[library.name] = library
+        self._sortedLibraries = None
         self.database.libraryChanged(self)
 
     def libraryRemoved(self, library):
         self.libraries.remove(library)
         del self.libraryNames[library.name]
+        self._sortedLibraries = None
         self.database.libraryChanged(self)
         
     def libraryChanged(self, library):
@@ -263,6 +298,7 @@ class Database():
             self._layers = None
             self._designs = Designs(self)
             self._deferredProcessingObjects = set()
+            self._sortedLibraries = None
         return self
     
     @property
@@ -294,6 +330,18 @@ class Database():
     def databaseViews(self):
         return self.databaseViews
 
+    @property
+    def path(self):
+        return '/'
+
+    @property
+    def sortedLibraries(self):
+        """Cached list of libraries sorted by name."""
+        if not self._sortedLibraries:
+            self._sortedLibraries = sorted(self.libraries, lambda a, b: cmp(a.name.lower(), b.name.lower()))
+        #print self._sortedLibraries
+        return self._sortedLibraries
+
     def installUpdateDatabaseViewsHook(self, view):
         self._databaseViews.add(view)
 
@@ -320,19 +368,17 @@ class Database():
         
     def libraryAdded(self, library):
         self.libraries.add(library)
-        #library.setDatabase(self)
         self.libraryNames[library.name] = library
-        #self.updateDatabaseViews()
+        self._sortedLibraries = None
         self.requestDeferredProcessing(self)
 
     def libraryRemoved(self, library):
         self.libraries.remove(library)
         del self._libraryNames[library.name]
-        #self.updateDatabaseViews()
+        self._sortedLibraries = None
         self.requestDeferredProcessing(self)
         
     def libraryChanged(self, library):
-        #self.updateDatabaseViews()
         self.requestDeferredProcessing(self)
 
     def makeLibraryFromPath(self, libraryPath, rootLib=None):

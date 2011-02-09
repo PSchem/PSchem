@@ -105,7 +105,7 @@ class HierarchyModel(QtCore.QAbstractItemModel):
                     n = d.index(parent)
                     return self.createIndex(n, 0, parent)
                 else:
-                    d = list(self.designs())
+                    d = list(self.designs)
                     n = d.index(parent)
                     return self.createIndex(n, 0, parent)
         return QtCore.QModelIndex()

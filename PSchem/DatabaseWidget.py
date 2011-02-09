@@ -55,7 +55,15 @@ class DatabaseModel(QtCore.QAbstractItemModel):
         if isinstance(data, Database):
             return QtCore.QVariant('database')
         if col == 0:
-            return QtCore.QVariant(data.name)
+            if role == QtCore.Qt.DisplayRole:
+                return QtCore.QVariant(data.name)
+            else: #role == QtCore.Qt.ToolTipRole:
+                if isinstance(data, Database) or isinstance(data, Library):
+                    return QtCore.QVariant(data.path)
+                elif isinstance(data, Cell):
+                    return QtCore.QVariant(data.library.path + "/" + data.name)
+                elif isinstance(data, CellView):
+                    return QtCore.QVariant(data.library.path + "/" + data.cell.name + "/" + data.name)
         elif isinstance(data, Library):
             return QtCore.QVariant('library')
         elif isinstance(data, Cell):
@@ -76,15 +84,14 @@ class DatabaseModel(QtCore.QAbstractItemModel):
             data = parent.internalPointer()
 
         if not parent.isValid() or isinstance(data, Database):
-            children = list(self.database.libraries)
+            children = self.database.sortedLibraries
         elif isinstance(data, Library):
-            children = list(data.libraries) + list(data.cells)
+            children = data.sortedLibraries + data.sortedCells
         elif isinstance(data, Cell):
-            children = list(data.cellViews)
+            children = data.sortedCellViews
         else:
             return QtCore.QModelIndex()
 
-        #children.sort(lambda a, b: cmp(a.name(), b.name()))
         if row >= 0 and len(children) > row:
             return self.createIndex(row, column, children[row])
         else:
@@ -102,26 +109,22 @@ class DatabaseModel(QtCore.QAbstractItemModel):
             if parentLibrary:
                 pParentLibrary = parentLibrary.parentLibrary
                 if pParentLibrary:
-                    d = list(pParentLibrary.libraries) + list(pParentLibrary.cells)
+                    d = pParentLibrary.sortedLibraries + pParentLibrary.sortedCells
                 else:
-                    d = list(self.database.libraries)
+                    d = self.database.sortedLibraries
                 n = d.index(parentLibrary)
                 return self.createIndex(n, 0, parentLibrary)
             return QtCore.QModelIndex()
         elif isinstance(data, Cell):
             parentLibrary = data.library.parentLibrary
             if parentLibrary:
-                d = list(parentLibrary.libraries) + list(parentLibrary.cells)
+                d = parentLibrary.sortedLibraries + parentLibrary.sortedCells
             else:
-                d = list(self.database.libraries)
-            #d = list(data.library().cells())
-            #d = list(self.database.libraries())
-            #d.sort(lambda a, b: cmp(a.name(), b.name()))
+                d = self.database.sortedLibraries
             n = d.index(data.library)
             return self.createIndex(n, 0, data.library)
         elif isinstance(data, CellView):
-            d = list(data.library.cells)
-            #d.sort(lambda a, b: cmp(a.name(), b.name()))
+            d = data.library.sortedCells
             n = d.index(data.cell)
             return self.createIndex(n, 0, data.cell)
         else:
@@ -132,11 +135,11 @@ class DatabaseModel(QtCore.QAbstractItemModel):
             return True
         data = parent.internalPointer()
         if isinstance(data, Database):
-            return len(data.libraries) > 0
+            return len(data.sortedLibraries) > 0
         elif isinstance(data, Library):
-            return len(data.libraries) + len(data.cells) > 0
+            return len(data.sortedLibraries) + len(data.sortedCells) > 0
         elif isinstance(data, Cell):
-            return len(data.cellViews) > 0
+            return len(data.sortedCellViews) > 0
         else:
             return False
 
@@ -144,17 +147,16 @@ class DatabaseModel(QtCore.QAbstractItemModel):
         if parent.column() > 1:
             return 0
 
-        #print parent.data()
         if not parent.isValid():
-            return len(self.database.libraries)
+            return len(self.database.sortedLibraries)
 
         data = parent.internalPointer()
         if isinstance(data, Database):
-            return len(data.libraries)
+            return len(data.sortedLibraries)
         elif isinstance(data, Library):
-            return len(data.libraries) + len(data.cells)
+            return len(data.sortedLibraries) + len(data.sortedCells)
         elif isinstance(data, Cell):
-            return len(data.cellViews)
+            return len(data.sortedCellViews)
         else:
             return 0
 
@@ -187,68 +189,21 @@ class DatabaseModel(QtCore.QAbstractItemModel):
 
         return QtCore.QVariant()
 
-class ProxyModel(QtGui.QSortFilterProxyModel):
-    def __init__(self):
-        QtGui.QSortFilterProxyModel.__init__(self)
-        self.libRegExp = QtCore.QRegExp()
-        self.cellRegExp = QtCore.QRegExp()
-        #print 'proxy ', self.thread()
-
-    def filterAcceptsRow(self, row, parent):
-        source_idx = self.sourceModel().index(row, 0, parent)
-
-        if not source_idx.isValid():
-            return True
-
-        data = source_idx.internalPointer()
-        if isinstance(data, Library) and not self.libRegExp.isEmpty():
-            text = self.sourceModel().data(
-                source_idx, QtCore.Qt.DisplayRole).toString()
-            return text.contains(self.libRegExp)
-        elif isinstance(data, Cell) and not self.cellRegExp.isEmpty():
-            text = self.sourceModel().data(
-                source_idx, QtCore.Qt.DisplayRole).toString()
-            return text.contains(self.cellRegExp)
-        else:
-            return True
-
-    def setRegExps(self, libRegExp, cellRegExp):
-        self.libRegExp = libRegExp
-        self.cellRegExp = cellRegExp
-
-
 class DatabaseWidget(QtGui.QWidget):
-    def __init__(self, parent=None):
-        QtGui.QWidget.__init__(self, parent)
-        #print 'view ', self.thread()
-        self.window = parent
-        self.proxyModel = ProxyModel()
-        self.proxyModel.setDynamicSortFilter(True)
-        self.sourceModel = None
+    def __init__(self, window, model):
+        QtGui.QWidget.__init__(self, window)
+        self.window = window
+        self.model = model
+        
         self.treeView = QtGui.QTreeView()
-        self.treeView.setSortingEnabled(True)
         self.treeView.setUniformRowHeights(True)
         self.treeView.setAlternatingRowColors(True)
-        #self.treeView.setAllColumnsShowFocus(True)
-        
-        layout2 = QtGui.QHBoxLayout()
-        self.libFilterText = QtGui.QLineEdit()
-        self.cellFilterText = QtGui.QLineEdit()
-        layout2.addWidget(QtGui.QLabel('Lib'))
-        layout2.addWidget(self.libFilterText)
-        layout2.addWidget(QtGui.QLabel('Cell'))
-        layout2.addWidget(self.cellFilterText)
 
         layout = QtGui.QVBoxLayout()
-        layout.addLayout(layout2)
         layout.addWidget(self.treeView)
 
-        self.connect(self.libFilterText,
-                     QtCore.SIGNAL("textChanged(QString)"),
-                     self.updateRegExp)
-        self.connect(self.cellFilterText,
-                     QtCore.SIGNAL("textChanged(QString)"),
-                     self.updateRegExp)
+        self.treeView.setModel(model)
+
         self.connect(self.treeView,
                      #QtCore.SIGNAL("doubleClicked(QModelIndex)"),
                      QtCore.SIGNAL("activated(QModelIndex)"),
@@ -257,41 +212,19 @@ class DatabaseWidget(QtGui.QWidget):
         self.setLayout(layout)
 
     def openCellView(self, index):
-        indexSource = self.proxyModel.mapToSource(index)
-        if not indexSource.isValid():
+        if not index.isValid():
             return
 
-        data = indexSource.internalPointer()
+        data = index.internalPointer()
 
         if isinstance(data, CellView):
-            #if self.window:
-                cell = data.cell
-                lib = cell.library
-                self.window.controller.execute(
-                    Command(
-                        'window.openCellViewByName(\'' +lib.path+
-                        '\', \''+cell.name+'\', \''+data.name+'\')'))
-
-
-    def updateRegExp(self):
-        libText = str(self.libFilterText.text())
-        cellText = str(self.cellFilterText.text())
-        self.proxyModel.setRegExps(
-            QtCore.QRegExp(libText, QtCore.Qt.CaseInsensitive,
-                           QtCore.QRegExp.Wildcard),
-            QtCore.QRegExp(cellText, QtCore.Qt.CaseInsensitive,
-                           QtCore.QRegExp.Wildcard))
-        self.proxyModel.invalidateFilter()
-
-    def setSourceModel(self, model):
-        self.sourceModel = model
-        self.proxyModel.setSourceModel(model)
-        self.treeView.setModel(self.proxyModel)
-        #self.treeView.setModel(self.sourceModel)
+            cell = data.cell
+            lib = cell.library
+            self.window.controller.execute(
+                Command(
+                    'window.openCellViewByName(\'' +lib.path+
+                    '\', \''+cell.name+'\', \''+data.name+'\')'))
 
     def selectedCellView(self):
-        #return self.sourceModel.database.cellViewByName('latch', 'comparator', 'schematic')
-        #return self.sourceModel.database.cellViewByName('latch', 'analoglatch', 'schematic')
-        return self.sourceModel.database.cellViewByName('/examples/gTAG', 'gTAG', 'schematic')
-    #return None
+        return self.model.database.cellViewByName('/examples/gTAG', 'gTAG', 'schematic')
 

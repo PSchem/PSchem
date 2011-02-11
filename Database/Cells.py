@@ -95,11 +95,9 @@ class Cell():
         else:
             return None
 
-    def cellViewByPath(self, path, create=False):
+    def objectByPath(self, path):
         if self.cellViewNames.has_key(path.cellViewName):
             cellView = self.cellViewNames[path.cellViewName]
-        #elif create:
-        #    cellView = CellView.createCellView(path.cellViewName, self)
         else:
             return None
         return cellView
@@ -234,49 +232,6 @@ class Library():
     def libraryChanged(self, library):
         self.root.libraryChanged(self)
 
-    def objectByPath__(self, libraryPath, create=False):
-        (libraryPath, sep, cellPath) = path.partition('/')
-        library = self.libraryByPath(libraryPath, create)
-        if len(sep) == 0 or len(cellPath) == 0:
-            return library
-        elif library:
-            return library.cellByPath(cellPath, create)
-        else:
-            return None
-        
-    def libraryByPath_(self, libraryPath, create=False):
-        (libraryPath2, sep, rest) = libraryPath.partition('/') #remove cell/cellview if any
-        (first, sep, rest) = libraryPath2.partition('.')
-        if libraryPath2 == '':
-            return None
-        if len(sep) > 0 and libraryPath2 == '': #relative to itself
-            self.libraryByPath(rest, create)
-        if self.libraryNames.has_key(first):
-            library = self.libraryNames[first]
-        elif create:
-            library = Library.createLibrary(first, self)
-        else:
-            return None
-        if library and sep != '':
-            return library.libraryByPath(rest, create)
-        else:
-            return library
-
-    def cellByPath_(self, cellPath, create=False):
-        (first, sep, rest) = cellPath.partition('/')
-        if cellPath == '' or first == '':
-            return None
-        if self.cellNames.has_key(first):
-            cell = self.cellNames[first]
-        elif create:
-            cell = Cell.createCell(first, self)
-        else:
-            return None
-        if cell and sep != '':
-            return cell.cellViewByPath(rest, create)
-        else:
-            return cell
-
     def objectByPath(self, path, create=False):
         if self.cellNames.has_key(path.cellName):
             cell = self.cellNames[path.cellName]
@@ -285,7 +240,7 @@ class Library():
         else:
             return None
         if cell and path.cellViewName:
-            return cell.cellViewByPath(path, create)
+            return cell.objectByPath(path)
         return cell
 
     def libraryByPath(self, path, create=False):
@@ -317,37 +272,6 @@ class Library():
         cell = self.createCellFromPath(path)
         return Symbol(self, cell)
         
-    #def libraryByPath(self, libraryPath):
-    #    (first, sep, rest) = libraryPath.partition('.')
-    #    if first == '':
-    #        return None
-    #    if first == '..':
-    #        return self.parentLibrary.libraryByPath(rest)
-    #    elif first == '.':
-    #        return self.libraryByPath(rest)
-    #    elif first == '':
-    #        return self.database.libraryByPath(rest)
-    #    elif self.libraryNames.has_key(first):
-    #        if rest == '':
-    #            return self.libraryNames[first]
-    #        else:
-    #            return self.libraryNames[first].libraryByPath(rest)
-    #    else:
-    #        return None
-
-    #def cellByName(self, cellName):
-    #    if self.cellNames.has_key(cellName):
-    #        return self.cellNames[cellName]
-    #    else:
-    #        return None
-
-    #def cellViewByName(self, cellName, cellViewName):
-    #    cell = self.cellByName(cellName)
-    #    if cell:
-    #        return cell.cellViewByName(cellViewName)
-    #    else:
-    #        return None
-
     def remove(self):
         # remove child libraries&cells
         for c in list(self.cells):

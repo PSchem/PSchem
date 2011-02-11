@@ -19,9 +19,9 @@
 
 #print 'Design in'
 
-#from Database.Primitives import *
-#from Database.Cells import *
-#from Database.Attributes import *
+#from Primitives import *
+#from Cells import *
+#from Attributes import *
 from xml.etree import ElementTree as et
 
 #print 'Design out'
@@ -168,8 +168,6 @@ class Designs():
         self._designs = set()
         self._hierarchyViews = set()
        
-    def __del__(self):
-        print self.__class__.__name__, "bye"
     @property
     def designs(self):
         return self._designs
@@ -206,4 +204,7 @@ class Designs():
         """Runs deferred processes."""
         self.updateHierarchyViews()
         
-
+    def close(self):
+        for d in list(self.designs):
+            d.remove()
+        

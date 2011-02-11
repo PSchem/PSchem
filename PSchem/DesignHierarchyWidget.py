@@ -22,7 +22,7 @@ from Database.Primitives import *
 from Database.Design import *
 #import sys
 
-class HierarchyModel(QtCore.QAbstractItemModel):
+class DesignHierarchyModel(QtCore.QAbstractItemModel):
     def __init__(self, designs, parent=None):
         QtCore.QAbstractItemModel.__init__(self, parent)
         self._designs = designs
@@ -183,7 +183,7 @@ class ProxyModel(QtGui.QSortFilterProxyModel):
         self.cellRegExp = cellRegExp
 
 
-class HierarchyWidget(QtGui.QWidget):
+class DesignHierarchyWidget(QtGui.QWidget):
     def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
 

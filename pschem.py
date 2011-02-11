@@ -24,10 +24,7 @@ import sys
 
 from PyQt4 import QtCore, QtGui
 
-#import PSchem
-from PSchem import *
-#from Database import *
-
+from PSchem import PWindow
 
 import signal
 signal.signal(signal.SIGINT, signal.SIG_DFL)

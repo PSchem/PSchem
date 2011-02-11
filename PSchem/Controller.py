@@ -19,6 +19,15 @@
 
 import re
 #from PSchem.ConsoleWidget import *
+from Database.Cells import *
+from Database.CellViews import *
+from Database.Primitives import *
+from Database.Design import *
+from Database.Attributes import *
+from Database.Layers import *
+from Database.Path import *
+from Database.Exceptions import *
+import traceback
 import sys
 import math
 from PyQt4 import QtGui, QtCore
@@ -43,7 +52,10 @@ class Controller():
         if echo:
             sys.stdout.pushSync(False)
             sys.stdout.write('--- ' + cmd.text() + '\n')
-            exec (cmd.compiled(), self.globals, self.locals)
+            try:
+                exec (cmd.compiled(), self.globals, self.locals)
+            except DatabaseError:
+                traceback.print_exc()
             #if res is not None:
             #    sys.stdout.write('=== '+str(res))
             sys.stdout.popSync()
@@ -51,7 +63,10 @@ class Controller():
             sys.stdout.pushSync(True)
             #sys.stdout.write('=== ')
             #exec (cmd.compiled(), self.globals, self.locals)
-            exec (cmd.compiled(), self.globals, self.globals)
+            try:
+                exec (cmd.compiled(), self.globals, self.globals)
+            except DatabaseError:
+                traceback.print_exc()
             #if res is not None:
             #    sys.stdout.write('=== '+str(res))
             sys.stdout.popSync()

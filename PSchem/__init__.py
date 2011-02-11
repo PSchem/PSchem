@@ -2,9 +2,8 @@
 # python package directory
 #
 __all__ = [
-    'PWindow',
-    'ConsoleWidget',
-    'Controller',
-    'DatabaseWidget',
-    'Resources_rc',
+#    'PWindow',
+#    'ConsoleWidget',
+#    'Controller',
+#    'Resources_rc',
     ]

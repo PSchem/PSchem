@@ -21,17 +21,31 @@
 
 import re
 import os
-from Database.Primitives import *
-from Database.CellViews import *
-from Database.Cells import *
-from Database.Layers import *
-#from Database.Primitives import Database
+from Path import *
+from Primitives import *
+from CellViews import *
+from Cells import *
+from Layers import *
 
 #print 'Reader out'
 
-class Reader():
+class Importer:
     def __init__(self, database):
         self._database = database
+        self.reset()
+
+    def reset(self):
+        self._importedCellsView = set()
+        self._reader = None
+        self._fileList = []
+        self._targetLibrary = 'work'
+        self._overwrite = False
+        self._recursive = True
+
+class Reader():
+    def __init__(self, root):
+        self._root = root
+        self._database = root.database
     
     def parseSchematic(self, fileName, cellView):
         pass
@@ -79,7 +93,7 @@ class GedaReader(Reader):
 
 
     def __init__(self, importer):
-        Reader.__init__(self, importer.database)
+        Reader.__init__(self, importer.root)
         self.importer = importer
         self.inSchematic = False
         self.inSymbol = False
@@ -367,9 +381,10 @@ class GedaImporter(Importer):
     pstrip = re.compile(r'(\.sch|\.sym)$')
     psymStrip = re.compile(r'\.sym$')
     pschStrip = re.compile(r'\.sch$')
-    def __init__(self, database):
-        Importer.__init__(self, database)
-        self.database = database
+    def __init__(self, root):
+        Importer.__init__(self, root)
+        self.root = root
+        self.database = root.database
         self.componentLibraryList = []
         self.sourceLibraryList = []
         
@@ -378,19 +393,17 @@ class GedaImporter(Importer):
         self.sourceLibraryList = sourceList
         for l in self.componentLibraryList:
             self.importComponentLibrary(l)
-            #self.database.processEvents()
         for l in self.sourceLibraryList:
             self.importSourceLibrary(l)
-            #self.database.processEvents()
             
     def libPathAbsToRel(self, libPath):
         l = self.library.path
         #print libPath, l
-        (abs, sep, lib) = l.rpartition('/')
+        (abs, sep, lib) = l.rpartition('.')
         if libPath.find(l) == 0:
-            return libPath.replace(l, '.')
-        elif len(abs) > 0 and libPath.find(abs) == 0:
-            return libPath.replace(abs, '..')
+            return libPath.replace(l, '')
+        #elif len(abs) > 0 and libPath.find(abs) == 0:
+        #    return libPath.replace(abs, '..')
         else:
             return libPath
     
@@ -399,7 +412,8 @@ class GedaImporter(Importer):
             library = self.library
         #print self.__class__.__name__, library.path
         #first current library
-        if library.cellViewByName(cellName, 'symbol'):
+        #if library.cellViewByName(cellName, 'symbol'):
+        if library.objectByPath(Path.createFromPathName('./' + cellName + '/symbol')):
             return library
         #then recursively any sub-libraries (without going above)
         for l in library.libraries:
@@ -411,20 +425,22 @@ class GedaImporter(Importer):
             if library.parentLibrary:
                 return self.findCellSymbolLibrary(cellName, library.parentLibrary)
             else:
-                for l in library.database.libraries:
+                for l in library.root.libraries:
                     lib = self.findCellSymbolLibrary(cellName, l, False)
                     if lib:
                         return lib
         return None
 
     def findCellSymbolLibrary_(self, cellName):
-        cell = self.database.cellViewByName(self.library.name, cellName, 'symbol')
+        #cell = self.database.cellViewByName(self.library.name, cellName, 'symbol')
+        cell = self.root.objectByPath(Path.createFromPathName(self.library.name + '/' + cellName + '/symbol'))
         if cell:
             return self.library
         else:
             for l in self.database.libraries:
                 if not l == self.library:
-                    cell = self.database.cellViewByName(l.name, cellName, 'symbol')
+                    #cell = self.database.cellViewByName(l.name, cellName, 'symbol')
+                    cell = self.root.objectByPath(Path.createFromPathName(l.name + '/' + cellName + '/symbol'))
                     #print l.name, cell
                     if cell:
                         return l
@@ -452,17 +468,23 @@ class GedaImporter(Importer):
                 #f = os.path.join(directory, f)
                 #print f, os.path.isfile(f) #, self.psymStrip.search(f)
                 #if os.path.isfile(f) and self.psymStrip.search(f):
-                if (not self.database.cellViewByName(library, self.cellName(f), 'symbol')):
+                if (not self.root.objectByPath(Path.createFromPathName(library + '/' + self.cellName(f) + '/symbol'))):
+                    #self.database.cellViewByName(library, self.cellName(f), 'symbol')):
                     ##print 'Importing component symbol', f
-                    self.library = self.database.libraryByPath(library)
-                    if not self.library:
+                    path = Path.createFromPathName(library + '/' + self.cellName(f))
+                    cell = self.root.objectByPath(path)
+                    if not cell:
+                        cell = self.root.createCellFromPath(path)
+                    self.library = cell.library
+                    self.cell = cell
+                    #if not self.library:
                         #self.library = self.database.newLibrary(library)
-                        self.library = self.database.makeLibraryFromPath(library)
+                    #    self.library = self.root.makeLibraryByPath(library)
                         #self.library = Library(library, self.database)
                         #self.database.addLibrary(self.library)
-                    self.cell = self.library.cellByName(self.cellName(f))
-                    if not self.cell:
-                        self.cell = Cell.createCell(self.cellName(f), self.library)
+                    #self.cell = self.library.cellByName(self.cellName(f))
+                    #if not self.cell:
+                    #    self.cell = Cell.createCell(self.cellName(f), self.library)
                         #self.library.addCell(self.cell)
                     cv = self.cell.cellViewByName('symbol')
                     if not cv:
@@ -492,18 +514,25 @@ class GedaImporter(Importer):
                 files)
             for f in files:
                 #f = os.path.join(directory, f)
-                if (not self.database.cellViewByName(library, self.cellName(f), 'schematic')):
+                if (not self.root.objectByPath(Path.createFromPathName(library + '/' + self.cellName(f) + '/schematic'))):
+                #if (not self.database.cellViewByName(library, self.cellName(f), 'schematic')):
                     ##print 'Importing schematic', f
-                    self.library = self.database.libraryByPath(library)
-                    if not self.library:
+                    path = Path.createFromPathName(library + '/' + self.cellName(f))
+                    cell = self.root.objectByPath(path)
+                    if not cell:
+                        cell = self.root.createCellFromPath(path)
+                    self.library = cell.library
+                    self.cell = cell
+                    #self.library = self.database.libraryByPath(library)
+                    #if not self.library:
                         #self.library = self.database.newLibrary(library)
-                        self.library = self.database.makeLibraryFromPath(library)
+                    #    self.library = self.database.makeLibraryByPath(library)
                         #self.library = Library(library)
                         #self.database.addLibrary(self.library)
-                    self.cell = self.library.cellByName(self.cellName(f))
-                    if not self.cell:
-                        self.cell = Cell.createCell(self.cellName(f), self.library)
-                        #self.library.addCell(self.cell)
+                    #self.cell = self.library.cellByName(self.cellName(f))
+                    #if not self.cell:
+                    #    self.cell = Cell.createCell(self.cellName(f), self.library)
+                    #    #self.library.addCell(self.cell)
                     cv = self.cell.cellViewByName('schematic')
                     if not cv:
                         cv = Schematic('schematic', self.cell)

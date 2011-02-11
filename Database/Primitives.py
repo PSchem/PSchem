@@ -19,9 +19,10 @@
 
 #print 'Primitives in'
 
-#from Database.Layers import *
-from Database.Cells import *
-from Database.Attributes import *
+#from Layers import *
+#from Cells import *
+from Path import *
+from Attributes import *
 from xml.etree import ElementTree as et
 
 #print 'Primitives out'
@@ -674,7 +675,8 @@ class Instance(Element):
         if cv:
             self._instanceCell = cv.cell
         else:
-            self._instanceCell = self.database.cellByName('/sym/analog', 'voltage-1')
+            path = Path.createFromNames('sym.analog', 'voltage-1')
+            self._instanceCell = self.database.libraries.objectByPath(path)
         return self._instanceCell
 
     @property
@@ -685,7 +687,8 @@ class Instance(Element):
         if cv:
             self._instanceCellView = cv
         else:
-            self._instanceCellView = self.database.cellViewByName('/sym/analog', 'voltage-1', 'symbol')
+            path = Path.createFromNames('sym.analog', 'voltage-1', 'symbol')
+            self._instanceCellView = self.database.libraries.objectByPath(path)
         return self._instanceCellView
 
     @property
@@ -700,7 +703,8 @@ class Instance(Element):
         
     @property
     def instanceAbsolutePath(self):
-        path = Library.concatenateLibraryPaths(self.library.path, self.instanceLibraryPath)
+        path = self.instanceLibraryPath
+        #path = Library.concatenateLibraryPaths(self.library.path, self.instanceLibraryPath)
         return path
 
     @property
@@ -725,9 +729,13 @@ class Instance(Element):
     @property
     def requestedInstanceCellView(self):
         if self.instanceLibraryPath == '':
-            self._requestedInstanceCellView = self.library.cellViewByName(self.instanceCellName, self.instanceCellViewName)
+            path = Path.createFromNames('.', self.instanceCellName, self.instanceCellViewName)
+            self._requestedInstanceCellView = self.library.objectByPath(path)
+            #self._requestedInstanceCellView = self.library.cellViewByName(self.instanceCellName, self.instanceCellViewName)
         else:
-            self._requestedInstanceCellView = self.database.cellViewByName(self.instanceAbsolutePath, self.instanceCellName, self.instanceCellViewName)
+            path = Path.createFromNames(self.instanceAbsolutePath, self.instanceCellName, self.instanceCellViewName)
+            self._requestedInstanceCellView = self.database.libraries.objectByPath(path)
+            #self._requestedInstanceCellView = self.database.cellViewByName(self.instanceAbsolutePath, self.instanceCellName, self.instanceCellViewName)
         return self._requestedInstanceCellView
         
     @property
@@ -738,7 +746,7 @@ class Instance(Element):
         if cv:
             self._instanceLibrary = cv.library
         else:
-            self._instanceLibrary = self.database.libraryByPath('/sym/analog')
+            self._instanceLibrary = self.database.libraryByPath(Path.createFromPathName('sym.analog'))
         return self._instanceLibrary
 
     def addToView(self, view):

@@ -23,14 +23,15 @@ from PyQt4.QtGui import *
 #from ..PSchem.ConsoleWidget import *
 from PSchem.ConsoleWidget import *
 from PSchem.Controller import *
-from PSchem.DatabaseWidget import *
-from PSchem.HierarchyWidget import *
+from PSchem.LibraryHierarchyWidget import *
+from PSchem.DesignHierarchyWidget import *
 from PSchem.LayerWidget import *
 from PSchem.ToolOptions import *
 from PSchem.DesignView import *
 from PSchem.GraphicsScene import *
 from PSchem.LayerView import *
 from PSchem.Resources_rc import *
+from Database import Database
 from Database import Cells, Reader
 import os
 
@@ -67,9 +68,9 @@ class PWindow(QtGui.QMainWindow):
             self.restoreGeometry(val.toByteArray())
         self.createConsole()
         self.createToolOptions()
-        self.createDatabaseView()
-        self.createHierarchyView()
-        self.createLayerView()
+        self.createLibraryHierarchyWidget()
+        self.createDesignHierarchyWidget()
+        self.createLayerWidget()
         self.createEditorWidget()
 
         self.createActions()
@@ -104,33 +105,29 @@ class PWindow(QtGui.QMainWindow):
         self.dockC = QtGui.QDockWidget(self.tr("Console"), self)
         self.dockC.setObjectName('consoleDock')
         self.docks.add(self.dockC)
-        #self.databaseWidget = DatabaseWidget.DatabaseWidget(self)
         self.dockC.setWidget(self.consoleWidget)
         self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.dockC)
 
 
-    def createDatabaseView(self):
-        self.dockD = QtGui.QDockWidget(self.tr("Database"), self)
-        self.dockD.setObjectName('databaseCellsDock')
+    def createLibraryHierarchyWidget(self):
+        self.dockD = QtGui.QDockWidget(self.tr("Libraries"), self)
+        self.dockD.setObjectName('librariesDock')
         self.docks.add(self.dockD)
-        self.databaseModel = DatabaseModel(self.database)
-        self.databaseWidget = DatabaseWidget(self, self.databaseModel)
-        #self.databaseWidget.setSourceModel(self.databaseModel)
-        self.dockD.setWidget(self.databaseWidget)
+        self.libraryHierarchyModel = LibraryHierarchyModel(self.database.libraries)
+        self.libraryHierarchyWidget = LibraryHierarchyWidget(self, self.libraryHierarchyModel)
+        self.dockD.setWidget(self.libraryHierarchyWidget)
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.dockD)
         #self.tabifyDockWidget(QtCore.Qt.LeftDockWidgetArea, dock)
 
-    def createHierarchyView(self):
-        self.dockH = QtGui.QDockWidget(self.tr("Hierarchy"), self)
-        self.dockH.setObjectName('hierarchyDock')
+    def createDesignHierarchyWidget(self):
+        self.dockH = QtGui.QDockWidget(self.tr("Designs"), self)
+        self.dockH.setObjectName('designsDock')
         self.docks.add(self.dockH)
-        self.hierarchyModel = HierarchyModel(self.database.designs)
-        self.hierarchyWidget = HierarchyWidget(self)
-        self.hierarchyWidget.setSourceModel(self.hierarchyModel)
+        self.designHierarchyModel = DesignHierarchyModel(self.database.designs)
+        self.designHierarchyWidget = DesignHierarchyWidget(self)
+        self.designHierarchyWidget.setSourceModel(self.designHierarchyModel)
         
-        #self.hierarchyWidget.setModel(self.hierarchyProxyModel)
-        #self.hierarchyWidget.setSortingEnabled(True)
-        self.dockH.setWidget(self.hierarchyWidget)
+        self.dockH.setWidget(self.designHierarchyWidget)
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.dockH)
 
     def loadLayers(self):
@@ -285,7 +282,7 @@ class PWindow(QtGui.QMainWindow):
 
         self.database.layers = self.layers
 
-    def createLayerView(self):
+    def createLayerWidget(self):
         self.loadLayers()
         self.dockL = QtGui.QDockWidget(self.tr("Layers"), self)
         self.dockL.setObjectName('layerDock')
@@ -305,7 +302,6 @@ class PWindow(QtGui.QMainWindow):
         self.dockTool = QtGui.QDockWidget(self.tr("Tool Options"), self)
         self.dockTool.setObjectName('toolOptionsDock')
         self.docks.add(self.dockTool)
-        #self.databaseWidget = DatabaseWidget.DatabaseWidget(self)
         self.selectToolOptions = SelectToolOptions()
         self.dockTool.setWidget(self.selectToolOptions)
         #self.consoleWidget.setObjectName('')
@@ -384,7 +380,7 @@ class PWindow(QtGui.QMainWindow):
         self.openCellViewAct = QtGui.QAction(self.tr("&Open cellview"), self)
         self.openCellViewAct.setShortcut(self.tr("Ctrl+O"))
         self.openCellViewAct.setStatusTip(self.tr("Open selected cellview"))
-        self.openCellViewCmd = Command("window.openCellView(window.databaseWidget.selectedCellView())")
+        self.openCellViewCmd = Command("window.openCellView(window.libraryHierarchyWidget.selectedCellView())")
         self.connect(self.openCellViewAct, QtCore.SIGNAL("triggered()"),
                     lambda: self.controller.execute(self.openCellViewCmd))
 
@@ -779,56 +775,56 @@ class PWindow(QtGui.QMainWindow):
     def newSchematic(self):
         #lib = self.database.makeLibrary('work')
         #self.database.addLibrary(lib)
-        importer = Reader.GedaImporter(self.database)
+        importer = Reader.GedaImporter(self.database.libraries)
         importer.importLibraryList(
             [
-                ['/spnet/latch', '../spNet/latch'],
-                ['/spnet/sym/analog', '../spNet/sym/analog'],
-                ['/spnet/sym/titleblock', '../spNet/sym/titleblock'],
-                ['/spnet/sym/spice', '../spNet/sym/spice'],
-                ['/sym/analog', '../geda/symbols/analog'],
-                ['/sym/diode', '../geda/symbols/diode'],
-                ['/sym/io', '../geda/symbols/io'],
-                ['/sym/IEC417', '../geda/symbols/IEC417'],
-                ['/sym/asic', '../geda/symbols/asic'],
-                ['/sym/font', '../geda/symbols/font'],
-                ['/sym/spice', '../geda/symbols/spice'],
-                ['/sym/power', '../geda/symbols/power'],
-                ['/sym/titleblock', '../geda/symbols/titleblock'],
-                ['/examples/lightning_detector', '../geda/examples/lightning_detector/sym'],
-                ['/examples/gTAG', '../geda/examples/gTAG'],
-                ['/flicker', '../flicker/ee/sym'],
-                ['/flicker/openIP', '../flicker/ee/openIP'],
-                ['/gsim/sym', '../gsim/sym/capacitor'],
-                ['/gsim/sym', '../gsim/sym/diode'],
-                ['/gsim/sym', '../gsim/sym/ic-analog'],
-                ['/gsim/sym', '../gsim/sym/inductor'],
-                ['/gsim/sym', '../gsim/sym/power'],
-                ['/gsim/sym', '../gsim/sym/resistor'],
-                ['/gsim/sym', '../gsim/sym/signal'],
-                ['/gsim/sym', '../gsim/sym/spice_commands'],
-                ['/gsim/sym', '../gsim/sym/spice_generic'],
-                ['/gsim/sym', '../gsim/sym/transformer'],
-                ['/gsim/sym', '../gsim/sym/transistor'],
-                ['/gsim/sym', '../gsim/sym/xspice_analog'],
-                ['/gsim/sym', '../gsim/sym/xspice_digital'],
-                ['/gsim/sym', '../gsim/sym/xspice_mixed'],
-                ['/gsim/sym', '../gsim/sym/xspice_model'],
+                ['spnet.latch', '../spNet/latch'],
+                ['spnet.sym.analog', '../spNet/sym/analog'],
+                ['spnet.sym.titleblock', '../spNet/sym/titleblock'],
+                ['spnet.sym.spice', '../spNet/sym/spice'],
+                ['sym.analog', '../geda/symbols/analog'],
+                ['sym.diode', '../geda/symbols/diode'],
+                ['sym.io', '../geda/symbols/io'],
+                ['sym.IEC417', '../geda/symbols/IEC417'],
+                ['sym.asic', '../geda/symbols/asic'],
+                ['sym.font', '../geda/symbols/font'],
+                ['sym.spice', '../geda/symbols/spice'],
+                ['sym.power', '../geda/symbols/power'],
+                ['sym.titleblock', '../geda/symbols/titleblock'],
+                ['examples.lightning_detector', '../geda/examples/lightning_detector/sym'],
+                ['examples.gTAG', '../geda/examples/gTAG'],
+                ['flicker', '../flicker/ee/sym'],
+                ['flicker.openIP', '../flicker/ee/openIP'],
+                ['gsim.sym', '../gsim/sym/capacitor'],
+                ['gsim.sym', '../gsim/sym/diode'],
+                ['gsim.sym', '../gsim/sym/ic-analog'],
+                ['gsim.sym', '../gsim/sym/inductor'],
+                ['gsim.sym', '../gsim/sym/power'],
+                ['gsim.sym', '../gsim/sym/resistor'],
+                ['gsim.sym', '../gsim/sym/signal'],
+                ['gsim.sym', '../gsim/sym/spice_commands'],
+                ['gsim.sym', '../gsim/sym/spice_generic'],
+                ['gsim.sym', '../gsim/sym/transformer'],
+                ['gsim.sym', '../gsim/sym/transistor'],
+                ['gsim.sym', '../gsim/sym/xspice_analog'],
+                ['gsim.sym', '../gsim/sym/xspice_digital'],
+                ['gsim.sym', '../gsim/sym/xspice_mixed'],
+                ['gsim.sym', '../gsim/sym/xspice_model'],
             ],
             [
-                ['/spnet/latch', '../spNet/latch'],
-                ['/examples/lightning_detector', '../geda/examples/lightning_detector'],
-                ['/examples/gTAG', '../geda/examples/gTAG'],
-                ['/flicker', '../flicker/ee'],
-                ['/gsim/examples/0010_basic', '../gsim/examples/0010_basic'],
-                ['/gsim/examples/0020_rlc', '../gsim/examples/0020_rlc'],
-                ['/gsim/examples/0030_diode_bjt', '../gsim/examples/0030_diode_bjt'],
-                ['/gsim/examples/0040_digital', '../gsim/examples/0040_digital'],
-                ['/gsim/examples/0050_xspice', '../gsim/examples/0050_xspice'],
-                ['/gsim/examples/0060_adc', '../gsim/examples/0060_adc'],
-                ['/gsim/examples/0070_hybrid', '../gsim/examples/0070_hybrid'],
-                ['/gsim/examples/0080_filtre', '../gsim/examples/0080_filtre'],
-                ['/gsim/examples/0100_script', '../gsim/examples/0100_script'],
+                ['spnet.latch', '../spNet/latch'],
+                ['examples.lightning_detector', '../geda/examples/lightning_detector'],
+                ['examples.gTAG', '../geda/examples/gTAG'],
+                ['flicker', '../flicker/ee'],
+                ['gsim.examples.0010_basic', '../gsim/examples/0010_basic'],
+                ['gsim.examples.0020_rlc', '../gsim/examples/0020_rlc'],
+                ['gsim.examples.0030_diode_bjt', '../gsim/examples/0030_diode_bjt'],
+                ['gsim.examples.0040_digital', '../gsim/examples/0040_digital'],
+                ['gsim.examples.0050_xspice', '../gsim/examples/0050_xspice'],
+                ['gsim.examples.0060_adc', '../gsim/examples/0060_adc'],
+                ['gsim.examples.0070_hybrid', '../gsim/examples/0070_hybrid'],
+                ['gsim.examples.0080_filtre', '../gsim/examples/0080_filtre'],
+                ['gsim.examples.0100_script', '../gsim/examples/0100_script'],
             ])
         
     def openCellView(self, cellView):
@@ -854,6 +850,12 @@ class PWindow(QtGui.QMainWindow):
 
     def openCellViewByName(self, libPath, cellName, viewName):
         cellView = self.database.cellViewByName(libPath, cellName, viewName)
+        print self.__class__.__name__, cellView
+        self.openCellView(cellView)
+
+    def openDatabaseObjectByPathName(self, pathName):
+        path = Path.createFromPathName(pathName)
+        cellView = self.database.libraries.objectByPath(path)
         print self.__class__.__name__, cellView
         self.openCellView(cellView)
 

@@ -19,8 +19,8 @@
 
 #print 'Cells in'
 
-#from Database.CellViews import *
-from Database.Design import *
+from CellViews import *
+from Path import Path
 from xml.etree import ElementTree as et
 
 #print 'Cells out'
@@ -30,6 +30,8 @@ class Cell():
     @classmethod
     def createCell(cls, name, library):
         """Construct a Library object, or return an existing one."""
+        if not Libraries.theLibraries:
+            return
         if name in library.cellNames:
             self = library.cellNames[name]
         else:
@@ -55,12 +57,20 @@ class Cell():
         return self._name
 
     @property
+    def path(self):
+        return self.library.path + '/' + self.name
+
+    @property
     def library(self):
         return self._library
         
     @property
+    def root(self):
+        return self.library.root
+        
+    @property
     def database(self):
-        return self.library.database
+        return self.root.database
 
     @property
     def implementation(self):
@@ -85,6 +95,15 @@ class Cell():
         else:
             return None
 
+    def cellViewByPath(self, path, create=False):
+        if self.cellViewNames.has_key(path.cellViewName):
+            cellView = self.cellViewNames[path.cellViewName]
+        #elif create:
+        #    cellView = CellView.createCellView(path.cellViewName, self)
+        else:
+            return None
+        return cellView
+        
     def cellViewAdded(self, cellView):
         self.cellViews.add(cellView)
         self.cellViewNames[cellView.name] = cellView
@@ -109,12 +128,14 @@ class Cell():
 class Library():
 
     @classmethod
-    def createLibrary(cls, name, database, parentLibrary = None):
+    def createLibrary(cls, name, parentLibrary = None):
         """Construct a Library object, or return an existing one."""
+        if not Libraries.theLibraries:
+            return
         if parentLibrary:
             parent = parentLibrary
         else:
-            parent = database
+            parent = Libraries.theLibraries
         if name in parent.libraryNames:
             self = parent.libraryNames[name]
         else:
@@ -125,7 +146,6 @@ class Library():
             self._libraryNames = {}
             self._parentLibrary = parentLibrary
             self._name = name
-            self._database = database
             self._sortedLibraries = None
             self._sortedCells = None
             parent.libraryAdded(self)
@@ -154,115 +174,179 @@ class Library():
     @property
     def path(self):
         if self.parentLibrary:
-            return self.parentLibrary.path + '/' + self.name
+            return self.parentLibrary.path + '.' + self.name
         else:
-            return '/' + self.name
+            return self.name
 
-    @property
-    def database(self):
-        if not self._database:
-            self._database = self.parentLibrary.database
-        return self._database
-        
     @property
     def parentLibrary(self):
         return self._parentLibrary
+
+    @property
+    def root(self):
+        return Libraries.theLibraries
+        
+    @property
+    def database(self):
+        return self.root.database
         
     @property
     def sortedLibraries(self):
         """Cached list of libraries sorted by name."""
         if not self._sortedLibraries:
-            #self._sortedChildNames = (self.libraryNames.keys() + self.cellNames.keys()).sort(key=str.lower) #lambda a, b: cmp(a.name.lower(), b.name.lower()))
-            #self._sortedChildNames = sorted(self.libraryNames.keys() + self.cellNames.keys()) #.sort(key=str.lower) #lambda a, b: cmp(a.name.lower(), b.name.lower()))
             self._sortedLibraries = sorted(self.libraries, lambda a, b: cmp(a.name.lower(), b.name.lower()))
-            #self._sortedLibraries = self.libraries
         return self._sortedLibraries
 
     @property
     def sortedCells(self):
         """Cached list of cells sorted by name."""
         if not self._sortedCells:
-            #self._sortedChildNames = (self.libraryNames.keys() + self.cellNames.keys()).sort(key=str.lower) #lambda a, b: cmp(a.name.lower(), b.name.lower()))
-            #self._sortedChildNames = sorted(self.libraryNames.keys() + self.cellNames.keys()) #.sort(key=str.lower) #lambda a, b: cmp(a.name.lower(), b.name.lower()))
             self._sortedCells = sorted(self.cells, lambda a, b: cmp(a.name.lower(), b.name.lower()))
-            #self._sortedCells = self.cells
         return self._sortedCells
 
     def cellAdded(self, cell):
         self.cells.add(cell)
         self.cellNames[cell.name] = cell
         self._sortedCells = None
-        self.database.libraryChanged(self)
+        self.root.libraryChanged(self)
 
     def cellRemoved(self, cell):
         self.cells.remove(cell)
         del self.cellNames[cell.name]
         self._sortedCells = None
-        self.database.libraryChanged(self)
+        self.root.libraryChanged(self)
         
     def cellChanged(self, cell):
-        self.database.libraryChanged(self)
+        self.root.libraryChanged(self)
 
     def libraryAdded(self, library):
         self.libraries.add(library)
         self.libraryNames[library.name] = library
         self._sortedLibraries = None
-        self.database.libraryChanged(self)
+        self.root.libraryChanged(self)
 
     def libraryRemoved(self, library):
         self.libraries.remove(library)
         del self.libraryNames[library.name]
         self._sortedLibraries = None
-        self.database.libraryChanged(self)
+        self.root.libraryChanged(self)
         
     def libraryChanged(self, library):
-        self.database.libraryChanged(self)
+        self.root.libraryChanged(self)
 
-    def libraryByPath(self, libraryPath):
-        (first, sep, rest) = libraryPath.partition('/')
-        if first == '..':
-            return self.parentLibrary.libraryByPath(rest)
-        elif first == '.':
-            return self.libraryByPath(rest)
-        elif first == '':
-            return self.database.libraryByPath(rest)
-        elif self.libraryNames.has_key(first):
-            if rest == '':
-                return self.libraryNames[first]
-            else:
-                return self.libraryNames[first].libraryByPath(rest)
+    def objectByPath__(self, libraryPath, create=False):
+        (libraryPath, sep, cellPath) = path.partition('/')
+        library = self.libraryByPath(libraryPath, create)
+        if len(sep) == 0 or len(cellPath) == 0:
+            return library
+        elif library:
+            return library.cellByPath(cellPath, create)
         else:
             return None
-
-    @classmethod
-    def concatenateLibraryPaths(cls, libPath1, libPath2):
-        (beginning1, sep, last1) = libPath1.rpartition('/')
-        (first2, sep, rest2) = libPath2.partition('/') 
-        if libPath2.find('/') == 0: #is absolute
-            return libPath2
-        elif len(libPath2) == 0:
-            return libPath1
-        elif first2 == '.':
-            return Library.concatenateLibraryPaths(libPath1, rest2)
-        elif first2 == '..' and beginning1 != '':
-            return Library.concatenateLibraryPaths(beginning1, rest2)
-        elif first2 == '..':
-            return '/' + libPath2
-        else:
-            return libPath1 + '/' + libPath2
-
-    def cellByName(self, cellName):
-        if self.cellNames.has_key(cellName):
-            return self.cellNames[cellName]
+        
+    def libraryByPath_(self, libraryPath, create=False):
+        (libraryPath2, sep, rest) = libraryPath.partition('/') #remove cell/cellview if any
+        (first, sep, rest) = libraryPath2.partition('.')
+        if libraryPath2 == '':
+            return None
+        if len(sep) > 0 and libraryPath2 == '': #relative to itself
+            self.libraryByPath(rest, create)
+        if self.libraryNames.has_key(first):
+            library = self.libraryNames[first]
+        elif create:
+            library = Library.createLibrary(first, self)
         else:
             return None
+        if library and sep != '':
+            return library.libraryByPath(rest, create)
+        else:
+            return library
 
-    def cellViewByName(self, cellName, cellViewName):
-        cell = self.cellByName(cellName)
-        if cell:
-            return cell.cellViewByName(cellViewName)
+    def cellByPath_(self, cellPath, create=False):
+        (first, sep, rest) = cellPath.partition('/')
+        if cellPath == '' or first == '':
+            return None
+        if self.cellNames.has_key(first):
+            cell = self.cellNames[first]
+        elif create:
+            cell = Cell.createCell(first, self)
         else:
             return None
+        if cell and sep != '':
+            return cell.cellViewByPath(rest, create)
+        else:
+            return cell
+
+    def objectByPath(self, path, create=False):
+        if self.cellNames.has_key(path.cellName):
+            cell = self.cellNames[path.cellName]
+        elif create:
+            cell = Cell.createCell(path.cellName, self)
+        else:
+            return None
+        if cell and path.cellViewName:
+            return cell.cellViewByPath(path, create)
+        return cell
+
+    def libraryByPath(self, path, create=False):
+        if path.absolute:
+            return self.libraries.libraryByPath(path, create)
+        if not path.subLibrary:
+            return self
+        libName = path.libraryName
+        if self.libraryNames.has_key(libName):
+            library = self.libraryNames[libName]
+        elif create:
+            library = Library.createLibrary(libName, self)
+        else:
+            return
+        return library.libraryByPath(path.descend, create)
+
+    def createLibraryFromPath(self, path):
+        return self.libraryByPath(path, True)
+        
+    def createCellFromPath(self, path):
+        lib = self.createLibraryFromPath(path)
+        return Cell.createCell(path.cellName, lib)
+        
+    def createSchematicFromPath(self, path):
+        cell = self.createCellFromPath(path)
+        return Schematic(self, cell)
+        
+    def createSymbolFromPath(self, path):
+        cell = self.createCellFromPath(path)
+        return Symbol(self, cell)
+        
+    #def libraryByPath(self, libraryPath):
+    #    (first, sep, rest) = libraryPath.partition('.')
+    #    if first == '':
+    #        return None
+    #    if first == '..':
+    #        return self.parentLibrary.libraryByPath(rest)
+    #    elif first == '.':
+    #        return self.libraryByPath(rest)
+    #    elif first == '':
+    #        return self.database.libraryByPath(rest)
+    #    elif self.libraryNames.has_key(first):
+    #        if rest == '':
+    #            return self.libraryNames[first]
+    #        else:
+    #            return self.libraryNames[first].libraryByPath(rest)
+    #    else:
+    #        return None
+
+    #def cellByName(self, cellName):
+    #    if self.cellNames.has_key(cellName):
+    #        return self.cellNames[cellName]
+    #    else:
+    #        return None
+
+    #def cellViewByName(self, cellName, cellViewName):
+    #    cell = self.cellByName(cellName)
+    #    if cell:
+    #        return cell.cellViewByName(cellViewName)
+    #    else:
+    #        return None
 
     def remove(self):
         # remove child libraries&cells
@@ -274,37 +358,27 @@ class Library():
         if self.parentLibrary:
             self.parentLibrary.libraryRemoved(self)
         else:
-            self.database.libraryRemoved(self)
+            self.root.libraryRemoved(self)
         self.parentLibrary = None
-        self.database = None
         
-
-class Database():
-    theDatabase = None
-
+class Libraries():
+    theLibraries = None
+    
     @classmethod
-    def createDatabase(cls, client):
-        """Construct a Database object, or return an existing one."""
-        if Database.theDatabase:
-            self = Database.theDatabase
-            #self._client = client
+    def createLibraries(cls, database):
+        """Construct a Libraries object, or return an existing one."""
+        if Libraries.theLibraries:
+            self = Libraries.theLibraries
         else:
             self = cls()
-            Database.theDatabase = self
-            self._client = client
+            Libraries.theLibraries = self
+            self.database = database
             self._libraries = set()
             self._libraryNames = {}
-            self._databaseViews = set()
-            self._layers = None
-            self._designs = Designs(self)
-            self._deferredProcessingObjects = set()
+            self._libraryViews = set()
             self._sortedLibraries = None
         return self
-    
-    @property
-    def client(self):
-        return self._client
-        
+            
     @property
     def libraries(self):
         return self._libraries
@@ -314,25 +388,8 @@ class Database():
         return self._libraryNames
 
     @property
-    def layers(self):
-        return self._layers
-        
-    @layers.setter
-    def layers(self, layers):
-        self._layers = layers
-        #self.updateViews()
-
-    @property
-    def designs(self):
-        return self._designs
-
-    @property
-    def databaseViews(self):
-        return self.databaseViews
-
-    @property
-    def path(self):
-        return '/'
+    def libraryViews(self):
+        return self._libraryViews
 
     @property
     def sortedLibraries(self):
@@ -342,151 +399,81 @@ class Database():
         #print self._sortedLibraries
         return self._sortedLibraries
 
-    def installUpdateDatabaseViewsHook(self, view):
-        self._databaseViews.add(view)
+    def libraryViewAdded(self, view):
+        self._libraryViews.add(view)
 
-    def updateDatabaseViewsPreparation(self):
-        """
-        Some views may require notification before layout
-        of the database changes
-        """
-        for v in self._databaseViews:
-            v.prepareForUpdate()
-        
-    def updateDatabaseViews(self):
-        "Notify views that the database layout has changed"
-        for v in self._databaseViews:
+    def updateLibraryViews(self):
+        "Notify views that the libraries layout has changed"
+        for v in self._libraryViews:
             v.update()
 
-    def updateDatabaseViewsPreparation(self):
+    def updateLibraryViewsPreparation(self):
         """
         Some views may require notification before layout
-        of the design hierarchy changes
+        of the libraries changes
         """
-        for v in self._databaseViews:
+        for v in self._libraryViews:
             v.prepareForUpdate()
         
     def libraryAdded(self, library):
         self.libraries.add(library)
         self.libraryNames[library.name] = library
         self._sortedLibraries = None
-        self.requestDeferredProcessing(self)
+        self.database.requestDeferredProcessing(self)
 
     def libraryRemoved(self, library):
         self.libraries.remove(library)
         del self._libraryNames[library.name]
         self._sortedLibraries = None
-        self.requestDeferredProcessing(self)
+        self.database.requestDeferredProcessing(self)
         
     def libraryChanged(self, library):
-        self.requestDeferredProcessing(self)
+        self.database.requestDeferredProcessing(self)
 
-    def makeLibraryFromPath(self, libraryPath, rootLib=None):
-        (first, sep, rest) = libraryPath.partition('/')
-        if libraryPath == '' or first == '..':
-            return None
-        if first == '' or first == '.':
-            return self.makeLibraryFromPath(rest)
-        if rootLib:
-            lib = rootLib.libraryByPath(first)
-            if not lib:
-                lib = Library.createLibrary(first, self, rootLib)
+    def objectByPath(self, path, create=False):
+        library = self.libraryByPath(path, create)
+        if library and path.cellName:
+            return library.objectByPath(path, create)
+        return library
+
+    def libraryByPath(self, path, create=False):
+        if not path.absolute or not path.subLibrary:
+            return
+        libName = path.libraryName
+        if self.libraryNames.has_key(libName):
+            library = self.libraryNames[libName]
+        elif create:
+            library = Library.createLibrary(libName)
         else:
-            lib = self.libraryByPath(first)
-            if not lib:
-                lib = Library.createLibrary(first, self)
-        if rest == '':
-            return lib
-        return self.makeLibraryFromPath(rest, lib)
+            return
+        return library.libraryByPath(path.descend, create)
+
+    def createLibraryFromPath(self, path):
+        return self.libraryByPath(path, True)
         
-    def libraryByPath(self, libraryPath):
-        if libraryPath == '':
-            return None
-        (first, sep, rest) = libraryPath.partition('/')
-        if first == '' or first == '.':
-            return self.libraryByPath(rest)
-        elif self.libraryNames.has_key(first):
-            if rest == '':
-                return self.libraryNames[first]
-            else:
-                return self.libraryNames[first].libraryByPath(rest)
-        else:
-            return None
-
-    def cellByName(self, libraryPath, cellName):
-        lib = self.libraryByPath(libraryPath)
-        if lib:
-            return lib.cellByName(cellName)
-        else:
-            return None
-
-    def cellViewByName(self, libraryPath, cellName, cellViewName):
-        lib = self.libraryByPath(libraryPath)
-        if lib:
-            return lib.cellViewByName(cellName, cellViewName)
-        else:
-            return None
-
+    def createCellFromPath(self, path):
+        lib = self.createLibraryFromPath(path)
+        return Cell.createCell(path.cellName, lib)
+        
+    def createSchematicFromPath(self, path):
+        cell = self.createCellFromPath(path)
+        return Schematic(self, cell)
+        
+    def createSymbolFromPath(self, path):
+        cell = self.createCellFromPath(path)
+        return Symbol(self, cell)
+        
     def runDeferredProcess(self):
         """
         Runs deferred processes of the Database class.
         Do not call it directly, Use Database.runDeferredProcesses(object)
         """
-        self.updateDatabaseViews()
+        self.updateLibraryViews()
         
-    def wasDeferredProcessingRequested(self, object=None):
-        if object:
-            return object in self._deferredProcessingObjects
-        else:
-            return len(self._deferredProcessingObjects) > 0
-        
-    def requestDeferredProcessing(self, object):
-        """
-        Request deferred processing of object's notifications.
-        Once per object. No priorities or order guarantees.
-        """
-        self._deferredProcessingObjects.add(object)
-        ##print self.__class__.__name__, "request", object
-        self.client.deferredProcessingRequested()
-        self.leaveCPU()
-            
-    def cancelDeferredProcessing(self, object):
-        """
-        Cancel deferred processing of a given object.
-        For example, if it has already been triggered manually.
-        """
-        self._deferredProcessingObjects.remove(object)
-        
-    def runDeferredProcesses(self, object = None):
-        """
-        Force execution of all deferred processes.
-        To be called synchronously or from within the main loop
-        (an "idle" function).
-        """
-        if object:
-            while self.wasDeferredProcessingRequested(object):
-                self.cancelDeferredProcessing(object)
-                o.runDeferredProcess()
-        else:
-            while self.wasDeferredProcessingRequested(object):
-                dpos = list(self._deferredProcessingObjects)
-                self._deferredProcessingObjects = set()
-                for o in dpos:
-                    ##print self.__class__.__name__, "run", o
-                    o.runDeferredProcess()
-            
-    def leaveCPU(self):
-        self.client.leaveCPU()
+    def close(self):
+        for l in list(self.libraries):
+            pass
+            #fix it
+            #l.remove()
+        Libraries.theLibraries = None
                 
-class Importer:
-    def __init__(self, database):
-        self._database = database
-        self.reset()
-
-    def reset(self):
-        self._importedCellsView = set()
-        self._reader = None
-        self._fileList = []
-        self._targetLibrary = 'work'
-        self._overwrite = False
-        self._recursive = True

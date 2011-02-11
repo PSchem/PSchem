@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with PSchem Database.  If not, see <http://www.gnu.org/licenses/>.
 
-#from Database.Cells import *
+#from Cells import *
 from xml.etree import ElementTree as et
 
 class Attribute():

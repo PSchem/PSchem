@@ -19,9 +19,9 @@
 
 #print 'CellViews in'
 
-from Database.Index import Index
-from Database.Primitives import *
-#from Database.Design import *
+from Index import Index
+from Primitives import *
+#from Design import *
 from xml.etree import ElementTree as et
 
 #print 'CellViews out'
@@ -36,6 +36,10 @@ class CellView():
     @property
     def name(self):
         return self._name
+        
+    @property
+    def path(self):
+        return self.cell.path + '/' + self.name
 
     @property
     def cell(self):
@@ -60,8 +64,8 @@ class CellView():
         pass
 
     def remove(self):
-        for a in list(self.attributes()):
-            a.remove()
+        #for a in list(self.attributes):
+        #    a.remove()
         self.cell.cellViewRemoved(self)
         self.cell = None
 

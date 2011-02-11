@@ -135,6 +135,12 @@ class GedaReader(Reader):
         n = NetSegment(self.view, self._database.layers, int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)))
         self.last = n
 
+    def parseBus(self):
+        m=self.match
+        n = NetSegment(self.view, self._database.layers, int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)))
+        n.layer = n.layers.layerByName('bus', 'drawing')
+        self.last = n
+
     def parseBox(self):
         m=self.match
         r = Rect(self.view, self._database.layers, int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)))
@@ -289,6 +295,9 @@ class GedaReader(Reader):
         elif (mode == 'schematic' and
               self.regExpSearch(self.pnet, text)):
             self.parseNet()
+        elif (mode == 'schematic' and
+              self.regExpSearch(self.pbus, text)):
+            self.parseBus()
         elif (mode == 'symbol' and
               self.regExpSearch(self.ppin, text)):
             self.parsePin()

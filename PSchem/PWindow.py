@@ -183,6 +183,17 @@ class PWindow(QtGui.QMainWindow):
         self.layers.addLayer(l)
 
         l = Layer()
+        l.name = 'bus'
+        l.type = 'drawing'
+        p = LinePattern(LinePattern.Solid, 0.5, 1)
+        p.setEndStyle = LinePattern.RoundEnd
+        l.linePattern = p
+        l.fillPattern = FillPattern(FillPattern.Solid)
+        l.color = Color(Color.Cyan)
+        l.zValue = 100
+        self.layers.addLayer(l)
+
+        l = Layer()
         l.name = 'pin'
         l.type = 'drawing'
         p = LinePattern(LinePattern.Solid, 0.1, 1)
@@ -775,56 +786,103 @@ class PWindow(QtGui.QMainWindow):
     def newSchematic(self):
         #lib = self.database.makeLibrary('work')
         #self.database.addLibrary(lib)
+        gEDA_Symbols = '../geda/symbols'
+        gEDA_Examples = '../geda/examples'
+        spnet = '../spNet'
+        flicker = '../flicker'
+        gsim = '../gsim'
+        SXI = '../SXI'
+        
         importer = Reader.GedaImporter(self.database.libraries)
         importer.importLibraryList(
             [
-                ['spnet.latch', '../spNet/latch'],
-                ['spnet.sym.analog', '../spNet/sym/analog'],
-                ['spnet.sym.titleblock', '../spNet/sym/titleblock'],
-                ['spnet.sym.spice', '../spNet/sym/spice'],
-                ['sym.analog', '../geda/symbols/analog'],
-                ['sym.diode', '../geda/symbols/diode'],
-                ['sym.io', '../geda/symbols/io'],
-                ['sym.IEC417', '../geda/symbols/IEC417'],
-                ['sym.asic', '../geda/symbols/asic'],
-                ['sym.font', '../geda/symbols/font'],
-                ['sym.spice', '../geda/symbols/spice'],
-                ['sym.power', '../geda/symbols/power'],
-                ['sym.titleblock', '../geda/symbols/titleblock'],
-                ['examples.lightning_detector', '../geda/examples/lightning_detector/sym'],
-                ['examples.gTAG', '../geda/examples/gTAG'],
-                ['flicker', '../flicker/ee/sym'],
-                ['flicker.openIP', '../flicker/ee/openIP'],
-                ['gsim.sym', '../gsim/sym/capacitor'],
-                ['gsim.sym', '../gsim/sym/diode'],
-                ['gsim.sym', '../gsim/sym/ic-analog'],
-                ['gsim.sym', '../gsim/sym/inductor'],
-                ['gsim.sym', '../gsim/sym/power'],
-                ['gsim.sym', '../gsim/sym/resistor'],
-                ['gsim.sym', '../gsim/sym/signal'],
-                ['gsim.sym', '../gsim/sym/spice_commands'],
-                ['gsim.sym', '../gsim/sym/spice_generic'],
-                ['gsim.sym', '../gsim/sym/transformer'],
-                ['gsim.sym', '../gsim/sym/transistor'],
-                ['gsim.sym', '../gsim/sym/xspice_analog'],
-                ['gsim.sym', '../gsim/sym/xspice_digital'],
-                ['gsim.sym', '../gsim/sym/xspice_mixed'],
-                ['gsim.sym', '../gsim/sym/xspice_model'],
+                ['spnet.latch', spnet + '/latch'],
+                ['spnet.sym.analog', spnet + '/sym/analog'],
+                ['spnet.sym.titleblock', spnet + '/sym/titleblock'],
+                ['spnet.sym.spice', spnet + '/sym/spice'],
+#                ['sym.4000', gEDA_Symbols + '/4000'],
+#                ['sym.74', gEDA_Symbols + '/74'],
+#                ['sym.allegro', gEDA_Symbols + '/allegro'],
+#                ['sym.altera', gEDA_Symbols + '/altera'],
+#                ['sym.amphenol', gEDA_Symbols + '/amphenol'],
+                ['sym.analog', gEDA_Symbols + '/analog'],
+#                ['sym.apex', gEDA_Symbols + '/apex'],
+                ['sym.asic', gEDA_Symbols + '/asic'],
+                ['sym.asicpads', gEDA_Symbols + '/asicpads'],
+                ['sym.bus', gEDA_Symbols + '/bus'],
+                ['sym.cascade', gEDA_Symbols + '/cascade'],
+                ['sym.connector', gEDA_Symbols + '/connector'],
+#                ['sym.dec', gEDA_Symbols + '/dec'],
+                ['sym.diode', gEDA_Symbols + '/diode'],
+#                ['sym.ecl', gEDA_Symbols + '/ecl'],
+##                ['sym.gnetman', gEDA_Symbols + '/gnetman'],
+#                ['sym.idt', gEDA_Symbols + '/idt'],
+                ['sym.IEC417', gEDA_Symbols + '/IEC417'],
+                ['sym.io', gEDA_Symbols + '/io'],
+#                ['sym.irf', gEDA_Symbols + '/irf'],
+#                ['sym.lattice', gEDA_Symbols + '/lattice'],
+#                ['sym.linear', gEDA_Symbols + '/linear'],
+#                ['sym.maxim', gEDA_Symbols + '/maxim'],
+#                ['sym.memory', gEDA_Symbols + '/memory'],
+#                ['sym.micro', gEDA_Symbols + '/micro'],
+#                ['sym.minicircuits', gEDA_Symbols + '/minicircuits'],
+                ['sym.misc', gEDA_Symbols + '/misc'],
+#                ['sym.national', gEDA_Symbols + '/national'],
+#                ['sym.opto', gEDA_Symbols + '/opto'],
+#                ['sym.philips', gEDA_Symbols + '/philips'],
+#                ['sym.pla', gEDA_Symbols + '/pla'],
+                ['sym.power', gEDA_Symbols + '/power'],
+#                ['sym.radio', gEDA_Symbols + '/radio'],
+#                ['sym.relay', gEDA_Symbols + '/relay'],
+#                ['sym.rf', gEDA_Symbols + '/rf'],
+                ['sym.spice', gEDA_Symbols + '/spice'],
+#                ['sym.st', gEDA_Symbols + '/st'],
+#                ['sym.supervisor', gEDA_Symbols + '/supervisor'],
+#                ['sym.switcap', gEDA_Symbols + '/switcap'],
+                ['sym.switch', gEDA_Symbols + '/switch'],
+                ['sym.titleblock', gEDA_Symbols + '/titleblock'],
+#                ['sym.transistor', gEDA_Symbols + '/transistor'],
+#                ['sym.tube', gEDA_Symbols + '/tube'],
+#                ['sym.verilog', gEDA_Symbols + '/verilog'],
+#                ['sym.vhdl', gEDA_Symbols + '/vhdl'],
+#                ['sym.xilinx', gEDA_Symbols + '/xilinx'],
+##                ['sym.font', gEDA_Symbols + '/font'],
+                ['examples.lightning_detector', gEDA_Examples + '/lightning_detector/sym'],
+                ['examples.gTAG', gEDA_Examples + '/gTAG'],
+                ['flicker', flicker + '/ee/sym'],
+                ['flicker.openIP', flicker + '/ee/openIP'],
+                ['gsim.sym', gsim + '/sym/capacitor'],
+                ['gsim.sym', gsim + '/sym/diode'],
+                ['gsim.sym', gsim + '/sym/ic-analog'],
+                ['gsim.sym', gsim + '/sym/inductor'],
+                ['gsim.sym', gsim + '/sym/power'],
+                ['gsim.sym', gsim + '/sym/resistor'],
+                ['gsim.sym', gsim + '/sym/signal'],
+                ['gsim.sym', gsim + '/sym/spice_commands'],
+                ['gsim.sym', gsim + '/sym/spice_generic'],
+                ['gsim.sym', gsim + '/sym/transformer'],
+                ['gsim.sym', gsim + '/sym/transistor'],
+                ['gsim.sym', gsim + '/sym/xspice_analog'],
+                ['gsim.sym', gsim + '/sym/xspice_digital'],
+                ['gsim.sym', gsim + '/sym/xspice_mixed'],
+                ['gsim.sym', gsim + '/sym/xspice_model'],
+                ['SXI.SXI-EM-DriverBoard', SXI + '/SXI-EM-DriverBoard/Symbols'],
             ],
             [
-                ['spnet.latch', '../spNet/latch'],
-                ['examples.lightning_detector', '../geda/examples/lightning_detector'],
-                ['examples.gTAG', '../geda/examples/gTAG'],
-                ['flicker', '../flicker/ee'],
-                ['gsim.examples.0010_basic', '../gsim/examples/0010_basic'],
-                ['gsim.examples.0020_rlc', '../gsim/examples/0020_rlc'],
-                ['gsim.examples.0030_diode_bjt', '../gsim/examples/0030_diode_bjt'],
-                ['gsim.examples.0040_digital', '../gsim/examples/0040_digital'],
-                ['gsim.examples.0050_xspice', '../gsim/examples/0050_xspice'],
-                ['gsim.examples.0060_adc', '../gsim/examples/0060_adc'],
-                ['gsim.examples.0070_hybrid', '../gsim/examples/0070_hybrid'],
-                ['gsim.examples.0080_filtre', '../gsim/examples/0080_filtre'],
-                ['gsim.examples.0100_script', '../gsim/examples/0100_script'],
+                ['spnet.latch', spnet + '/latch'],
+                ['examples.lightning_detector', gEDA_Examples + '/lightning_detector'],
+                ['examples.gTAG', gEDA_Examples + '/gTAG'],
+                ['flicker', flicker + '/ee'],
+                ['gsim.examples.0010_basic', gsim + '/examples/0010_basic'],
+                ['gsim.examples.0020_rlc', gsim + '/examples/0020_rlc'],
+                ['gsim.examples.0030_diode_bjt', gsim + '/examples/0030_diode_bjt'],
+                ['gsim.examples.0040_digital', gsim + '/examples/0040_digital'],
+                ['gsim.examples.0050_xspice', gsim + '/examples/0050_xspice'],
+                ['gsim.examples.0060_adc', gsim + '/examples/0060_adc'],
+                ['gsim.examples.0070_hybrid', gsim + '/examples/0070_hybrid'],
+                ['gsim.examples.0080_filtre', gsim + '/examples/0080_filtre'],
+                ['gsim.examples.0100_script', gsim + '/examples/0100_script'],
+                ['SXI.SXI-EM-DriverBoard', SXI + '/SXI-EM-DriverBoard'],
             ])
         
     def openCellView(self, cellView):

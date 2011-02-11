@@ -20,14 +20,17 @@
 from Exceptions import PathError
 
 class Path():
+    def __init__(self, pathName=None):
+        if pathName:
+            self._libraryPath = None
+            self.cellName = None
+            self.cellViewName = None
+            self.absolute = False
+            self.parse(pathName)
+    
     @classmethod
     def createFromPathName(cls, pathName):
-        self = cls()
-        self._libraryPath = None
-        self.cellName = None
-        self.cellViewName = None
-        self.absolute = False
-        self.parse(pathName)
+        self = cls(pathName)
         return self
 
     @classmethod
@@ -163,3 +166,7 @@ class Path():
         self.libraryPath.append(first)
         if sep != '':
             self.parseLibPathRec(rest, origName)
+
+    def __repr__(self):
+        return "Path('" + self.name + "')"
+        

@@ -204,6 +204,9 @@ class Element():
         self.layer = None
         self.diagram = None
         
+    def __repr__(self):
+        return "<Element @[" + str(self.x) + "," + str(self.y) + "]>"
+
 class Line(Element):
     def __init__(self, diagram, layers, x1, y1, x2, y2):
         Element.__init__(self, diagram, layers)
@@ -241,6 +244,9 @@ class Line(Element):
         elem.attrib['layer'] = str(self.layer.name)
         return elem
         
+    def __repr__(self):
+        return "<Line @[" + str(self.x1) + "," + str(self.y1) + "]-[" + str(self.x2) + "," + str(self.y2) + "]>"
+
 class Rect(Element):
     def __init__(self, diagram, layers, x, y, w, h):
         Element.__init__(self, diagram, layers)
@@ -262,6 +268,9 @@ class Rect(Element):
 
     def addToView(self, view):
         view.addRect(self)
+
+    def __repr__(self):
+        return "<Rect @[" + str(self.x) + "," + str(self.y) + "],[" + str(self.w) + "x" + str(self.h) + "]>"
 
 class CustomPath(Element):
     move, line, curve, close = range(4)
@@ -299,6 +308,9 @@ class CustomPath(Element):
             self._path.append([self.close])
             self.updateViews()
 
+    def __repr__(self):
+        return "<CustomPath " + repr(self.path) + ">"
+
 class Ellipse(Element):
     def __init__(self, diagram, layers, x, y, radiusX, radiusY):
         Element.__init__(self, diagram, layers)
@@ -332,6 +344,9 @@ class Ellipse(Element):
 
     def addToView(self, view):
         view.addEllipse(self)
+
+    def __repr__(self):
+        return "<Ellipse @[" + str(self.x) + "," + str(self.y) + "],[" + str(self.radiusX) + "x" + str(self.radiusY) + "]>"
 
 class EllipseArc(Element):
     def __init__(self, diagram, layers, x, y, radiusX, radiusY,
@@ -389,6 +404,9 @@ class EllipseArc(Element):
 
     def addToView(self, view):
         view.addEllipseArc(self)
+
+    def __repr__(self):
+        return "<EllipseArc @[" + str(self.x) + "," + str(self.y) + "],[" + str(self.radiusX) + "x" + str(self.radiusY) + "]>"
 
 class Label(Element):
     AlignLeft = 0
@@ -456,6 +474,10 @@ class Label(Element):
         elem.attrib['valign'] = str(self.vAlign)
         elem.attrib['size'] = str(self.textSize)
         return elem
+
+    def __repr__(self):
+        return "<Label @[" + str(self.x) + "," + str(self.y) + "] '" + str(self.text) + "'>"
+
         
 class AttributeLabel(Label):
     AlignLeft = 0
@@ -521,6 +543,9 @@ class AttributeLabel(Label):
         elem.append(attr)
         return elem
         
+    def __repr__(self):
+        return "<AttributeLabel @[" + str(self.x) + "," + str(self.y) + "] '" + str(self.text) + "'>"
+
         
 class NetSegment(Element):
     def __init__(self, diagram, layers, x1, y1, x2, y2):
@@ -632,6 +657,9 @@ class NetSegment(Element):
         self.diagram.netSegmentRemoved(self)
         Element.remove(self)
  
+    def __repr__(self):
+        return "<NetSegment @[" + str(self.x1) + "," + str(self.y1) + "]-[" + str(self.x2) + "," + str(self.y2) + "]>"
+
 class SolderDot(Element):
     def __init__(self, diagram, layers, x, y):
         Element.__init__(self, diagram, layers)
@@ -652,6 +680,9 @@ class SolderDot(Element):
     def addToView(self, view):
         view.addSolderDot(self)
         
+    def __repr__(self):
+        return "<SolderDot @[" + str(self.x) + "," + str(self.y) + "]>"
+
 class Instance(Element):
     def __init__(self, diagram, layers):
         Element.__init__(self, diagram, layers)
@@ -752,6 +783,9 @@ class Instance(Element):
     def addToView(self, view):
         view.addInstance(self)
 
+    def __repr__(self):
+        return "<Instance @[" + str(self.x) + "," + str(self.y) + "] '" + self.instanceCellView.path + "'>"
+
 class Pin(Instance):
     def __init__(self, diagram, layers, x1, y1, x2, y2):
         Element.__init__(self, diagram, layers)
@@ -792,6 +826,9 @@ class Pin(Instance):
     def addToView(self, view):
         view.addPin(self)
 
+    def __repr__(self):
+        return "<Pin @[" + str(self.x) + "," + str(self.y) + "] '" + self.instanceCellView.path + "'>"
+
 class SymbolPin(Instance):
     def __init__(self, diagram, layers, x1, y1, x2, y2):
         Element.__init__(self, diagram, layers)
@@ -831,6 +868,10 @@ class SymbolPin(Instance):
 
     def addToView(self, view):
         view.addPin(self)
+
+    def __repr__(self):
+        return "<SymbolPin @[" + str(self.x) + "," + str(self.y) + "] '" + self.instanceCellView.path + "'>"
+
         
 class Connectivity():
     def __init__(self):

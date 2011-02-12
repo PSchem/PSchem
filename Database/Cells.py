@@ -123,6 +123,9 @@ class Cell():
         self.library.cellRemoved(self)
         self.library = None
 
+    def __repr__(self):
+        return "<Cell '" + self.path + "'>"
+
 class Library():
 
     @classmethod
@@ -285,6 +288,9 @@ class Library():
             self.root.libraryRemoved(self)
         self.parentLibrary = None
         
+    def __repr__(self):
+        return "<Library '" + self.path + "'>"
+        
 class Libraries():
     theLibraries = None
     
@@ -401,3 +407,6 @@ class Libraries():
             #l.remove()
         Libraries.theLibraries = None
                 
+    def __repr__(self):
+        return "<Libraries " + repr(self.sortedLibraries) + ">"
+        

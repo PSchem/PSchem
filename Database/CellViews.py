@@ -69,6 +69,10 @@ class CellView():
         self.cell.cellViewRemoved(self)
         self.cell = None
 
+    def __repr__(self):
+        return "<CellView '" + self.path + "'>"
+
+
 class Diagram(CellView):
     def __init__(self, name, cell):
         CellView.__init__(self, name, cell)
@@ -270,6 +274,9 @@ class Diagram(CellView):
         else:
             if level and (not elem.tail or not elem.tail.strip()):
                 elem.tail = i
+
+    def __repr__(self):
+        return "<Diagram '" + self.path + "'>"
 
                 
 class Schematic(Diagram):
@@ -474,6 +481,9 @@ class Schematic(Diagram):
         """
         self.checkNets()
         
+    def __repr__(self):
+        return "<Schematic '" + self.path + "'>"
+
 class Symbol(Diagram):
     def __init__(self, name, cell):
         Diagram.__init__(self, name, cell)
@@ -503,8 +513,14 @@ class Symbol(Diagram):
     def symbolPinRemoved(self, symbolPin):
         self.symbolPins.remove(symbolPin)
         
+    def __repr__(self):
+        return "<Symbol '" + self.path + "'>"
+
 class Netlist(CellView):
     def __init__(self, name, cell):
         CellView.__init__(self, name, cell)
         #self._name = 'netlist'
+
+    def __repr__(self):
+        return "<Netlist '" + self.path + "'>"
 

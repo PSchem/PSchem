@@ -56,6 +56,9 @@ class Color():
     @property
     def blue(self):
         return self._color[2]
+        
+    def __repr__(self):
+        return "Color(" + repr(self.color) + ")"
 
 class LinePattern():
     NoLine, Solid, Dash, Dot, DashDot, DashDotDot, CustomPattern = range(7)
@@ -102,6 +105,10 @@ class LinePattern():
     def endStyle(self, endStyle):
         self._endStyle = endStyle
 
+    def __repr__(self):
+        return "<LinePattern " + str(self.style) + ", " + str(self.width) + ", " + str(self.pixelWidth) + ", " + repr(self.pattern) + ">"
+
+    
 class FillPattern():
     NoFill, Solid, CustomPattern, \
     Dense1, Dense2, Dense3, Dense4, Dense5, Dense6, Dense7, \
@@ -122,6 +129,8 @@ class FillPattern():
     def pattern(self):
         return self._pattern
 
+    def __repr__(self):
+        return "<FillPattern " + str(self.style) + ", " + repr(self.pattern) + ">"
 
 class Layer():
     def __init__(self):
@@ -151,7 +160,7 @@ class Layer():
 
     @property
     def fullName(self):
-        return self.name + ' ' + self.type
+        return self.name + '/' + self.type
 
     @property
     def linePattern(self):
@@ -217,12 +226,16 @@ class Layer():
     def selectable(self):
         return False
 
+    def __repr__(self):
+        return "<Layer '" + self.fullName + "'@" + str(self.zValue) + ">"
+
 class Layers():
     def __init__(self, database):
         self._database = database
         self._layers = set()
         self._layerNames = {}
         self._view = None
+        self._sortedLayers = None
 
     @property
     def database(self):
@@ -231,6 +244,14 @@ class Layers():
     @property
     def layers(self):
         return self._layers
+
+    @property
+    def sortedLayers(self):
+        """Cached list of layers sorted by zValue."""
+        if not self._sortedLayers:
+            self._sortedLayers = sorted(self.layers, lambda a, b: cmp(a.zValue, b.zValue))
+        #print self._sortedLayers
+        return self._sortedLayers
 
     @property
     def view(self):
@@ -243,6 +264,7 @@ class Layers():
     def addLayer(self, layer):
         self.layers.add(layer)
         self._layerNames[layer.fullName] = layer
+        self._sortedLayers = None
         if self.view:
             self.view.addLayer(layer)
 
@@ -256,4 +278,6 @@ class Layers():
     def layerNames(self):
         return keys(self._layerNames)
 
-
+    def __repr__(self):
+        return "<Layers " + repr(self.sortedLayers) + ">"
+        

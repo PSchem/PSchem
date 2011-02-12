@@ -116,6 +116,9 @@ class DesignUnit():
             self.cellView.DesignUnitRemoved(self)
         self.parentDesignUnit.childDesignUnitRemoved(self)
         
+    def __repr__(self):
+        return "<Design '" + self.instance.name + "@" + self.cellView.path + "'>"
+
 class Design(DesignUnit):
     def __init__(self, cellView, designs):
         self._cellView = cellView
@@ -162,11 +165,15 @@ class Design(DesignUnit):
         self.cellView.designUnitRemoved(self)
         self.designs.designRemoved(self)
 
+    def __repr__(self):
+        return "<Design '" + self.cellView.path + "'>"
+
 class Designs():
     def __init__(self, database):
         self._database = database
         self._designs = set()
         self._hierarchyViews = set()
+        self._sortedDesigns = None
        
     @property
     def designs(self):
@@ -180,6 +187,14 @@ class Designs():
     def hierarchyViews(self):
         return self._hierarchyViews
 
+    @property
+    def sortedDesigns(self):
+        """Cached list of designs sorted by name."""
+        if not self._sortedDesigns:
+            self._sortedDesigns = sorted(self.designs, lambda a, b: cmp(a.name.lower(), b.name.lower()))
+        #print self._sortedDesigns
+        return self._sortedDesigns
+
     def installUpdateHierarchyViewsHook(self, view):
         self.hierarchyViews.add(view)
 
@@ -192,12 +207,14 @@ class Designs():
         #self.add(design)
         self.designs.add(design)
         #self.updateHierarchyViews()
+        self._sortedDesigns = None
         self.database.requestDeferredProcessing(self)
 
     def designRemoved(self, design):
         #self.remove(design)
         self.designs.remove(design)
         #self.updateHierarchyViews()
+        self._sortedDesigns = None
         self.database.requestDeferredProcessing(self)
         
     def runDeferredProcess(self):
@@ -208,3 +225,5 @@ class Designs():
         for d in list(self.designs):
             d.remove()
         
+    def __repr__(self):
+        return "<Designs " + repr(self.sortedDesigns) + ">"

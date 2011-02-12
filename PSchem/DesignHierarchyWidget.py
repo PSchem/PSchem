@@ -30,7 +30,7 @@ class DesignHierarchyModel(QtCore.QAbstractItemModel):
 
     @property
     def designs(self):
-        return self._designs.designs
+        return self._designs
         
     def prepareForUpdate(self):
         self.emit(QtCore.SIGNAL("layoutAboutToBeChanged()"))
@@ -74,11 +74,10 @@ class DesignHierarchyModel(QtCore.QAbstractItemModel):
         if parent.isValid():
             data = parent.internalPointer()
 
-        if not parent.isValid():
-        #if isinstance(data, Design):
-            children = list(self.designs)
+        if not parent.isValid() or isinstance(data, Designs):
+            children = self.designs.sortedDesigns
         elif isinstance(data, DesignUnit):
-            children = data.childDesignUnits.values() #+ list(data.pins()) + list(data.nets() - data.pins())
+            children = data.sortedChildDesignUnits #+ list(data.pins()) + list(data.nets() - data.pins())
         else:
             return QtCore.QModelIndex()
 
@@ -101,11 +100,11 @@ class DesignHierarchyModel(QtCore.QAbstractItemModel):
                 pparent = parent.parentDesignUnit
                 if pparent:
                     #sys.stderr.write('pparent' + pparent.cellView.cell.name + "\n")
-                    d = pparent.childDesignUnits.values()
+                    d = pparent.sortedChildDesignUnits
                     n = d.index(parent)
                     return self.createIndex(n, 0, parent)
                 else:
-                    d = list(self.designs)
+                    d = list(self.designs.sortedDesigns)
                     n = d.index(parent)
                     return self.createIndex(n, 0, parent)
         return QtCore.QModelIndex()
@@ -115,7 +114,7 @@ class DesignHierarchyModel(QtCore.QAbstractItemModel):
             return True
         data = parent.internalPointer()
         if isinstance(data, DesignUnit):
-            return len(data.childDesignUnits) > 0
+            return len(data.sortedChildDesignUnits) > 0
         else:
             return False
 
@@ -124,11 +123,11 @@ class DesignHierarchyModel(QtCore.QAbstractItemModel):
         #    return 0
 
         if not parent.isValid():
-            return len(self.designs)
+            return len(self.designs.sortedDesigns)
 
         data = parent.internalPointer()
         if isinstance(data, DesignUnit):
-            return len(data.childDesignUnits) #+ list(data.pins) + list(data.nets - data.pins)
+            return len(data.sortedChildDesignUnits) #+ list(data.pins) + list(data.nets - data.pins)
         return 0
 
     def columnCount(self, parent):
@@ -153,81 +152,21 @@ class DesignHierarchyModel(QtCore.QAbstractItemModel):
 
         return QtCore.QVariant()
 
-
-class ProxyModel(QtGui.QSortFilterProxyModel):
-    def __init__(self):
-        QtGui.QSortFilterProxyModel.__init__(self)
-        self.libRegExp = QtCore.QRegExp()
-        self.cellRegExp = QtCore.QRegExp()
-
-    def filterAcceptsRow(self, row, parent):
-        source_idx = self.sourceModel().index(row, 0, parent)
-
-        if not source_idx.isValid():
-            return True
-
-        #data = source_idx.internalPointer()
-        #if isinstance(data, Library) and not self.libRegExp.isEmpty():
-        #    text = self.sourceModel().data(
-        #        source_idx, QtCore.Qt.DisplayRole).toString()
-        #    return text.contains(self.libRegExp)
-        #elif isinstance(data, Cell) and not self.cellRegExp.isEmpty():
-        #    text = self.sourceModel().data(
-        #        source_idx, QtCore.Qt.DisplayRole).toString()
-        #    return text.contains(self.cellRegExp)
-        #else:
-        return True
-
-    def setRegExps(self, libRegExp, cellRegExp):
-        self.libRegExp = libRegExp
-        self.cellRegExp = cellRegExp
-
-
 class DesignHierarchyWidget(QtGui.QWidget):
-    def __init__(self, parent=None):
-        QtGui.QWidget.__init__(self, parent)
+    def __init__(self, window, model):
+        QtGui.QWidget.__init__(self, window)
+        self.window = window
+        self.model = model
 
-        self.proxyModel = ProxyModel()
-        self.proxyModel.setDynamicSortFilter(True)
         self.treeView = QtGui.QTreeView()
         self.treeView.setUniformRowHeights(True)
-        self.treeView.setSortingEnabled(True)
         self.treeView.setAlternatingRowColors(True)
-        #self.treeView.setAllColumnsShowFocus(True)
 
-        layout2 = QtGui.QHBoxLayout()
-        self.libFilterText = QtGui.QLineEdit()
-        self.cellFilterText = QtGui.QLineEdit()
-        layout2.addWidget(QtGui.QLabel('Lib'))
-        layout2.addWidget(self.libFilterText)
-        layout2.addWidget(QtGui.QLabel('Cell'))
-        layout2.addWidget(self.cellFilterText)
-
+        self.treeView.setModel(model)
+        
         layout = QtGui.QVBoxLayout()
-        layout.addLayout(layout2)
         layout.addWidget(self.treeView)
 
-        self.connect(self.libFilterText,
-                     QtCore.SIGNAL("textChanged(QString)"),
-                     self.updateRegExp)
-        self.connect(self.cellFilterText,
-                     QtCore.SIGNAL("textChanged(QString)"),
-                     self.updateRegExp)
-
         self.setLayout(layout)
-
-    def updateRegExp(self):
-        libText = str(self.libFilterText.text())
-        cellText = str(self.cellFilterText.text())
-        self.proxyModel.setRegExps(
-            QtCore.QRegExp(libText, QtCore.Qt.CaseInsensitive,
-                           QtCore.QRegExp.Wildcard),
-            QtCore.QRegExp(cellText, QtCore.Qt.CaseInsensitive,
-                           QtCore.QRegExp.Wildcard))
-        self.proxyModel.invalidateFilter()
-
-    def setSourceModel(self, model):
-        self.proxyModel.setSourceModel(model)
-        self.treeView.setModel(self.proxyModel)
 
 

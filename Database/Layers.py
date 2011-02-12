@@ -250,7 +250,7 @@ class Layers():
         """Cached list of layers sorted by zValue."""
         if not self._sortedLayers:
             self._sortedLayers = sorted(self.layers, lambda a, b: cmp(a.zValue, b.zValue))
-        #print self._sortedLayers
+        print self._sortedLayers
         return self._sortedLayers
 
     @property
@@ -269,7 +269,7 @@ class Layers():
             self.view.addLayer(layer)
 
     def layerByName(self, layerName, typeName):
-        fullName = layerName + ' ' + typeName
+        fullName = layerName + '/' + typeName
         if self._layerNames.has_key(fullName):
             return self._layerNames[fullName]
         else:

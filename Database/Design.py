@@ -31,6 +31,7 @@ class DesignUnit():
         self._instance = instance
         self._parentDesignUnit = parentDesignUnit
         self._childDesignUnits = {} #set()
+        self._sortedChildDesignUnits = None
         self._design = parentDesignUnit.design
         self._scene = None
         #self._index = Index()
@@ -54,6 +55,14 @@ class DesignUnit():
                 DesignUnit(i, self) # it should add itself to parent design unit
                 #self._childDesignUnits[i] = DesignUnit(i, self)
         return self._childDesignUnits
+
+    @property
+    def sortedChildDesignUnits(self):
+        """Cached list of designs units sorted by name."""
+        if not self._sortedChildDesignUnits:
+            self._sortedChildDesignUnits = sorted(self.childDesignUnits.values(), lambda a, b: cmp(a.instance.instanceCellName.lower(), b.instance.instanceCellName.lower()))
+        #print self._sortedChildDesignUnits
+        return self._sortedChildDesignUnits
 
     @property
     def parentDesignUnit(self):
@@ -87,9 +96,11 @@ class DesignUnit():
         
     def childDesignUnitAdded(self, designUnit):
         self._childDesignUnits[designUnit.instance] = designUnit
+        self._sortedChildDesignUnits = None
         
     def childDesignUnitRemoved(self, designUnit):
         del self._childDesignUnits[designUnit.instance]
+        self._sortedChildDesignUnits = None
 
     def updateItem(self):
         if self.scene:
@@ -124,6 +135,7 @@ class Design(DesignUnit):
         self._cellView = cellView
         self._designs = designs
         self._childDesignUnits = {}
+        self._sortedChildDesignUnits = None
         self._scene = None
         self.cellView.designUnitAdded(self)
         designs.designAdded(self)
@@ -173,7 +185,7 @@ class Designs():
         self._database = database
         self._designs = set()
         self._hierarchyViews = set()
-        self._sortedDesigns = None
+        self._sortedDesigns = []
        
     @property
     def designs(self):
@@ -189,10 +201,7 @@ class Designs():
 
     @property
     def sortedDesigns(self):
-        """Cached list of designs sorted by name."""
-        if not self._sortedDesigns:
-            self._sortedDesigns = sorted(self.designs, lambda a, b: cmp(a.name.lower(), b.name.lower()))
-        #print self._sortedDesigns
+        """Preserve the order the designs were added."""
         return self._sortedDesigns
 
     def installUpdateHierarchyViewsHook(self, view):
@@ -207,14 +216,14 @@ class Designs():
         #self.add(design)
         self.designs.add(design)
         #self.updateHierarchyViews()
-        self._sortedDesigns = None
+        self._sortedDesigns.append(design)
         self.database.requestDeferredProcessing(self)
 
     def designRemoved(self, design):
         #self.remove(design)
         self.designs.remove(design)
         #self.updateHierarchyViews()
-        self._sortedDesigns = None
+        del self._sortedDesigns[self._sortedDesigns.index(design)]
         self.database.requestDeferredProcessing(self)
         
     def runDeferredProcess(self):

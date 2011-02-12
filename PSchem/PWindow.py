@@ -124,8 +124,7 @@ class PWindow(QtGui.QMainWindow):
         self.dockH.setObjectName('designsDock')
         self.docks.add(self.dockH)
         self.designHierarchyModel = DesignHierarchyModel(self.database.designs)
-        self.designHierarchyWidget = DesignHierarchyWidget(self)
-        self.designHierarchyWidget.setSourceModel(self.designHierarchyModel)
+        self.designHierarchyWidget = DesignHierarchyWidget(self, self.designHierarchyModel)
         
         self.dockH.setWidget(self.designHierarchyWidget)
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.dockH)

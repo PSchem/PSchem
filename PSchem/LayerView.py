@@ -162,6 +162,7 @@ class LayerView():
 class LayersView():
     def __init__(self, layers):
         self._layers = layers
+        self._sortedLayerViews = None
         self._layerViews = set()
         self._views = set()
         layers.view = self
@@ -169,6 +170,14 @@ class LayersView():
     @property
     def layers(self):
         return self._layers
+
+    @property
+    def sortedLayerViews(self):
+        """Cached list of layer views sorted by zValue."""
+        if not self._sortedLayerViews:
+            self._sortedLayerViews = sorted(self.layerViews, lambda a, b: cmp(a.layer.zValue, b.layer.zValue))
+        #print self._sortedLayerViews
+        return self._sortedLayerViews
     
     @property
     def layerViews(self):
@@ -184,11 +193,13 @@ class LayersView():
     def addLayer(self, layer):
         layerView = LayerView(layer)
         self.layerViews.add(layerView)
+        self._sortedLayerViews = None
         for v in self.views:
             v.update()
 
     def removeLayer(self, layer):
         self._layerViews.remove(layer.view())
+        self._sortedLayerViews = None
         for v in self._views:
             v.update()
 

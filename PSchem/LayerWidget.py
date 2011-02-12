@@ -74,11 +74,11 @@ class LayerModel(QtCore.QAbstractItemModel):
     def index(self, row, column, parent):
 
         if not parent.isValid():
-            children = list(self.layersView.layerViews)
+            children = list(self.layersView.sortedLayerViews)
         else:
             return QtCore.QModelIndex()
 
-        children.sort(lambda a, b: cmp(a.layer.zValue, b.layer.zValue))
+        #children.sort(lambda a, b: cmp(a.layer.zValue, b.layer.zValue))
         return self.createIndex(row, column, children[row])
 
     def parent(self, index):
@@ -91,7 +91,7 @@ class LayerModel(QtCore.QAbstractItemModel):
 
     def rowCount(self, parent):
         if not parent.isValid():
-            return len(self.layersView.layerViews)
+            return len(self.layersView.sortedLayerViews)
         return 0
 
     def columnCount(self, parent):

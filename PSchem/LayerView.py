@@ -139,7 +139,7 @@ class LayerView():
             #self._pen.setColor(QtGui.QColor(random()*255, random()*255, random()*255))
             return self._pen
         else:
-            pen = QtGui.QPen(QtCore.QtNoPen)
+            pen = QtGui.QPen(QtCore.Qt.NoPen)
             return pen
 
     @property
@@ -147,7 +147,7 @@ class LayerView():
         if self.layer.visible:
             return self._brush
         else:
-            brush = QtGui.QBrush(QtCore.QtNoBrush)
+            brush = QtGui.QBrush(QtCore.Qt.NoBrush)
             return brush
 
     @property
@@ -156,7 +156,7 @@ class LayerView():
             brush = QtGui.QBrush(self.color)
             return brush
         else:
-            brush = QtGui.QBrush(QtCore.QtNoBrush)
+            brush = QtGui.QBrush(QtCore.Qt.NoBrush)
             return brush
 
 class LayersView():

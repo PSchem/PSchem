@@ -336,7 +336,7 @@ class Ellipse(Element):
     def radiusY(self):
         return self._radiusY
 
-    @radiusX.setter
+    @radiusY.setter
     def radiusY(self, radiusY):
         if self.editable:
             self._radiusY = radiusY

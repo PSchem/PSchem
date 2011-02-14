@@ -276,7 +276,7 @@ class Layers():
             return None
 
     def layerNames(self):
-        return keys(self._layerNames)
+        return self._layerNames.keys()
 
     def __repr__(self):
         return "<Layers " + repr(self.sortedLayers) + ">"

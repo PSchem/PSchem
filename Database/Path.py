@@ -43,7 +43,7 @@ class Path():
         self.parseLibPath(pathName, pathName)
         if (cellViewName and cellViewName != '') and \
             (not cellName or cellName == ''):
-            raise PathError(pathname + '//' + cellViewName, "Empty cell name")
+            raise PathError(pathName + '//' + cellViewName, "Empty cell name")
         return self
 
     @classmethod

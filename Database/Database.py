@@ -96,7 +96,7 @@ class Database():
         if object:
             while self.wasDeferredProcessingRequested(object):
                 self.cancelDeferredProcessing(object)
-                o.runDeferredProcess()
+                object.runDeferredProcess()
         else:
             while self.wasDeferredProcessingRequested(object):
                 dpos = list(self._deferredProcessingObjects)

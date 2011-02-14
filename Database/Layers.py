@@ -71,7 +71,7 @@ class LinePattern():
             self._pattern = []
         self._width = width
         self._pixelWidth = pixelWidth
-        self._endStyle = self.FlatEnd
+        self._endStyle = self.RoundEnd #self.FlatEnd
 
     @property
     def style(self):

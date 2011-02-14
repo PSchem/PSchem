@@ -25,7 +25,7 @@ class BaseItem(QtGui.QGraphicsItem):
     def __init__(self, parent=None):
         QtGui.QGraphicsItem.__init__(self, parent)
         
-        self._rect = QtCore.QRectF()
+        self._boundingRect = QtCore.QRectF()
         self.model = None
         self.selected = False
         self.preSelected = False
@@ -56,7 +56,7 @@ class BaseItem(QtGui.QGraphicsItem):
 
     #has to be a function for QGraphicsItem compat.
     def boundingRect(self):
-        return self._rect
+        return self._boundingRect
     
     def removeItem(self):
         if self.scene():
@@ -156,7 +156,7 @@ class TextItem(BaseItem):
         self.model = label
         self.labelItem = TextItemInt(self)
         self.scale = 1.0
-        self._rect = None
+        self._boundingRect = None
         
         #self._labelItem
         self.setHandlesChildEvents(True)
@@ -219,7 +219,7 @@ class TextItem(BaseItem):
         r = self.labelItem.boundingRect()
         pos = self.labelItem.pos()
         matrix = self.labelItem.transform() * QtGui.QTransform().translate(pos.x(), pos.y())
-        self._rect = matrix.mapRect(r)
+        self._boundingRect = matrix.mapRect(r)
     
     def paint(self, painter, option, widget):
         #draw = (option.levelOfDetail > 0.32)
@@ -297,9 +297,9 @@ class CustomPathItem(BaseItem):
 
     def updateBoundingRect(self):
         self.prepareGeometryChange()
-        self._rect = self.path.controlPointRect()
+        self._boundingRect = self.path.controlPointRect()
         a = self.model.layer.lineWidth/2.0
-        self._rect.adjust(-a,-a,a,a)
+        self._boundingRect.adjust(-a,-a,a,a)
         
 class LineItem(BaseItem):
     def __init__(self, line, parent=None):
@@ -326,10 +326,7 @@ class LineItem(BaseItem):
         width = layer.lineWidth
         pixelWidth = layer.linePixelWidth
         if width > 0:
-            if self.aa:
-                pen.setWidthF(max(pixelWidth/scale, width))
-            else:
-                pen.setWidth(max(scale*width, pixelWidth))
+            pen.setWidth(max(scale*width, pixelWidth))
 
         painter.setPen(pen)
         brush = QtGui.QBrush(self.model.layer.view.brush)
@@ -340,10 +337,7 @@ class LineItem(BaseItem):
         if not self.parentItem() and self.preSelected:
             pen = QtGui.QPen(self.model.layers.layerByName('preselection', 'drawing').view.pen)
             if width > 0:
-                if self.aa:
-                    pen.setWidthF(max(pixelWidth/scale, width))
-                else:
-                    pen.setWidth(max(scale*width, pixelWidth))
+                pen.setWidth(max(scale*width, pixelWidth))
             painter.setPen(pen)
             painter.drawLine(self.lineShape)
 
@@ -357,7 +351,7 @@ class LineItem(BaseItem):
         #self._width = l.width
         #self.setLine(self.lineShape)
         self.updateBoundingRect()
-        #self._rect = QtGui.QGraphicsLineItem.boundingRect(self)
+        #self._boundingRect = QtGui.QGraphicsLineItem.boundingRect(self)
         self.update()
 
     def updateBoundingRect(self):
@@ -369,9 +363,9 @@ class LineItem(BaseItem):
         y = min(l.y1(), l.y2())
         h = abs(l.y1()-l.y2())+d
         
-        self._rect = QtCore.QRectF(x, y, w, h)
+        self._boundingRect = QtCore.QRectF(x, y, w, h)
         a = self.model.layer.lineWidth/2.0
-        self._rect.adjust(-a,-a,a,a)
+        self._boundingRect.adjust(-a,-a,a,a)
         
 
 class RectItem(BaseItem):
@@ -400,10 +394,7 @@ class RectItem(BaseItem):
         width = layer.lineWidth
         pixelWidth = layer.linePixelWidth
         if width > 0:
-            if self.aa:
-                pen.setWidthF(max(pixelWidth/scale, width))
-            else:
-                pen.setWidth(max(scale*width, pixelWidth))
+            pen.setWidth(max(scale*width, pixelWidth))
 
         painter.setPen(pen)
         brush = QtGui.QBrush(self.model.layer.view.brush)
@@ -424,19 +415,19 @@ class RectItem(BaseItem):
             r.x/uu, r.y/uu, r.w/uu, r.h/uu)
         self.setZValue(r.layer.zValue)
         #self._width = l.width()
-        #self.setRect(self._rectShape)
+        #self.setRect(self._boundingRectShape)
         #self.update(self.boundingRect())
         #def setLineWidth(self, width):
         #self.width = width
-        #self._rect = QtGui.QGraphicsRectItem.boundingRect(self)
+        #self._boundingRect = QtGui.QGraphicsRectItem.boundingRect(self)
         self.updateBoundingRect()
         self.update(self.boundingRect())
 
     def updateBoundingRect(self):
         self.prepareGeometryChange()
-        self._rect = self.rectShape
+        self._boundingRect = QtCore.QRectF(self.rectShape)
         a = self.model.layer.lineWidth/2.0
-        self._rect.adjust(-a,-a,a,a)
+        self._boundingRect.adjust(-a,-a,a,a)
         
 class EllipseItem(BaseItem):
     def __init__(self, ellipse, parent=None):
@@ -460,10 +451,7 @@ class EllipseItem(BaseItem):
         width = layer.lineWidth
         pixelWidth = layer.linePixelWidth
         if width > 0:
-            if self.aa:
-                pen.setWidthF(max(pixelWidth/scale, width))
-            else:
-                pen.setWidth(max(scale*width, pixelWidth))
+            pen.setWidth(max(scale*width, pixelWidth))
 
         painter.setPen(pen)
         brush = QtGui.QBrush(self.model.layer.view.brush)
@@ -494,10 +482,10 @@ class EllipseItem(BaseItem):
         uu = float(e.diagram.uu)
         cx = e.radiusX/uu
         cy = e.radiusY/uu
-        self._rect = QtCore.QRectF(e.x/uu-cx/2.0, e.y/uu-cy/2.0, cx, cy)
-        self.ellipseRect = QtCore.QRectF(self._rect)
+        self._boundingRect = QtCore.QRectF(e.x/uu-cx/2.0, e.y/uu-cy/2.0, cx, cy)
+        self.ellipseRect = QtCore.QRectF(self._boundingRect)
         a = self.model.layer.lineWidth/2.0
-        self._rect.adjust(-a,-a,a,a)
+        self._boundingRect.adjust(-a,-a,a,a)
         
         
 class EllipseArcItem(BaseItem):
@@ -524,10 +512,7 @@ class EllipseArcItem(BaseItem):
         width = layer.lineWidth
         pixelWidth = layer.linePixelWidth
         if width > 0:
-            if self.aa:
-                pen.setWidthF(max(pixelWidth/scale, width))
-            else:
-                pen.setWidth(max(scale*width, pixelWidth))
+            pen.setWidth(max(scale*width, pixelWidth))
 
 
         painter.setPen(pen)
@@ -562,11 +547,11 @@ class EllipseArcItem(BaseItem):
         uu = float(e.diagram.uu)
         cx = e.radiusX/uu
         cy = e.radiusY/uu
-        self._rect = QtCore.QRectF(
+        self._boundingRect = QtCore.QRectF(
             e.x/uu-cx/2.0, e.y/uu-cy/2.0, cx, cy)
-        self.ellipseRect = QtCore.QRectF(self._rect)
+        self.ellipseRect = QtCore.QRectF(self._boundingRect)
         a = self.model.layer.lineWidth/2.0
-        self._rect.adjust(-a,-a,a,a)
+        self._boundingRect.adjust(-a,-a,a,a)
 
     def shape(self):
         path = QtGui.QPainterPath()
@@ -586,7 +571,7 @@ class InstanceItem(BaseItem):
         self.cellView = self.model.instanceCellView
         #print self.__class__.__name__, instance, instance.instanceLibraryPath, instance.instanceCellName, instance.instanceCellViewName, self._cellView
         self.uu = float(self.cellView.uu)
-        self._rect = QtCore.QRectF()
+        self._boundingRect = QtCore.QRectF()
         self.shape = QtGui.QPainterPath()
         #self.setZValue(self.model.layer.zValue)
         self.setHandlesChildEvents(True)
@@ -600,7 +585,7 @@ class InstanceItem(BaseItem):
     #@property
     #def shape(self):
     #    #self._shape = QtGui.QPainterPath()
-    #    #self._shape.addRect(self._rect)
+    #    #self._shape.addRect(self._boundingRect)
     #    return self._shape
 
     def instanceRemoved(self):
@@ -707,14 +692,14 @@ class InstanceItem(BaseItem):
         
     def updateBoundingRect(self):
         self.prepareGeometryChange()
-        self._rect = QtCore.QRectF()
+        self._boundingRect = QtCore.QRectF()
         shapeRect = QtCore.QRectF()
-        #self._rect = childrenBoundingRect()  # missing for some reason
+        #self._boundingRect = childrenBoundingRect()  # missing for some reason
         for c in self.childItems():
             r = c.boundingRect()
             pos = c.pos()
             matrix = c.transform() * QtGui.QTransform().translate(pos.x(), pos.y())
-            self._rect = self._rect | matrix.mapRect(r)
+            self._boundingRect = self._boundingRect | matrix.mapRect(r)
             #if (not isinstance(c, TextItem) and
                 #not isinstance(c, InstanceItem)):
                 #shapeRect = shapeRect | matrix.mapRect(r)

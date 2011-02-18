@@ -30,6 +30,7 @@ class DesignUnit():
     def __init__(self, instance, parentDesignUnit):
         self._instance = instance
         self._parentDesignUnit = parentDesignUnit
+        self._name = instance.name
         self._childDesignUnits = {} #set()
         self._sortedChildDesignUnits = None
         self._design = parentDesignUnit.design
@@ -38,6 +39,17 @@ class DesignUnit():
         self.cellView.designUnitAdded(self)
         parentDesignUnit.childDesignUnitAdded(self)
  
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def path(self):
+        parent = self.parentDesignUnit
+        if parent.parentDesignUnit:
+            return parent.path + '.' + self.name
+        return parent.path + ':' + self.name
+
     @property
     def childDesignUnits(self):
         """
@@ -128,18 +140,23 @@ class DesignUnit():
         self.parentDesignUnit.childDesignUnitRemoved(self)
         
     def __repr__(self):
-        return "<Design '" + self.instance.name + "@" + self.cellView.path + "'>"
+        return "<DesignUnit '" + self.path + "'>"
 
 class Design(DesignUnit):
     def __init__(self, cellView, designs):
         self._cellView = cellView
         self._designs = designs
+        self._name = cellView.path
         self._childDesignUnits = {}
         self._sortedChildDesignUnits = None
         self._scene = None
         self.cellView.designUnitAdded(self)
         designs.designAdded(self)
             
+    @property
+    def path(self):
+        return self.cellView.path
+
     @property
     def cellView(self):
         return self._cellView
@@ -178,19 +195,24 @@ class Design(DesignUnit):
         self.designs.designRemoved(self)
 
     def __repr__(self):
-        return "<Design '" + self.cellView.path + "'>"
+        return "<Design '" + self.path + "'>"
 
 class Designs():
     def __init__(self, database):
         self._database = database
         self._designs = set()
+        self._designNames = {}
         self._hierarchyViews = set()
         self._sortedDesigns = []
        
     @property
     def designs(self):
         return self._designs
-        
+    
+    @property
+    def designNames(self):
+        return self._designNames
+    
     @property
     def database(self):
         return self._database
@@ -215,6 +237,7 @@ class Designs():
     def designAdded(self, design):
         #self.add(design)
         self.designs.add(design)
+        self.designNames[design.name] = design
         #self.updateHierarchyViews()
         self._sortedDesigns.append(design)
         self.database.requestDeferredProcessing(self)
@@ -222,9 +245,14 @@ class Designs():
     def designRemoved(self, design):
         #self.remove(design)
         self.designs.remove(design)
+        del self.designNames[design.name]
         #self.updateHierarchyViews()
         del self._sortedDesigns[self._sortedDesigns.index(design)]
         self.database.requestDeferredProcessing(self)
+        
+    def designUnitByPath(self, pathName):
+        if pathName in self.designNames:
+            return self.designNames[pathName]
         
     def runDeferredProcess(self):
         """Runs deferred processes."""

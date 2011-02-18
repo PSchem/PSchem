@@ -884,9 +884,10 @@ class PWindow(QtGui.QMainWindow):
                 ['SXI.SXI-EM-DriverBoard', SXI + '/SXI-EM-DriverBoard'],
             ])
         
-    def openCellView(self, cellView):
+    def openCellView(self, cellView, design = None):
         if cellView:
-            design = Design(cellView, self.database.designs)
+            if not design:
+                design = Design(cellView, self.database.designs)
             scene = GraphicsScene(design)
             #self.database.addDesign(design)
             dView = DesignView(self, scene)
@@ -916,6 +917,14 @@ class PWindow(QtGui.QMainWindow):
         print self.__class__.__name__, cellView
         self.openCellView(cellView)
 
+    def openDesignUnitByPathName(self, pathName):
+        (cellViewPathName, sep, instancePathName) = pathName.partition(':')
+        cellViewPath = Path.createFromPathName(cellViewPathName)
+        cellView = self.database.libraries.objectByPath(cellViewPath)
+        design = self.database.designs.designUnitByPath(cellViewPathName)
+        print self.__class__.__name__, cellView, design
+        self.openCellView(cellView, design)
+        
     #def runDeferred(self):
     #    print self.thread()
     #    self.database.runDeferredProcesses()

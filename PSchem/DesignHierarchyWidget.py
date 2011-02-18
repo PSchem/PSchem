@@ -20,6 +20,7 @@
 from PyQt4 import QtCore, QtGui
 from Database.Primitives import *
 from Database.Design import *
+from PSchem.ConsoleWidget import Command
 #import sys
 
 class DesignHierarchyModel(QtCore.QAbstractItemModel):
@@ -43,7 +44,7 @@ class DesignHierarchyModel(QtCore.QAbstractItemModel):
         if not index.isValid():
             return QtCore.QVariant()
 
-        if role != QtCore.Qt.DisplayRole:
+        if role != QtCore.Qt.DisplayRole and role != QtCore.Qt.ToolTipRole:
             return QtCore.QVariant()
 
         row = index.row()
@@ -51,19 +52,25 @@ class DesignHierarchyModel(QtCore.QAbstractItemModel):
         col = index.column()
         data = index.internalPointer()
         if isinstance(data, Design):
-            if col == 0:
-                return QtCore.QVariant('')
-            elif col == 1:
-                return QtCore.QVariant(data.cellView.cell.name)
+            if role == QtCore.Qt.DisplayRole:
+                if col == 0:
+                    return QtCore.QVariant('')
+                elif col == 1:
+                    return QtCore.QVariant(data.cellView.cell.name)
+                else:
+                    return QtCore.QVariant(data.cellView.library.path)
             else:
-                return QtCore.QVariant(data.cellView.library.path)
+                return QtCore.QVariant(data.path)
         elif isinstance(data, DesignUnit):
-            if col == 0:
-                return QtCore.QVariant(data.instance.name)
-            elif col == 1:
-                return QtCore.QVariant(data.instance.instanceCellName)
+            if role == QtCore.Qt.DisplayRole:
+                if col == 0:
+                    return QtCore.QVariant(data.instance.name)
+                elif col == 1:
+                    return QtCore.QVariant(data.instance.instanceCellName)
+                else:
+                    return QtCore.QVariant(data.instance.instanceLibraryPath)
             else:
-                return QtCore.QVariant(data.instance.instanceLibraryPath)
+                return QtCore.QVariant(data.path)
         else:
             return QtCore.QVariant()
 
@@ -164,9 +171,23 @@ class DesignHierarchyWidget(QtGui.QWidget):
 
         self.treeView.setModel(model)
         
+        self.connect(self.treeView,
+                     #QtCore.SIGNAL("doubleClicked(QModelIndex)"),
+                     QtCore.SIGNAL("activated(QModelIndex)"),
+                     self.openInstance)
+
         layout = QtGui.QVBoxLayout()
         layout.addWidget(self.treeView)
 
         self.setLayout(layout)
 
+    def openInstance(self, index):
+        if not index.isValid():
+            return
 
+        data = index.internalPointer()
+
+        #if isinstance(data, CellView):
+        self.window.controller.execute(
+            Command('window.openDesignUnitByPathName(\'' + data.path + '\')'))
+        

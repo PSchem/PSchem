@@ -53,31 +53,26 @@ class UndoViewStack(list):
 class Cursor():
     def __init__(self, widget, pos):
         self._widget = widget
-        self.rst()
         self._cursor = None
+        self._cursorUpdateRect = None
         self.move(pos)
 
     def move(self, point):
-        self._prev = self._cursor
-        self._cursor = point
-        rect = QtCore.QRectF(0, 0, 6, 6)
-        rect = self._widget.matrix().inverted()[0].mapRect(rect)
-        w = rect.width() #+2
+        invTransform = self._widget.transform().inverted()[0]
+        rect = invTransform.mapRect(QtCore.QRectF(-2, -2, 6, 6))
+        rect.translate(point)
 
-        if self._prev:
+        if self._cursor:
             self._widget.updateScene([self._cursorUpdateRect])
-        self._cursorUpdateRect = QtCore.QRectF(
-            self._cursor
-            - QtCore.QPointF(w/2, w/2),
-            QtCore.QSizeF(w, w))
+        self._cursorUpdateRect = rect
         self._widget.updateScene([self._cursorUpdateRect])
+        self._cursor = point
 
     def remove(self):
         self._widget.updateScene([self._cursorUpdateRect])
         self.rst()
 
     def rst(self):
-        self._prev = None
         self._cursorUpdateRect = None
 
     def pos(self):
@@ -93,12 +88,9 @@ class Cursor():
         layerView = self._widget.window.database.layers.layerByName('cursor', 'drawing').view
         painter.setPen(layerView.pen)
         painter.setBrush(layerView.brush)
-        c = self._cursor
-        rect = QtCore.QRectF(0, 0, 4, 4)
-        rect = self._widget.matrix().inverted()[0].mapRect(rect)
-        rectCursor = QtCore.QRectF(
-            c.x() - rect.width()/2, c.y() - rect.height()/2,
-            rect.width(), rect.height())
+        invTransform = self._widget.transform().inverted()[0]
+        rectCursor = invTransform.mapRect(QtCore.QRectF(-2, -2, 4, 4))
+        rectCursor.translate(self._cursor)
         painter.drawRect(rectCursor)
 
 class DesignView(QtGui.QGraphicsView):
@@ -173,6 +165,7 @@ class DesignView(QtGui.QGraphicsView):
 
 
     def drawForeground(self, painter, rect):
+        painter.setRenderHint(QtGui.QPainter.Antialiasing, False)
         #painter.setCompositionMode(QtGui.QPainter.RasterOp_SourceXorDestination)
         #painter.setCompositionMode(QtGui.QPainter.CompositionMode_Xor)
         if self._cursor:

@@ -40,7 +40,8 @@ class UndoViewStack(list):
     def popView(self):
         if not self.isEmpty():
             matrix = self.pop()
-            self._widget.cursor = None
+            self._widget.removeCursor()
+            #self._widget.cursor = None
             self._widget.setMatrix(matrix)
             self._widget.updateSceneRect(self._widget._scene.sceneRect())
             return matrix
@@ -233,20 +234,7 @@ class DesignView(QtGui.QGraphicsView):
             return
         point = self.mapToScene(event.pos())
         cursor = self.snapToGrid(point)
-        if not self._cursor:
-            self._cursor = Cursor(self, cursor)
-        if cursor != self._cursor.pos():
-            if event.buttons() & self.mousePressedButton:
-                self.modeStack.top().mouseDragEvent(event, cursor)
-            else:
-                self.modeStack.top().mouseMoveEvent(event, cursor)
-                
-            #self.window.statusBar().showMessage("x: "+str(cursor.x())+",\t y: "+str(cursor.y()), 1000)
-            self._cursor.move(cursor)
-            self.window.statusBar().showMessage(
-                    "x: "+str(self._cursor.x())+",\t y: "+str(self._cursor.y()), 1000)
-            
-        
+        # scene panning
         if event.buttons() & QtCore.Qt.MidButton:
             #offset = self.mapToScene(self._lastMousePos) - point
             #self.move(offset.x(), offset.y(), False)
@@ -255,6 +243,20 @@ class DesignView(QtGui.QGraphicsView):
             self.moveTo(newPoint.x(), newPoint.y())
             #self.repaint()
             #print time.clock() - tstart
+        else:
+            if not self._cursor:
+                self._cursor = Cursor(self, cursor)
+            if cursor != self._cursor.pos():
+                if event.buttons() & self.mousePressedButton:
+                    self.modeStack.top().mouseDragEvent(event, cursor)
+                else:
+                    self.modeStack.top().mouseMoveEvent(event, cursor)
+                
+                #self.window.statusBar().showMessage("x: "+str(cursor.x())+",\t y: "+str(cursor.y()), 1000)
+                self._cursor.move(cursor)
+                self.window.statusBar().showMessage(
+                        "x: "+str(self._cursor.x())+",\t y: "+str(self._cursor.y()), 1000)
+            
         self._lastMousePos = event.pos() #point
         self._eventLoopMutex.unlock()
 
@@ -287,12 +289,24 @@ class DesignView(QtGui.QGraphicsView):
         """
         if not newVisibleArea:
             newVisibleArea = self.mapToScene(self.viewport().rect()).boundingRect()
+        
+        # This code works around what looks like a bug in QGraphicsView.
+        # If either of scrollbars is disabled (scene smaller than viewport)
+        # a full scene redraw is triggered (slow).
+        # So, as a workaround we make sure that self.sceneRect() is always slightly larger
+        # than the viewport.
+        w = newVisibleArea.width()
+        h = newVisibleArea.height()
+        newVisibleArea.adjust(-0.001*w, -0.001*h, 0.001*w, 0.001*h)
+        # end of workaround
+        
         vb = newVisibleArea.bottom()
         vt = newVisibleArea.top()
         vl = newVisibleArea.left()
         vr = newVisibleArea.right()
-        sceneRect = QtCore.QRectF(400, 500, 300, 200)
-        #sceneRect = self.scene().sceneRect()
+        #sceneRect = QtCore.QRectF(400, 500, 300, 200)
+        sceneRect = self.scene().sceneRect()
+
         sb = sceneRect.bottom()
         st = sceneRect.top()
         sl = sceneRect.left()
@@ -328,7 +342,7 @@ class DesignView(QtGui.QGraphicsView):
     
     def moveTo(self, x, y):
         self.undoViewStack.pushView(self.matrix())
-        self._cursor = None
+        self.removeCursor()
         self.checkScrollBars()
         vr = self.mapToScene(self.viewport().rect()).boundingRect()
         cp = QtCore.QPointF(x, y)
@@ -342,7 +356,7 @@ class DesignView(QtGui.QGraphicsView):
         if dx != 0 or dy != 0:
             #print self.currentCenterPoint
             self.undoViewStack.pushView(self.matrix())
-            self._cursor = None
+            self.removeCursor()
             self.checkScrollBars()
             visibleArea = self.mapToScene(self.viewport().rect()).boundingRect()
             ##center = QtCore.QPointF(visibleArea.x() + visibleArea.width() / 2.0,
@@ -374,7 +388,7 @@ class DesignView(QtGui.QGraphicsView):
                 return
 
             self.undoViewStack.pushView(self.matrix())
-            self._cursor = None
+            self.removeCursor()
             self.checkScrollBars()
             vr = self.mapToScene(self.viewport().rect()).boundingRect()
             #cpView = vr.center() #QtCore.QPointF((vr.left() + vr.right()) / 2.0, (vr.top() + vr.bottom()) / 2.0)
@@ -395,7 +409,7 @@ class DesignView(QtGui.QGraphicsView):
             
     def fitRect(self, rect):
         self.undoViewStack.pushView(self.matrix())
-        self._cursor = None
+        self.removeCursor()
         m = self.matrix()
         vp = self.viewport().rect()
         w = max(1e-20, rect.width())
@@ -479,7 +493,10 @@ class DesignView(QtGui.QGraphicsView):
         #self.fileMenu.addAction(self.panDownAct)
 
     def leaveEvent(self, event):
+        self.removeCursor()
+
+    def removeCursor(self):
         if self._cursor:
             self._cursor.remove()
             self._cursor = None
-
+        

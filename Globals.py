@@ -20,3 +20,8 @@
 #UI = 'PyQt4'
 UI = 'PySide'
 
+Qt = __import__(UI,  globals(),  locals(),  ['QtCore',  'QtGui'])
+QtCore = Qt.QtCore
+QtGui = Qt.QtGui
+
+QtVersion = map(int, QtCore.qVersion().split('.'))

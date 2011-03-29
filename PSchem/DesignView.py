@@ -17,8 +17,13 @@
 # You should have received a copy of the GNU General Public License
 # along with PSchem.  If not, see <http://www.gnu.org/licenses/>.
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+import Globals
+Qt = __import__(Globals.UI,  globals(),  locals(),  ['QtCore',  'QtGui'])
+QtCore = Qt.QtCore
+QtGui = Qt.QtGui
+
+#from PyQt4.QtCore import *
+#from PyQt4.QtGui import *
 
 from PSchem.GraphicsItems import *
 from PSchem.Modes import *
@@ -219,8 +224,7 @@ class DesignView(QtGui.QGraphicsView):
         #axes
         painter.setPen(penAxes)
         painter.drawLines(
-            QtCore.QLineF(0, rect.top(), 0, rect.bottom()),
-            QtCore.QLineF(rect.left(), 0, rect.right(), 0))
+            [QtCore.QLineF(0, rect.top(), 0, rect.bottom()), QtCore.QLineF(rect.left(), 0, rect.right(), 0)])
 
 
     def snapToGrid(self, point):

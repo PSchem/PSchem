@@ -30,7 +30,13 @@ from Database.Exceptions import *
 import traceback
 import sys
 import math
-from PyQt4 import QtGui, QtCore
+
+import Globals
+Qt = __import__(Globals.UI,  globals(),  locals(),  ['QtCore',  'QtGui'])
+QtCore = Qt.QtCore
+QtGui = Qt.QtGui
+
+#from PyQt4 import QtGui, QtCore
 
 class Controller():
 

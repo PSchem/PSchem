@@ -17,7 +17,12 @@
 # You should have received a copy of the GNU General Public License
 # along with PSchem.  If not, see <http://www.gnu.org/licenses/>.
 
-from PyQt4 import QtCore, QtGui
+import Globals
+Qt = __import__(Globals.UI,  globals(),  locals(),  ['QtCore',  'QtGui'])
+QtCore = Qt.QtCore
+QtGui = Qt.QtGui
+
+#from PyQt4 import QtCore, QtGui
 from Database.Cells import *
 from Database.CellViews import *
 from PSchem.ConsoleWidget import Command
@@ -43,39 +48,52 @@ class LibraryHierarchyModel(QtCore.QAbstractItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return QtCore.QVariant()
+            return None
+            #return QtCore.QVariant()
 
         if role != QtCore.Qt.DisplayRole and role != QtCore.Qt.ToolTipRole:
-            return QtCore.QVariant()
+            return None
+            #return QtCore.QVariant()
 
         row = index.row()
 
         col = index.column()
         data = index.internalPointer()
         if isinstance(data, Libraries):
-            return QtCore.QVariant('libraries')
+            return self.tr('Libraries')
+            #return QtCore.QVariant('libraries')
         if col == 0:
             if role == QtCore.Qt.DisplayRole:
-                return QtCore.QVariant(data.name)
+                return data.name
+                #return QtCore.QVariant(data.name)
             else: #role == QtCore.Qt.ToolTipRole:
                 if isinstance(data, Libraries) or isinstance(data, Library):
-                    return QtCore.QVariant(data.path)
+                    return data.path
+                    #return QtCore.QVariant(data.path)
                 elif isinstance(data, Cell):
-                    return QtCore.QVariant(data.library.path + "/" + data.name)
+                    return data.library.path + "/" + data.name
+                    #return QtCore.QVariant(data.library.path + "/" + data.name)
                 elif isinstance(data, CellView):
-                    return QtCore.QVariant(data.library.path + "/" + data.cell.name + "/" + data.name)
+                    return data.library.path + "/" + data.cell.name + "/" + data.name
+                    #return QtCore.QVariant(data.library.path + "/" + data.cell.name + "/" + data.name)
         elif isinstance(data, Library):
-            return QtCore.QVariant('library')
+            return self.tr('Library')
+            #return QtCore.QVariant('library')
         elif isinstance(data, Cell):
-            return QtCore.QVariant('cell')
+            return self.tr('Cell')
+            #return QtCore.QVariant('cell')
         elif isinstance(data, Schematic):
-            return QtCore.QVariant('schematic')
+            return self.tr('Schematic')
+            #return QtCore.QVariant('schematic')
         elif isinstance(data, Symbol):
-            return QtCore.QVariant('symbol')
+            return self.tr('Symbol')
+            #return QtCore.QVariant('symbol')
         elif isinstance(data, CellView):
-            return QtCore.QVariant('cellview')
+            return self.tr('Cell View')
+            #return QtCore.QVariant('cellview')
         else:
-            return QtCore.QVariant()
+            return None
+            #return QtCore.QVariant()
 
 
     def index(self, row, column, parent):
@@ -179,15 +197,20 @@ class LibraryHierarchyModel(QtCore.QAbstractItemModel):
     def headerData(self, section, orientation, role):
         if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
             if section == 0:
-                return QtCore.QVariant(self.tr("Name"))
+                return self.tr('Name')
+                #eturn QtCore.QVariant(self.tr("Name"))
             elif section == 1:
-                return QtCore.QVariant(self.tr("Type"))
+                return self.tr('Type')
+                #eturn QtCore.QVariant(self.tr("Type"))
             #elif section == 2:
+            #    return self.tr('Value')
             #    return QtCore.QVariant(self.tr("Value"))
             else:
-                return QtCore.QVariant()
+                return None
+                #return QtCore.QVariant()
 
-        return QtCore.QVariant()
+        return None
+        #return QtCore.QVariant()
 
 class LibraryHierarchyWidget(QtGui.QWidget):
     def __init__(self, window, model):

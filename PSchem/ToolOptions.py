@@ -17,9 +17,15 @@
 # You should have received a copy of the GNU General Public License
 # along with PSchem.  If not, see <http://www.gnu.org/licenses/>.
 
-from PyQt4 import QtCore, QtGui
-
 from ThirdParty.FlowLayout import *
+
+import Globals
+Qt = __import__(Globals.UI,  globals(),  locals(),  ['QtCore',  'QtGui'])
+QtCore = Qt.QtCore
+QtGui = Qt.QtGui
+
+#from PyQt4 import QtCore, QtGui
+
 
 class ToolOptions(QtGui.QWidget):
     def __init__(self):

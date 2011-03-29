@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # -*- coding: utf-8 -*-
 
 # Copyright (C) 2009 PSchem Contributors (see CONTRIBUTORS for details)
@@ -19,6 +17,6 @@
 # You should have received a copy of the GNU General Public License
 # along with PSchem.  If not, see <http://www.gnu.org/licenses/>.
 
-from pschem import main
+#UI = 'PyQt4'
+UI = 'PySide'
 
-main()

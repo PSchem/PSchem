@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# -*- coding: utf-8 -*-
+
 # Copyright (C) 2009 PSchem Contributors (see CONTRIBUTORS for details)
 
 # This file is part of PSchem.
@@ -22,7 +24,12 @@ import sys
 #import cProfile
 #import pstats
 
-from PyQt4 import QtCore, QtGui
+import Globals
+Qt = __import__(Globals.UI,  globals(),  locals(),  ['QtCore',  'QtGui'])
+QtCore = Qt.QtCore
+QtGui = Qt.QtGui
+
+#from PyQt4 import QtCore, QtGui
 
 from PSchem import PWindow
 

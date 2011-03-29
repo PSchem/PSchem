@@ -7,7 +7,11 @@
 #
 # WARNING! All changes made in this file will be lost!
 
-from PyQt4 import QtCore
+import Globals
+Qt = __import__(Globals.UI,  globals(),  locals(),  ['QtCore'])
+QtCore = Qt.QtCore
+
+#from PyQt4 import QtCore
 
 qt_resource_data = "\
 \x00\x00\x03\x54\

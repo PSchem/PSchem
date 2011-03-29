@@ -17,7 +17,12 @@
 # You should have received a copy of the GNU General Public License
 # along with PSchem.  If not, see <http://www.gnu.org/licenses/>.
 
-from PyQt4 import QtCore, QtGui
+import Globals
+Qt = __import__(Globals.UI,  globals(),  locals(),  ['QtCore',  'QtGui'])
+QtCore = Qt.QtCore
+QtGui = Qt.QtGui
+
+#from PyQt4 import QtCore, QtGui
 from Database.Layers import *
 from Database.Cells import *
 from PSchem.LayerView import *
@@ -34,10 +39,12 @@ class LayerModel(QtCore.QAbstractItemModel):
 
     def data(self, index, role):
         if not index.isValid():
-            return QtCore.QVariant()
+            return None
+            #return QtCore.QVariant()
 
         if role != QtCore.Qt.DisplayRole and role != QtCore.Qt.DecorationRole and role != QtCore.Qt.CheckStateRole:
-            return QtCore.QVariant()
+            return None
+            #return QtCore.QVariant()
 
         row = index.row()
 
@@ -45,7 +52,8 @@ class LayerModel(QtCore.QAbstractItemModel):
         data = index.internalPointer()
         if isinstance(data, LayerView) and role == QtCore.Qt.DecorationRole:
             if col == 0:
-                return QtCore.QVariant(data.icon)
+                return data.icon
+                #return QtCore.QVariant(data.icon)
                 #return QtCore.QVariant(QtGui.QColor(random()*255,
                 #                                    random()*255,
                 #                                    random()*255,
@@ -55,21 +63,28 @@ class LayerModel(QtCore.QAbstractItemModel):
             layer = data.layer
             if col == 1:
                 if layer.visible:
-                    return QtCore.QVariant(QtCore.Qt.Checked)
+                    return QtCore.Qt.Checked
+                    #return QtCore.QVariant(QtCore.Qt.Checked)
                 else:
-                    return QtCore.QVariant(QtCore.Qt.Unchecked)
+                    return QtCore.Qt.Unchecked
+                    #return QtCore.QVariant(QtCore.Qt.Unchecked)
             elif col == 2:
                 if layer.selectable:
-                    return QtCore.QVariant(QtCore.Qt.Checked)
+                    return QtCore.Qt.Checked
+                    #return QtCore.QVariant(QtCore.Qt.Checked)
                 else:
-                    return QtCore.QVariant(QtCore.Qt.Unchecked)
+                    return QtCore.Qt.Unchecked
+                    #return QtCore.QVariant(QtCore.Qt.Unchecked)
         elif isinstance(data, LayerView) and role == QtCore.Qt.DisplayRole:
             layer = data.layer
             if col == 3:
-                return QtCore.QVariant(layer.name)
+                return layer.name
+                #return QtCore.QVariant(layer.name)
             elif col == 4:
-                return QtCore.QVariant(layer.type)
-        return QtCore.QVariant()
+                return layer.type
+                #return QtCore.QVariant(layer.type)
+        return None
+        #return QtCore.QVariant()
 
     def index(self, row, column, parent):
 
@@ -82,7 +97,8 @@ class LayerModel(QtCore.QAbstractItemModel):
         return self.createIndex(row, column, children[row])
 
     def parent(self, index):
-        return QtCore.QVariant()
+        return None
+        #return QtCore.QVariant()
 
     def hasChildren(self, parent):
         if not parent.isValid():
@@ -102,18 +118,25 @@ class LayerModel(QtCore.QAbstractItemModel):
     def headerData(self, section, orientation, role):
         if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
             if section == 0:
-                return QtCore.QVariant(self.tr(""))
+                return ''
+                #return QtCore.QVariant(self.tr(""))
             elif section == 1:
-                return QtCore.QVariant(self.tr("V"))
+                return self.tr('V')
+                #return QtCore.QVariant(self.tr("V"))
             elif section == 2:
-                return QtCore.QVariant(self.tr("S"))
+                return self.tr('S')
+                #return QtCore.QVariant(self.tr("S"))
             elif section == 3:
-                return QtCore.QVariant(self.tr("Name"))
+                return self.tr('Name')
+                #return QtCore.QVariant(self.tr("Name"))
             elif section == 4:
-                return QtCore.QVariant(self.tr("Type"))
+                return self.tr('Type')
+                #return QtCore.QVariant(self.tr("Type"))
             else:
-                return QtCore.QVariant()
-        return QtCore.QVariant()
+                return None
+                #return QtCore.QVariant()
+        return None
+        #return QtCore.QVariant()
 
 class ProxyModel(QtGui.QSortFilterProxyModel):
     def __init__(self):

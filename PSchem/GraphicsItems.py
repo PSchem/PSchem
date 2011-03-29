@@ -17,9 +17,13 @@
 # You should have received a copy of the GNU General Public License
 # along with PSchem.  If not, see <http://www.gnu.org/licenses/>.
 
-from PyQt4 import QtCore, QtGui
-from Database.Primitives import *
+import Globals
+Qt = __import__(Globals.UI,  globals(),  locals(),  ['QtCore',  'QtGui'])
+QtCore = Qt.QtCore
+QtGui = Qt.QtGui
 
+#from PyQt4 import QtCore, QtGui
+from Database.Primitives import *
 
 class BaseItem(QtGui.QGraphicsItem):
     def __init__(self, parent=None):
@@ -223,10 +227,10 @@ class TextItem(BaseItem):
     
     def paint(self, painter, option, widget):
         #draw = (option.levelOfDetail > 0.32)
-        if QtCore.QT_VERSION >= 263680: #4.6.0
-            draw = (option.levelOfDetailFromTransform(painter.transform()) > 0.32)
-        else:
-            draw = (option.levelOfDetail > 0.32)
+        #if QtCore.QT_VERSION >= 263680: #4.6.0
+        draw = (option.levelOfDetailFromTransform(painter.transform()) > 0.32)
+        #else:
+        #    draw = (option.levelOfDetail > 0.32)
         self.labelItem.draw = draw
            
         #painter.drawLine(-2, 0, 2, 0)
@@ -572,7 +576,7 @@ class InstanceItem(BaseItem):
         #print self.__class__.__name__, instance, instance.instanceLibraryPath, instance.instanceCellName, instance.instanceCellViewName, self._cellView
         self.uu = float(self.cellView.uu)
         self._boundingRect = QtCore.QRectF()
-        self.shape = QtGui.QPainterPath()
+        self.selectShape = QtGui.QPainterPath()
         #self.setZValue(self.model.layer.zValue)
         self.setHandlesChildEvents(True)
         self.model.itemAdded(self)
@@ -583,10 +587,10 @@ class InstanceItem(BaseItem):
     #    return self._cellView
         
     #@property
-    #def shape(self):
-    #    #self._shape = QtGui.QPainterPath()
-    #    #self._shape.addRect(self._boundingRect)
-    #    return self._shape
+    #def selectShape(self):
+    #    #self._selectShape = QtGui.QPainterPath()
+    #    #self._selectShape.addRect(self._boundingRect)
+    #    return self._selectShape
 
     def instanceRemoved(self):
         #self.model = None
@@ -599,12 +603,12 @@ class InstanceItem(BaseItem):
                 pen = QtGui.QPen(self.model.layers.layerByName('selection', 'drawing').view.pen)
                 painter.setPen(pen)
                 #painter.drawRect(self.boundingRect())
-                painter.drawPath(self.shape)
+                painter.drawPath(self.selectShape)
             if self.preSelected:
                 pen = QtGui.QPen(self.model.layers.layerByName('preselection', 'drawing').view.pen)
                 painter.setPen(pen)
                 #painter.drawRect(self.boundingRect())
-                painter.drawPath(self.shape)
+                painter.drawPath(self.selectShape)
 
 
     #def installTransformChangeHook(self, cb):
@@ -691,6 +695,7 @@ class InstanceItem(BaseItem):
         self.updateBoundingRect()
         
     def updateBoundingRect(self):
+        #import sys
         self.prepareGeometryChange()
         self._boundingRect = QtCore.QRectF()
         shapeRect = QtCore.QRectF()
@@ -700,11 +705,12 @@ class InstanceItem(BaseItem):
             pos = c.pos()
             matrix = c.transform() * QtGui.QTransform().translate(pos.x(), pos.y())
             self._boundingRect = self._boundingRect | matrix.mapRect(r)
+            #sys.stderr.write(str(self._boundingRect) + '\n')
             #if (not isinstance(c, TextItem) and
                 #not isinstance(c, InstanceItem)):
                 #shapeRect = shapeRect | matrix.mapRect(r)
             shapeRect = shapeRect | matrix.mapRect(r)
-            self.shape = QtGui.QPainterPath()
-            self.shape.addRect(shapeRect)
+            self.selectShape = QtGui.QPainterPath()
+            self.selectShape.addRect(shapeRect)
         self.update()
                 

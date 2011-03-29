@@ -1,6 +1,7 @@
 #
 # python package directory
 #
+
 __all__ = [
 #    'PWindow',
 #    'ConsoleWidget',

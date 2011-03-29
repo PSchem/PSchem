@@ -18,7 +18,11 @@
 # along with PSchem.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys, traceback
-from PyQt4 import QtCore, QtGui
+
+import Globals
+Qt = __import__(Globals.UI,  globals(),  locals(),  ['QtCore',  'QtGui'])
+QtCore = Qt.QtCore
+QtGui = Qt.QtGui
 
 try:
     from Controller import *
@@ -90,8 +94,8 @@ class StdoutWrap():
 
     def write(self, txt):
         self.console.write(txt)
-        if self.stream.fileno() >= 0: # for Windows (pythonw.exe) compatibility
-            self.stream.write(txt)
+        #if self.stream.fileno() >= 0: # for Windows (pythonw.exe) compatibility
+        #    self.stream.write(txt)
         if txt.find('\n', -1) != -1:
             QtGui.qApp.processEvents() #interferes with deferred processing of Database notifications
 
@@ -150,7 +154,7 @@ class History(deque):
         f = open(self.filePath, 'w')
         try:
             for cmd in self:
-                cmdText = str(cmd)
+                cmdText = unicode(cmd)
                 f.write(cmdText)
                 #write(cmdText)
         finally:
@@ -199,7 +203,8 @@ class History(deque):
             self.pointer -= 1
             val = self[self.pointer]
             #print ">>" + str(searchTxt) + "<<"
-            if (not searchTxt or str(val).find(searchTxt) != -1):
+            #if (not searchTxt or str(val).find(searchTxt) != -1):
+            if (not searchTxt or val.find(searchTxt) != -1):
                 return val
             else:
                 return self.previous(searchTxt)
@@ -209,7 +214,8 @@ class History(deque):
             self.pointer += 1
             val = self[self.pointer]
             #print ">>" + str(searchTxt) + "<<"
-            if (not searchTxt or str(val).find(searchTxt) != -1):
+            #if (not searchTxt or str(val).find(searchTxt) != -1):
+            if (not searchTxt or val.find(searchTxt) != -1):
                 return val
             else:
                 return self.next(searchTxt)
@@ -218,7 +224,7 @@ class History(deque):
     def __repr__(self):
         text = ''
         for cmd in self:
-            text += str(cmd)
+            text += cmd
         return text
     
 
@@ -322,8 +328,9 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
         return self._history
 
     def _pythonInfo(self):
+        return
         return 'Python %s on %s\n' % (sys.version, sys.platform) + \
-            'PyQt4 v.%s, Qt4 v.%s\n' % (QtCore.PYQT_VERSION_STR, QtCore.QT_VERSION_STR) + \
+            'PyQt4 v.%s, Qt4 v.%s\n' % (QtCore.PY_VERSION_STR, QtCore.QT_VERSION_STR) + \
             'Type "help", "copyright", "credits" or "license" for more information.\n'
         
         
@@ -393,7 +400,7 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
             time.sleep(0.01)
         self._inReadline = False
         #sys.stdout.stream.write(str(lines))
-        sys.stdout.stream.write(lines[0])
+        ##sys.stdout.stream.write(lines[0])
         return lines[0]
 
     #def readChar(self):
@@ -504,7 +511,7 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
                 #self.history().setTransient(Command(self.commandRawText()+'\n', 'exec'))
             cmd = self.history().previous(self._rawBuffer)
             if cmd:
-                text = str(cmd)
+                text = unicode(cmd)
                 text = text[0:len(text)-1]
                 self.commandClear()
                 self.textCursor().insertText(text)
@@ -514,7 +521,7 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
         elif key == QtCore.Qt.Key_Down and not self._inReadline:
             cmd = self.history().next(self._rawBuffer)
             if cmd:
-                text = str(cmd)
+                text = unicode(cmd)
                 text = text[0:len(text)-1]
                 self.commandClear()
                 self.textCursor().insertText(text)
@@ -539,7 +546,7 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
         elif key == QtCore.Qt.Key_V and (modifier & QtCore.Qt.ControlModifier):
             self.paste()
             return
-        elif text.length() and not (modifier & QtCore.Qt.ControlModifier):
+        elif len(text) > 0 and not (modifier & QtCore.Qt.ControlModifier):
             cursor = self.textCursor()
             cursor.setPosition(self._lastCursorPos)
             cursor.insertText(event.text())
@@ -565,7 +572,7 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
         if len(lines) == 1:
             if not first and not empty:
                 cmd = Command(line, 'single')
-                sys.stdout.stream.write(self.commandText())
+                ##sys.stdout.stream.write(self.commandText())
                 try:
                     self.execute(cmd, False)
                 except (StandardError) as err:
@@ -582,7 +589,7 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
             for l in lines[:-1]:
                 txt += l
             cmd = Command(txt, 'exec')
-            sys.stdout.stream.write(self.commandText())
+            ##sys.stdout.stream.write(self.commandText())
             try:
                 self.execute(cmd, False)
             except (StandardError) as err:
@@ -617,8 +624,9 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
         txt = cursor.selectedText()
         cursor.removeSelectedText()
         #self.setTextCursor(cursor)
-        txt.replace(u"\u2029", '\n')
-        txt = str(txt)
+        #txt.replace(u"\u2029", '\n')
+        txt = txt.replace(u"\u2029", '\n')
+        txt = unicode(txt)
         return txt
     
     def commandText(self):
@@ -629,8 +637,8 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
         txt = cursor.selectedText()
         cursor.setPosition(pos, QtGui.QTextCursor.MoveAnchor)
         #self.setTextCursor(cursor)
-        txt.replace(u"\u2029", '\n')
-        txt = str(txt)
+        txt = unicode(txt)
+        txt = txt.replace(u"\u2029", '\n')
         return txt
 
     def commandLines(self):
@@ -678,7 +686,7 @@ class ConsoleWidget(QtGui.QPlainTextEdit):
         cursor = self.textCursor()
         cursor.setPosition(self._lastCursorPos)
         self.setTextCursor(cursor)
-        lines = str(QtGui.qApp.clipboard().text())
+        lines = unicode(QtGui.qApp.clipboard().text())
         for line in lines.splitlines(True):
             line = self.pstrip.sub('', line)
             enter = self.penter.search(line)

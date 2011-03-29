@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set style = polyester
+#set style = polyester
 #set style = oxygen
 #set style = qtcurve
 #set style = windows
@@ -13,7 +13,7 @@ set style = polyester
 #set style = motif
 #set style = cde
 
-#set graphicssystem = native
-set graphicssystem = raster
+set graphicssystem = native
+#set graphicssystem = raster
 
 exec python pschem.py -style ${style} -graphicssystem ${graphicssystem}

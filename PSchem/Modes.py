@@ -17,7 +17,12 @@
 # You should have received a copy of the GNU General Public License
 # along with PSchem.  If not, see <http://www.gnu.org/licenses/>.
 
-from PyQt4 import QtCore, QtGui
+import Globals
+Qt = __import__(Globals.UI,  globals(),  locals(),  ['QtCore',  'QtGui'])
+QtCore = Qt.QtCore
+QtGui = Qt.QtGui
+
+#from PyQt4 import QtCore, QtGui
 #from PyQt4.QtCore import *
 #from PyQt4.QtGui import *
 
@@ -192,7 +197,6 @@ class SelectMode():
         item = None
         if len(items) > 0:
             item = items[0]
-        #print item, self._preSelected
         
         if item != self._preSelected:
             if self._preSelected:

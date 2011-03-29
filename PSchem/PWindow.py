@@ -17,8 +17,13 @@
 # You should have received a copy of the GNU General Public License
 # along with PSchem.  If not, see <http://www.gnu.org/licenses/>.
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+import Globals
+Qt = __import__(Globals.UI,  globals(),  locals(),  ['QtCore',  'QtGui'])
+QtCore = Qt.QtCore
+QtGui = Qt.QtGui
+
+#from PyQt4.QtCore import *
+#from PyQt4.QtGui import *
 
 #from ..PSchem.ConsoleWidget import *
 from PSchem.ConsoleWidget import *
@@ -37,7 +42,7 @@ import os
 
 class SubWindow(QtGui.QMdiSubWindow):
     def __init__(self, window):
-        QtGui.QMainWindow.__init__(self)
+        QtGui.QMdiSubWindow.__init__(self)
         self.mainWindow = window
 
     def closeEvent(self, event):
@@ -64,8 +69,8 @@ class PWindow(QtGui.QMainWindow):
         #    QtCore.QSettings.UserScope,
         #    sys.argv[0])
         val = self.settings.value('window/geometry')
-        if (val.canConvert(QtCore.QVariant.ByteArray)):
-            self.restoreGeometry(val.toByteArray())
+        ##if (val.canConvert(QtCore.QVariant.ByteArray)):
+        ##    self.restoreGeometry(val.toByteArray())
         self.createConsole()
         self.createToolOptions()
         self.createLibraryHierarchyWidget()
@@ -89,9 +94,9 @@ class PWindow(QtGui.QMainWindow):
         self.tabifyDockWidget(self.dockTool, self.dockH)
         self.tabifyDockWidget(self.dockH, self.dockD)
 
-        val = self.settings.value('window/state')
-        if (val.canConvert(QtCore.QVariant.ByteArray)):
-            self.restoreState(val.toByteArray())
+        #val = self.settings.value('window/state')
+        #if (val.canConvert(QtCore.QVariant.ByteArray)):
+        #    self.restoreState(val.toByteArray())
 
     def show(self):
         QtGui.QMainWindow.show(self)
@@ -312,7 +317,8 @@ class PWindow(QtGui.QMainWindow):
         self.dockTool = QtGui.QDockWidget(self.tr("Tool Options"), self)
         self.dockTool.setObjectName('toolOptionsDock')
         self.docks.add(self.dockTool)
-        self.selectToolOptions = SelectToolOptions()
+        #self.selectToolOptions = SelectToolOptions()
+        self.selectToolOptions = ToolOptions()
         self.dockTool.setWidget(self.selectToolOptions)
         #self.consoleWidget.setObjectName('')
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.dockTool)
@@ -321,8 +327,8 @@ class PWindow(QtGui.QMainWindow):
         self.mdiArea = QtGui.QMdiArea()
         #self.mdiArea = QtGui.QTabWidget()
         #self.mdiArea.addTab(None, '')
-        versionMaj = QtCore.QT_VERSION / 256 / 256
-        versionMin = QtCore.QT_VERSION / 256 % 256
+        #versionMaj = QtCore.QT_VERSION / 256 / 256
+        #versionMin = QtCore.QT_VERSION / 256 % 256
         #if versionMaj >= 4 and versionMin >=6:
         #    self.mdiArea.setMovable(True)
         #    self.mdiArea.setTabsClosable(True)
@@ -659,8 +665,8 @@ class PWindow(QtGui.QMainWindow):
 
 
     def closeEvent(self, event):
-        self.settings.setValue('window/geometry', QtCore.QVariant(self.saveGeometry()))
-        self.settings.setValue('window/state', QtCore.QVariant(self.saveState()))
+        self.settings.setValue('window/geometry', self.saveGeometry())
+        self.settings.setValue('window/state', self.saveState())
         QtGui.QWidget.closeEvent(self, event)
         
         

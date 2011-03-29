@@ -61,7 +61,12 @@
 # **
 # ****************************************************************************/
 
-from PyQt4 import QtCore, QtGui
+import Globals
+Qt = __import__(Globals.UI,  globals(),  locals(),  ['QtCore',  'QtGui'])
+QtCore = Qt.QtCore
+QtGui = Qt.QtGui
+
+#from PyQt4 import QtCore, QtGui
  
 class FlowLayout(QtGui.QLayout):
     def __init__(self, parent=None, margin=None, spacing=None):

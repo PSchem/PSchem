@@ -8,16 +8,17 @@ the implementation and user scripts.
 Project Resources
 -----------------
 
-* [Wiki and Documentation](https://github.com/andrzej-r/pschem/wiki).
+* [Project Page](https://github.com/PSchem/PSchem)
+* [Wiki and Documentation](https://github.com/PSchem/PSchem/wiki).
 * [Mailing List](http://groups.google.com/group/pschem).
-* [Git repository](git://github.com/andrzej-r/pschem.git).
+* Public Git repository: git://github.com/PSchem/PSchem.git (read-only).
 
 Supported Platforms
 -------------------
 
 * Windows
 * Linux
-* Other supported by the [Qt library](http://qt.nokia.com/) (untested)
+* Other supported by the [Qt library](http://qt.nokia.com/) (not tested)
 
 License
 -------
@@ -72,5 +73,5 @@ Use provided batch files or run the program directly:
 There are no electronic component libraries available yet so you may want
 to reuse some of [gEDA](http://www.gpleda.org/) designs.
 
-*Note*: PSchem is in no way related to the gEDA project (other than both
-being freely available).
+*Note*: PSchem is not related to the gEDA project. Please do not report
+problems with PSchem on the gEDA mailing list or issue trackers.

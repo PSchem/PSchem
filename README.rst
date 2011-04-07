@@ -10,9 +10,9 @@ Project Resources
 =================
 
 :Project Page: https://github.com/PSchem/PSchem
-:Wiki and Documentation: https://github.com/PSchem/PSchem/wiki
+:Wiki: https://github.com/PSchem/PSchem/wiki
 :Mailing List: http://groups.google.com/group/pschem
-:Public Git repository: git://github.com/PSchem/PSchem.git (read-only)
+:Git: git://github.com/PSchem/PSchem.git (read-only)
 
 Supported Platforms
 ===================
@@ -42,10 +42,10 @@ terms of following licenses:
 
 ::
 
-PSchem is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+  PSchem is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
 
 Contributing
 ============
@@ -75,7 +75,7 @@ To run the program you will need following components:
 Usage
 =====
 
-:Note:
+**Note**
   PSchem is in a very early stage of development.
   It is not yet suitable for the design of electronic circuits.
 
@@ -84,9 +84,9 @@ Use provided batch files or run the program directly::
 $ python pschem.py
 
 There are no electronic component libraries available yet so you may want
-to reuse some of gEDA_[#]_ designs.
+to reuse some of gEDA_ [#]_ designs.
 
 .. _gEDA: http://www.gpleda.org/
 
-.. _[#] PSchem is not related to the gEDA project. Please do not report
-problems with PSchem on the gEDA mailing list or issue trackers.
+.. [#] PSchem is not related to the gEDA project. Please do not report
+       problems with PSchem on the gEDA mailing list or issue trackers.
